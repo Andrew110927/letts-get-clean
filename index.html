@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Letts Get Clean · Mobile Car Detailing in Orange County, NY</title>
+<meta name="description" content="Mobile car detailing in Orange County, NY. Exterior, interior and full details at your home or drop-off in Newburgh. Book online or call/text (845) 282-9387.">
+<meta property="og:title" content="Letts Get Clean · Mobile Car Detailing">
+<meta property="og:description" content="Dirty car? Not for long. Book a detail online in Orange County, NY. Launch prices through Nov 16.">
+<meta property="og:image" content="https://andrew110927.github.io/letts-get-clean/media/hero_poster.jpg">
+<meta property="og:url" content="https://andrew110927.github.io/letts-get-clean/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#07080B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='14' fill='%2329C8FF' transform='rotate(-8 32 32)'/%3E%3Cpath d='M17 41h30v-8l-4-10H21l-4 10z' fill='none' stroke='%2304131A' stroke-width='4' stroke-linejoin='round'/%3E%3Ccircle cx='23' cy='42' r='3.5' fill='%2304131A'/%3E%3Ccircle cx='41' cy='42' r='3.5' fill='%2304131A'/%3E%3C/svg%3E">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+/* Layout: one long mobile-first page — hero → caution-tape ticker → packages → book (quote + calendar) → gallery → reviews → footer; owner dashboard is a full-screen view on top. */
+:root{
+  color-scheme:dark;
+  --bg:#07080B; --panel:#12151B; --panel2:#181C24; --line:#262C36;
+  --fg:#F4F5F7; --dim:#A7AEB8; --mute:#6E7682;
+  --accent:#29C8FF; --accent-ink:#04131A; --mud:#7A6A52;
+  --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171;
+  --display:"Anton","Impact","Arial Narrow Bold",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+main,footer{overflow-x:clip}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.5px;line-height:1;margin:0;text-wrap:balance}
+.eyebrow{font-weight:900;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--dim)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 24px;border-radius:999px;border:0;cursor:pointer;font-weight:800;text-decoration:none;letter-spacing:.3px}
+.btn-primary{background:var(--accent);color:var(--accent-ink);box-shadow:5px 5px 0 var(--fg)}
+.btn-primary:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 var(--fg)}
+.btn-ghost{background:transparent;color:var(--fg);border:2px solid var(--line)}
+.btn-ghost:hover{border-color:var(--accent)}
+.btn-sm{min-height:38px;padding:0 16px;font-size:14px}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+section{padding-block:72px}
+.sec-head{display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.sec-head h2{font-size:clamp(40px,7vw,68px)}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(7,8,11,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--fg)}
+.brand .tile{width:40px;height:40px;border-radius:11px;background:var(--accent);display:grid;place-items:center;transform:rotate(-8deg);flex-shrink:0}
+.brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:1px;text-transform:uppercase;transform:skewX(-8deg)}
+.brand b span{color:var(--accent)}
+nav.links{display:flex;gap:4px;flex-wrap:wrap}
+nav.links a{color:var(--dim);text-decoration:none;font-weight:700;font-size:14px;padding:8px 12px;border-radius:999px}
+nav.links a:hover{color:var(--fg);background:var(--panel)}
+@media (max-width:760px){nav.links{display:none}}
+
+/* hero */
+.hero{padding-block:56px 40px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-180px;top:-140px;width:560px;height:560px;border-radius:50%;border:3px solid var(--panel2);box-shadow:0 0 0 80px transparent,inset 0 0 0 80px transparent;pointer-events:none}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:center;position:relative;z-index:1}
+@media (max-width:860px){.hero .wrap{grid-template-columns:minmax(0,1fr)}}
+.hero h1{font-size:clamp(50px,11.5vw,132px);transform:skewX(-8deg);transform-origin:left bottom}
+.hero h1 .l1{display:block;text-shadow:6px 6px 0 #2a303a}
+.hero h1 .l2{display:inline-block;margin-top:10px;background:var(--accent);color:var(--accent-ink);padding:2px 20px 8px;transform:rotate(-2deg);box-shadow:9px 9px 0 var(--fg)}
+.hero p.lede{font-size:19px;color:var(--dim);max-width:46ch;margin:26px 0 0}
+.hero .ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px}
+.deal-badge{display:inline-flex;align-items:center;gap:10px;background:var(--fg);color:var(--bg);font-family:var(--display);font-size:20px;letter-spacing:1px;text-transform:uppercase;padding:8px 18px;border-radius:999px;transform:rotate(-1.5deg);box-shadow:5px 5px 0 var(--accent);margin-bottom:22px}
+.facts{display:grid;gap:12px}
+.fact{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.fact .ic{width:40px;height:40px;border-radius:12px;background:var(--panel2);display:grid;place-items:center;flex-shrink:0}
+.fact b{display:block;font-size:16px}
+.fact span{color:var(--dim);font-size:14px}
+.phone-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.phone-num{font-family:var(--display);font-size:30px;letter-spacing:1px;user-select:all}
+
+/* ticker */
+.ticker{position:relative;overflow:hidden;background:repeating-linear-gradient(-45deg,var(--accent) 0 18px,var(--bg) 18px 36px);padding-block:10px;transform:rotate(-1.5deg);margin:10px -20px}
+.ticker .belt{background:var(--bg);white-space:nowrap;padding-block:12px;overflow:hidden}
+.ticker .run{display:inline-flex;gap:44px;padding-left:44px;font-family:var(--display);font-size:24px;letter-spacing:1.5px;text-transform:uppercase;animation:run 38s linear infinite}
+.ticker .run i{font-style:normal;color:var(--accent)}
+@keyframes run{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker .run{animation:none}}
+
+/* packages */
+.pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch}
+@media (max-width:860px){.pk-grid{grid-template-columns:minmax(0,1fr)}}
+.pk{background:var(--fg);color:var(--bg);border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:14px;box-shadow:8px 8px 0 var(--accent);position:relative}
+.pk.hero-pk{background:var(--accent);color:var(--accent-ink);box-shadow:8px 8px 0 var(--fg)}
+.pk .tag{font-size:12px;font-weight:900;letter-spacing:3px;text-transform:uppercase;opacity:.75}
+.pk h3{font-size:40px}
+.pk .price{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.pk .now{font-family:var(--display);font-size:76px;line-height:.9}
+.pk .now sup{font-size:32px;vertical-align:top;position:relative;top:6px}
+.pk .was{font-family:var(--display);font-size:24px;opacity:.6;text-decoration:line-through;text-decoration-thickness:3px;padding-bottom:8px}
+.pk ul{list-style:none;padding:0;margin:0;display:grid;gap:8px;font-weight:600;font-size:15px}
+.pk li{display:flex;gap:10px}
+.pk li svg{flex-shrink:0;margin-top:3px}
+.pk .pick{margin-top:auto}
+.pk .btn-dark{background:var(--bg);color:var(--fg)}
+.stamp{position:absolute;top:-26px;right:-12px;width:96px;height:96px;transform:rotate(12deg)}
+
+/* booking */
+.book-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.book-grid{grid-template-columns:minmax(0,1fr)}}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:16px}
+.step + .step{margin-top:18px}
+.step h3{font-size:26px;display:flex;align-items:center;gap:12px}
+.step h3 .n{font-family:var(--body);font-weight:900;font-size:13px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;transform:none}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.choice{position:relative}
+.choice input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.choice .face{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border:2px solid var(--line);border-radius:14px;background:var(--panel2);height:100%}
+.choice .face b{font-size:15px}
+.choice .face span{color:var(--dim);font-size:13px}
+.choice input:checked + .face{border-color:var(--accent);background:rgba(41,200,255,.1)}
+.choice input:focus-visible + .face{outline:3px solid var(--accent);outline-offset:2px}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.day{flex:0 0 auto;min-width:72px;padding:10px 8px;border-radius:14px;border:2px solid var(--line);background:var(--panel2);cursor:pointer;text-align:center;display:grid;gap:2px}
+.day small{color:var(--dim);font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.day b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1}
+.day[aria-pressed="true"]{border-color:var(--accent);background:rgba(41,200,255,.12)}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.slot{min-height:46px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);cursor:pointer;font-weight:800}
+.slot[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.slot[disabled]{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.field{display:grid;gap:6px}
+.field label{font-weight:700;font-size:14px}
+.field input,.field select,.field textarea{width:100%;min-height:48px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel2)}
+.field textarea{min-height:90px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);outline:none}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.row2{grid-template-columns:minmax(0,1fr)}}
+.check{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;background:var(--panel2);border:2px solid var(--line);cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--accent);margin:2px 0 0;flex-shrink:0}
+.summary{position:sticky;top:calc(env(safe-area-inset-top,0px) + 88px);background:var(--fg);color:var(--bg);border-radius:22px;padding:24px;box-shadow:8px 8px 0 var(--accent);display:grid;gap:12px}
+.summary h3{font-size:30px}
+.summary .line{display:flex;justify-content:space-between;gap:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.summary .line span:first-child{color:#3a414c}
+.summary .total{border-top:2px dashed #c9ced6;padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end}
+.summary .total b{font-family:var(--display);font-weight:400;font-size:56px;line-height:.9}
+.summary .when{font-weight:800}
+.summary .btn{width:100%}
+.err{color:var(--bad);font-weight:700;font-size:14px}
+.confirm{background:var(--panel);border:2px solid var(--accent);border-radius:22px;padding:26px;display:grid;gap:14px}
+.confirm h3{font-size:36px}
+.mine{display:grid;gap:10px}
+.mine-item{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+
+/* gallery */
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:24px}
+.pair{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:14px;display:grid;gap:12px}
+.pair .imgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pair figure{margin:0;position:relative;border-radius:14px;overflow:hidden;aspect-ratio:4/5;background:var(--panel2);max-width:100%}
+.pair img{width:100%;height:100%;object-fit:cover;display:block}
+.pair figcaption{position:absolute;left:10px;top:10px;font-family:var(--display);font-size:18px;letter-spacing:2px;padding:4px 12px;border-radius:999px}
+.pair .b figcaption{background:#3A332A;color:#fff;border:2px solid var(--mud)}
+.pair .a figcaption{background:var(--accent);color:var(--accent-ink)}
+.pair p{margin:0 4px 4px;font-weight:700}
+.empty{border:2px dashed var(--line);border-radius:18px;padding:28px;color:var(--dim);text-align:center}
+
+/* reviews */
+.rv-top{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+.rv-avg{font-family:var(--display);font-size:72px;line-height:.9}
+.stars{color:var(--accent);letter-spacing:2px;font-size:20px}
+.rv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.rv{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:8px}
+.rv p{margin:0}
+.rv-form{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:14px;max-width:640px}
+.star-pick{display:flex;gap:6px}
+.star-pick button{background:none;border:0;font-size:34px;line-height:1;cursor:pointer;color:var(--line);padding:2px}
+.star-pick button[aria-pressed="true"]{color:var(--accent)}
+
+/* info + footer */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.info{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:8px}
+.info h3{font-size:24px}
+.info p{margin:0;color:var(--dim)}
+footer{border-top:1px solid var(--line);padding-block:40px 56px}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.socials{display:flex;gap:10px;flex-wrap:wrap}
+.soc{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line);color:var(--fg);text-decoration:none;font-weight:700;font-size:14px;background:var(--panel)}
+.soc:hover{border-color:var(--accent)}
+.soc.off{opacity:.55}
+.soc small{color:var(--mute);font-weight:600}
+.checker{height:18px;background:conic-gradient(var(--fg) 0 25%,var(--bg) 0 50%,var(--fg) 0 75%,var(--bg) 0) 0 0/18px 18px}
+
+/* dashboard */
+#dash{position:fixed;inset:0;z-index:80;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.d-head{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line)}
+.d-head .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:10px}
+.tab{min-height:40px;padding:0 16px;border-radius:999px;border:2px solid var(--line);background:var(--panel);cursor:pointer;font-weight:800;font-size:14px;white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.d-body{padding-block:24px 60px;display:grid;gap:22px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:4px}
+.kpi small{color:var(--dim);font-weight:800;font-size:12px;letter-spacing:2px;text-transform:uppercase}
+.kpi b{font-family:var(--display);font-weight:400;font-size:42px;line-height:1;font-variant-numeric:tabular-nums}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:14px;min-width:0}
+.card h3{font-size:26px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;color:var(--dim);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td .sub{color:var(--dim);font-size:13px}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.5px}
+.st-requested{background:rgba(251,191,36,.15);color:var(--warn)}
+.st-confirmed{background:rgba(41,200,255,.15);color:var(--accent)}
+.st-done{background:rgba(74,222,128,.15);color:var(--ok)}
+.st-cancelled{background:rgba(248,113,113,.15);color:var(--bad)}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.bars{display:grid;gap:10px}
+.bar{display:grid;grid-template-columns:120px minmax(0,1fr) 40px;gap:10px;align-items:center;font-size:14px;font-weight:700}
+.bar .trk{height:14px;background:var(--panel2);border-radius:999px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:999px}
+.post{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:8px}
+.post .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.post p{margin:0;white-space:pre-wrap}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:12px;font-weight:800}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:800;padding:12px 20px;border-radius:999px;z-index:100;box-shadow:4px 4px 0 var(--accent)}
+.note{background:rgba(41,200,255,.08);border:1px solid rgba(41,200,255,.35);border-radius:14px;padding:14px 16px;font-size:14px}
+svg.chart text{fill:var(--dim);font-size:11px}
+
+/* ---- v2 visual layer ---- */
+.hero{padding-block:72px 64px;isolation:isolate}
+.hero-media{position:absolute;inset:0;z-index:-2;overflow:hidden;background:#000}
+.hero-media video,.hero-media img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.1)}
+.hero-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,8,11,.95) 0%,rgba(7,8,11,.82) 42%,rgba(7,8,11,.45) 75%,rgba(7,8,11,.3) 100%),linear-gradient(0deg,var(--bg) 0%,rgba(7,8,11,0) 28%)}
+@media (max-width:860px){.hero-shade{background:linear-gradient(180deg,rgba(7,8,11,.72) 0%,rgba(7,8,11,.86) 60%,var(--bg) 100%)}}
+.hero::after{display:none}
+.hero .fact{background:rgba(18,21,27,.78);backdrop-filter:blur(10px);border-color:rgba(255,255,255,.08)}
+.hero h1{animation:slam .55s cubic-bezier(.2,1.4,.4,1) both}
+.hero h1 .l2{animation:slam2 .6s .18s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes slam{0%{transform:skewX(-8deg) scale(1.35)}100%{transform:skewX(-8deg) scale(1)}}
+@keyframes slam2{0%{transform:rotate(-8deg) scale(1.3)}100%{transform:rotate(-2deg) scale(1)}}
+.spark{position:absolute;color:var(--accent);font-size:22px;pointer-events:none;animation:twinkle 2.4s ease-in-out infinite;text-shadow:0 0 12px rgba(41,200,255,.8)}
+.spark.w{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.9)}
+@keyframes twinkle{0%,100%{transform:scale(.4) rotate(0);opacity:.25}50%{transform:scale(1.15) rotate(45deg);opacity:1}}
+.next-chip{display:inline-flex;align-items:center;gap:10px;background:rgba(18,21,27,.85);border:1px solid rgba(41,200,255,.45);color:var(--fg);border-radius:999px;padding:8px 16px;font-weight:700;font-size:14px;margin-top:18px;text-decoration:none}
+.next-chip i{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(74,222,128,.6);animation:ping 1.8s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}80%,100%{box-shadow:0 0 0 12px rgba(74,222,128,0)}}
+.sec-head h2{transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36}
+.pk{transition:transform .25s ease,box-shadow .25s ease}
+.pk:hover{transform:translateY(-6px) rotate(-1deg);box-shadow:12px 14px 0 var(--accent)}
+.pk.hero-pk:hover{box-shadow:12px 14px 0 var(--fg)}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;counter-reset:s}
+@media (max-width:760px){.steps{grid-template-columns:minmax(0,1fr)}}
+.stepc{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:8px;position:relative;overflow:hidden}
+.stepc .num{font-family:var(--display);font-size:64px;line-height:.8;color:var(--accent);text-shadow:4px 4px 0 #04131A}
+.stepc h3{font-size:28px}
+.stepc p{margin:0;color:var(--dim)}
+.watch{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:48px;align-items:center}
+@media (max-width:860px){.watch{grid-template-columns:minmax(0,1fr);justify-items:center}}
+.phone{position:relative;width:100%;max-width:360px;aspect-ratio:9/16;border-radius:34px;padding:10px;background:linear-gradient(145deg,#1d222b,#0b0d11);box-shadow:0 30px 80px rgba(41,200,255,.18),0 0 0 2px #262c36}
+.phone video{width:100%;height:100%;object-fit:cover;border-radius:26px;background:#000;display:block}
+.glow-ring{position:absolute;inset:-30px;border-radius:50%;background:radial-gradient(closest-side,rgba(41,200,255,.22),transparent);z-index:-1;filter:blur(10px)}
+.watch ul{list-style:none;padding:0;margin:18px 0 26px;display:grid;gap:12px;font-weight:600}
+.watch li{display:flex;gap:12px;align-items:flex-start}
+.mbar{display:none}
+@media (max-width:760px){
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;gap:12px;align-items:center;justify-content:space-between;background:rgba(7,8,11,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .mbar b{font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:.5px}
+  .mbar small{display:block;color:var(--dim);font-size:12px}
+  footer{padding-bottom:110px}
+}
+@media (prefers-reduced-motion:reduce){.hero h1,.hero h1 .l2,.spark,.next-chip i{animation:none}.pk,.pk:hover{transition:none;transform:none}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Letts Get Clean home">
+      <span class="tile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#04131A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14v-4l-2-5H7l-2 5v4z"/><path d="M3 13h18"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg></span>
+      <b>Letts <span>Get Clean</span></b>
+    </a>
+    <nav class="links" aria-label="Sections">
+      <a href="#how">How it works</a><a href="#packages">Packages</a><a href="#watch">Watch</a><a href="#book">Book</a><a href="#gallery">Gallery</a><a href="#reviews">Reviews</a><a href="#info">Info</a>
+    </nav>
+    <div style="display:flex;gap:8px;align-items:center">
+            <a class="btn btn-primary btn-sm" href="#book">Book now</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-media" aria-hidden="true"><video id="heroVid" src="media/hero_loop.mp4" poster="media/hero_poster.jpg" autoplay muted loop playsinline preload="auto"></video></div>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <span class="spark" style="left:58%;top:18%;animation-delay:.2s">✦</span>
+    <span class="spark w" style="left:66%;top:44%;animation-delay:1s;font-size:30px">✦</span>
+    <span class="spark" style="left:88%;top:26%;animation-delay:1.6s;font-size:16px">✦</span>
+    <span class="spark w" style="left:79%;top:70%;animation-delay:.6s;font-size:18px">✦</span>
+    <div class="wrap">
+      <div>
+        <div class="deal-badge" id="dealBadge" hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>
+          <span id="dealText">Launch deal · Ends Nov 16</span>
+        </div>
+        <p class="eyebrow">Mobile car detailing · Orange County, NY</p>
+        <h1 style="margin-top:14px"><span class="l1">Dirty car?</span><span class="l2">Not for long.</span></h1>
+        <p class="lede">Hand wash, foam bath and deep interior cleaning, done in your driveway. Pick a package, get your price, and book a time in about a minute.</p>
+        <div class="ctas">
+          <a class="btn btn-primary" href="#book">Get my price</a>
+          <a class="btn btn-ghost" href="#watch">Watch the transformation</a>
+        </div>
+        <a class="next-chip" href="#book" id="nextChip" hidden><i aria-hidden="true"></i><span id="nextText">Next opening</span></a>
+      </div>
+      <div class="facts">
+        <div class="fact"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span><div><b>We come to you</b><span>Most appointments are at your home, or drop your car off with Andrew in Newburgh.</span></div></div>
+        <div class="fact"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div><b>Have power + a hose ready</b><span>We hook up to your outdoor outlet and water spigot.</span></div></div>
+        <div class="fact"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><b>Hours</b><span id="hoursText">Weekdays from 3 PM · Weekends from 1:30 PM</span></div></div>
+        <div class="fact"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span><div style="display:grid;gap:8px;min-width:0"><b>Call or text</b><a class="phone-num" id="phoneText" href="tel:+18452829387" style="color:var(--fg);text-decoration:none">(845) 282-9387</a>
+          <div class="phone-row"><a class="btn btn-primary btn-sm" id="callLink" href="tel:+18452829387">Call</a><a class="btn btn-ghost btn-sm" id="textLink" href="sms:+18452829387">Text</a><button class="btn btn-ghost btn-sm" data-copy-phone>Copy number</button></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true"><div class="belt"><div class="run" id="tickerRun"></div></div></div>
+
+  <section id="how" style="padding-block:56px 8px">
+    <div class="wrap">
+      <div class="sec-head"><p class="eyebrow">Simple as 1, 2, 3</p><h2>How it works</h2></div>
+      <div class="steps">
+        <div class="stepc"><span class="num">1</span><h3>Pick a package</h3><p>Exterior, Interior or the Full Detail. Add your vehicle size and any extras and see your exact price.</p></div>
+        <div class="stepc"><span class="num">2</span><h3>Choose a time</h3><p>Tap an open day and time. Andrew texts you to confirm.</p></div>
+        <div class="stepc"><span class="num">3</span><h3>We come to you</h3><p>Have an outdoor outlet and a hose ready. Pay when it's done: cash, Cash App or Venmo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="packages">
+    <div class="wrap">
+      <div class="sec-head"><p class="eyebrow">Three packages</p><h2>Pick your package</h2><p class="muted" id="pkgNote"></p></div>
+      <div class="pk-grid" id="pkGrid"></div>
+    </div>
+  </section>
+
+  <section id="watch">
+    <div class="wrap watch">
+      <div class="phone"><span class="glow-ring" aria-hidden="true"></span><video src="media/reel_web.mp4" poster="media/reel_poster.jpg" controls playsinline preload="none" aria-label="Letts Get Clean before and after video"></video></div>
+      <div>
+        <p class="eyebrow">28 seconds · sound on</p>
+        <h2 style="font-size:clamp(44px,7vw,76px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36">Watch the<br><span style="color:var(--accent)">transformation</span></h2>
+        <ul>
+          <li><span style="color:var(--accent);font-weight:900">✦</span>Foam bath to lift dirt before anything touches the paint</li>
+          <li><span style="color:var(--accent);font-weight:900">✦</span>Deep vacuum and wipe-down inside</li>
+          <li><span style="color:var(--accent);font-weight:900">✦</span>Real car, real driveway, right here in Orange County</li>
+        </ul>
+        <a class="btn btn-primary" href="#book">Book your detail</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="book" style="background:linear-gradient(var(--bg),var(--panel) 30%,var(--bg))">
+    <div class="wrap">
+      <div class="sec-head"><p class="eyebrow">Instant price · real-time openings</p><h2>Book your detail</h2></div>
+            <div class="book-grid" id="bookArea">
+        <form id="bookForm" novalidate><input type="text" id="hp1" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
+          <div class="step"><h3><span class="n">1</span>Package</h3><div class="choices" id="pkChoices"></div></div>
+          <div class="step"><h3><span class="n">2</span>Vehicle &amp; extras</h3>
+            <div class="choices" id="sizeChoices"></div>
+            <div class="choices" id="addonChoices"></div>
+          </div>
+          <div class="step"><h3><span class="n">3</span>Day &amp; time</h3>
+            <div class="days" id="days" role="group" aria-label="Choose a day"></div>
+            <div class="slots" id="slots" role="group" aria-label="Choose a time"></div>
+          </div>
+          <div class="step"><h3><span class="n">4</span>Where &amp; your details</h3>
+            <div class="choices" id="locChoices" role="radiogroup" aria-label="Where should the detail happen"></div>
+            <p class="note" id="dropNote" hidden style="margin:0">Drop-off is at Andrew's place in Newburgh. For privacy the address isn't posted online. Andrew texts it to you after you book, or call/text <b id="dropPhone">(845) 282-9387</b> to get it.</p>
+            <div class="row2">
+              <div class="field"><label for="fName">Name</label><input id="fName" autocomplete="name" required></div>
+              <div class="field"><label for="fPhone">Phone</label><input id="fPhone" type="tel" autocomplete="tel" required></div>
+            </div>
+            <div class="row2" id="addrRow">
+              <div class="field"><label for="fAddr">Street address</label><input id="fAddr" autocomplete="street-address" required></div>
+              <div class="field"><label for="fTown">Town</label><input id="fTown" autocomplete="address-level2" placeholder="Newburgh, Middletown, Goshen…" required></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="fCar">Car (make &amp; model)</label><input id="fCar" placeholder="e.g. Hyundai Sonata"></div>
+              <div class="field"><label for="fSource">How did you hear about us?</label>
+                <select id="fSource"><option value="">Choose one</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>Google</option><option>Flyer</option><option>Friend or family</option><option>Other</option></select></div>
+            </div>
+            <div class="field"><label for="fNotes">Anything we should know?</label><textarea id="fNotes" placeholder="Stains, gate code, where to park…"></textarea></div>
+            <label class="check" id="hookRow"><input type="checkbox" id="fHook"><span><b>I have an outdoor outlet and a hose spigot we can use.</b><br><span class="muted" style="font-size:14px">Needed for at-home appointments.</span></span></label>
+          </div>
+        </form>
+        <aside class="summary" aria-live="polite">
+          <p class="eyebrow" style="color:#0a6f93">Your quote</p>
+          <h3 id="sumPkg">The Full Detail</h3>
+          <div id="sumLines" style="display:grid;gap:8px"></div>
+          <div class="total"><span style="font-weight:800">Total</span><b id="sumTotal">$50</b></div>
+          <div class="when" id="sumWhen">Pick a day and time</div>
+          <div class="err" id="bookErr" hidden></div>
+          <button class="btn btn-primary" id="bookBtn" type="button" style="background:var(--bg);color:var(--fg);box-shadow:5px 5px 0 var(--accent)">Book this detail</button>
+          <small style="color:#3a414c">Pay after the job: cash, Cash App or Venmo. Andrew will text to confirm.</small>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="gallery">
+    <div class="wrap">
+      <div class="sec-head"><p class="eyebrow">Real cars · real results</p><h2>Before &amp; after</h2></div>
+      <div class="gal" id="gal"><div class="empty">Before &amp; after photos are loading…</div></div>
+    </div>
+  </section>
+
+  <section id="reviews" style="background:var(--panel)">
+    <div class="wrap">
+      <div class="sec-head"><p class="eyebrow">What customers say</p><h2>Reviews</h2></div>
+      <div class="rv-top" id="rvTop"></div>
+      <div class="rv-grid" id="rvGrid"></div>
+      <form class="rv-form" id="rvForm" novalidate hidden><input type="text" id="hp2" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
+        <h3 style="font-size:28px" id="rvFormTitle">Leave a review</h3>
+        <div class="star-pick" id="starPick" role="group" aria-label="Star rating"></div>
+        <div class="field"><label for="rvName">First name</label><input id="rvName" autocomplete="given-name"></div>
+        <div class="field"><label for="rvText">How did it go?</label><textarea id="rvText"></textarea></div>
+        <div class="err" id="rvErr" hidden></div>
+        <div><button class="btn btn-primary" type="submit">Post review</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="info">
+    <div class="wrap">
+      <div class="sec-head"><p class="eyebrow">Good to know</p><h2>How it works</h2></div>
+      <div class="info-grid">
+        <div class="info"><h3>Where we go</h3><p>Orange County, New York: Newburgh, New Windsor, Middletown, Goshen, Warwick, Monroe and nearby towns. Prefer drop-off? Choose it when you book and Andrew texts you his address.</p></div>
+        <div class="info"><h3>What to have ready</h3><p>An outdoor electrical outlet and a hose spigot within reach of the car. Clear out anything valuable before we start the interior.</p></div>
+        <div class="info"><h3>When we work</h3><p id="hoursInfo">Weekdays from 3 PM and weekends from 1:30 PM.</p></div>
+        <div class="info"><h3>Ways to pay</h3><p>Pay at the end of the job with cash, Cash App or Venmo.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><a class="soc" href="https://cash.app/$AndrewLetta" target="_blank" rel="noopener">Cash App <small style="color:var(--accent)">$AndrewLetta</small></a><a class="soc" href="https://venmo.com/u/Andrew-Letts-9" target="_blank" rel="noopener">Venmo <small style="color:var(--accent)">@Andrew-Letts-9</small></a></div></div>
+        <div class="info"><h3>Confirming your spot</h3><p>Booking holds your time. Andrew texts you to confirm, and you pay when the job is done.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div style="display:grid;gap:10px">
+      <a class="brand" href="#top"><span class="tile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#04131A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14v-4l-2-5H7l-2 5v4z"/><path d="M3 13h18"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg></span><b>Letts <span>Get Clean</span></b></a>
+      <span class="muted">Mobile detailing · Orange County, NY · <a id="footPhone" href="tel:+18452829387" style="color:var(--fg)">(845) 282-9387</a> · <a id="footText" href="sms:+18452829387">Text us</a></span>
+    </div>
+    <div style="display:grid;gap:10px"><b>Follow along</b><div class="socials" id="socials"></div></div>
+  </div>
+</footer>
+<div class="checker" aria-hidden="true"></div>
+
+
+<div class="mbar" id="mbar"><div><b id="mbarPrice">From $25</b><small>Mobile detailing · Orange County</small></div><a class="btn btn-primary btn-sm" href="#book">Book now</a></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+(() => {
+  // ===== Site settings: edit these to change prices, hours and links =====
+  const API_URL = "__API_URL__"; // Google Apps Script web app URL (booking + reviews)
+  const SETTINGS = {
+    phone: "(845) 282-9387",
+    dealEnds: "2026-11-16",
+    startDate: "2026-10-24",
+    slotsWeekday: ["15:00", "17:00"],
+    slotsWeekend: ["13:30", "15:30", "17:30"],
+    packages: [
+      { id: "exterior", name: "Exterior", deal: 25, regular: 35, items: ["Hand wash & dry", "Wheels cleaned & tires shined", "Bug & road grime removed", "Windows & mirrors streak-free"] },
+      { id: "interior", name: "Interior", deal: 30, regular: 40, items: ["Vacuum seats, carpets & trunk", "Dash, console & door panels wiped", "Floor mats cleaned", "Cupholders & air vents detailed"] },
+      { id: "full", name: "The Full Detail", deal: 50, regular: 70, items: ["Everything in Exterior + Interior", "Inside and out, one visit", "Biggest savings"] }
+    ],
+    sizes: [
+      { id: "car", label: "Car / sedan", price: 0 },
+      { id: "suv", label: "SUV / truck", price: 10 },
+      { id: "van", label: "Minivan / 3-row", price: 15 }
+    ],
+    addons: [
+      { id: "freshener", label: "Air freshener", price: 2 },
+      { id: "heavy", label: "Extra-dirty interior", price: 10 },
+      { id: "wax", label: "Wax coat upgrade", price: 20 }
+    ],
+    socials: { instagram: "", tiktok: "", facebook: "", google: "" },
+    gallery: [
+      { before: "media/ext_before.jpg", after: "media/ext_after.jpg", caption: "White Hyundai Sonata · Exterior" },
+      { before: "media/int_before.jpg", after: "media/int_after.jpg", caption: "White Hyundai Sonata · Interior" }
+    ]
+  };
+  // =======================================================================
+
+  const SOC = [
+    { k: "instagram", label: "Instagram", d: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>' },
+    { k: "tiktok", label: "TikTok", d: '<path d="M9 18a3 3 0 1 1 0-6"/><path d="M12 3v15"/><path d="M12 3c1 3 3 4.5 6 4.5"/>' },
+    { k: "facebook", label: "Facebook", d: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M15 8h-2a2 2 0 0 0-2 2v11"/><path d="M9 13h6"/>' },
+    { k: "google", label: "Google Business", d: '<path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>' }
+  ];
+  const S = { settings: SETTINGS, reviews: [], busy: new Set() };
+  const sel = { pkg: "full", size: "car", addons: new Set(), date: null, time: null, loc: "mobile" };
+  const apiOn = /^https:\/\/script\.google(usercontent)?\.com\//.test(API_URL);
+  const $ = (id) => document.getElementById(id);
+
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "html") el.innerHTML = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) el.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return el;
+  }
+  function icon(d, color, size) { const s = size || 18; return h("span", { html: `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${color || "currentColor"}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`, style: "display:inline-flex" }); }
+  const CHECK = '<path d="M5 12l5 5 9-10"/>';
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2800); }
+  function money(n) { return "$" + (Math.round(n * 100) / 100).toLocaleString(); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function fmtTime(t) { const [H, M] = t.split(":").map(Number); return ((H + 11) % 12 + 1) + (M ? ":" + pad(M) : "") + (H < 12 ? " AM" : " PM"); }
+  function fmtDate(s) { const d = new Date(s + "T12:00:00"); return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }); }
+  function dealOn() { return new Date() <= new Date(S.settings.dealEnds + "T23:59:59"); }
+  function priceOf(p) { return dealOn() ? p.deal : p.regular; }
+  function dealLabel() { const d = new Date(S.settings.dealEnds + "T12:00:00"); return "Launch deal · Ends " + d.toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+  function pkg(id) { return S.settings.packages.find(p => p.id === id) || S.settings.packages[0]; }
+  function telHref(kind) { const d = String(S.settings.phone).replace(/\D/g, "").slice(-10); return (kind === "sms" ? "sms:+1" : "tel:+1") + d; }
+  function slotsFor(date) {
+    const dow = new Date(date + "T12:00:00").getDay();
+    return ((dow === 0 || dow === 6) ? S.settings.slotsWeekend : S.settings.slotsWeekday).slice().sort();
+  }
+  function hoursLine() {
+    const wd = S.settings.slotsWeekday.slice().sort()[0], we = S.settings.slotsWeekend.slice().sort()[0];
+    return [wd ? "Weekdays from " + fmtTime(wd) : null, we ? "Weekends from " + fmtTime(we) : null].filter(Boolean).join(" · ");
+  }
+  function busyKey(date, time) { return date + "_" + time.replace(":", ""); }
+  function copyText(text) {
+    try { navigator.clipboard.writeText(text).then(() => toast("Copied"), () => toast("Select the number to copy it")); }
+    catch (e) { toast("Select the number to copy it"); }
+  }
+  async function api(method, params) {
+    if (!apiOn) throw new Error("offline");
+    if (method === "GET") {
+      const r = await fetch(API_URL + "?" + new URLSearchParams(params), { method: "GET" });
+      return r.json();
+    }
+    const r = await fetch(API_URL, { method: "POST", body: JSON.stringify(params) }); // text/plain: no preflight
+    return r.json();
+  }
+
+  // ---------- rendering ----------
+  function renderPublic() {
+    const st = S.settings, deal = dealOn();
+    $("dealBadge").hidden = !deal; $("dealText").textContent = dealLabel();
+    $("phoneText").textContent = st.phone; $("footPhone").textContent = st.phone;
+    $("phoneText").href = telHref("tel"); $("callLink").href = telHref("tel"); $("footPhone").href = telHref("tel");
+    $("textLink").href = telHref("sms"); $("footText").href = telHref("sms");
+    const startsLater = st.startDate && st.startDate > ymd(new Date());
+    $("hoursText").textContent = hoursLine() + (startsLater ? " · First appointments " + fmtDate(st.startDate) : "");
+    $("hoursInfo").textContent = hoursLine() + "." + (startsLater ? " Booking opens for " + fmtDate(st.startDate) + " and later." : "");
+    $("pkgNote").textContent = deal ? `Launch prices until ${fmtDate(st.dealEnds)}. Regular prices start the day after.` : "Prices for a standard car. SUVs, trucks and extras are priced in the quote below.";
+    const items = [deal ? dealLabel() : "Book online in a minute", "We come to you", "Mobile detailing", "Orange County, NY", "Call or text " + st.phone, ...st.packages.map(p => p.name + " $" + priceOf(p))];
+    const run = $("tickerRun"); run.replaceChildren();
+    for (let r = 0; r < 2; r++) for (const t of items) { run.append(h("span", {}, t)); run.append(h("i", {}, "✦")); }
+    const g = $("pkGrid"); g.replaceChildren();
+    st.packages.forEach((p, i) => {
+      const hero = p.id === "full";
+      const card = h("article", { class: "pk" + (hero ? " hero-pk" : "") },
+        h("span", { class: "tag" }, hero ? (deal ? "Best value · Save $" + (p.regular - p.deal) : "Best value") : (i === 0 ? "Outside" : "Inside")),
+        h("h3", {}, p.name),
+        h("div", { class: "price" }, h("span", { class: "now", html: `<sup>$</sup>${priceOf(p)}` }), deal ? h("span", { class: "was" }, "Reg. $" + p.regular) : null),
+        h("ul", {}, p.items.map(t => h("li", {}, icon(CHECK, hero ? "#04131A" : "#07080B", 16), t))),
+        h("div", { class: "pick" }, h("a", { class: "btn btn-sm btn-dark", href: "#book", onclick: () => { sel.pkg = p.id; renderChoices(); renderSummary(); } }, "Book " + p.name)));
+      if (hero && deal) card.append(h("span", { class: "stamp", html: `<svg viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Save ${p.regular - p.deal} dollars"><path d="M60,2 L70,20 L89,10 L91,32 L113,32 L104,52 L120,62 L104,74 L112,94 L90,94 L88,116 L69,106 L60,120 L50,106 L31,116 L29,94 L8,94 L16,74 L0,62 L16,52 L7,32 L29,32 L31,10 L50,20 Z" fill="#07080B"/><text x="60" y="56" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-size="22" fill="#fff">SAVE</text><text x="60" y="86" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-size="28" fill="#29C8FF">$${p.regular - p.deal}</text></svg>` }));
+      g.append(card);
+    });
+    renderSocials(); renderChoices(); renderDays(); renderSummary(); renderNext(); renderGallery();
+    $("mbarPrice").textContent = "From $" + Math.min(...st.packages.map(priceOf));
+  }
+  function renderSocials() {
+    const box = $("socials"); box.replaceChildren();
+    for (const s of SOC) {
+      const url = S.settings.socials[s.k];
+      if (url) box.append(h("a", { class: "soc", href: url, target: "_blank", rel: "noopener" }, icon(s.d, "var(--accent)"), s.label));
+      else box.append(h("span", { class: "soc off", title: "Coming soon" }, icon(s.d, "var(--mute)"), s.label, h("small", {}, "soon")));
+    }
+  }
+  function choice(name, value, checked, title, sub, onchange, type) {
+    const id = name + "-" + value;
+    return h("label", { class: "choice", for: id }, h("input", { type: type || "radio", name, id, value, checked, onchange }),
+      h("span", { class: "face" }, h("b", {}, title), sub ? h("span", {}, sub) : null));
+  }
+  function renderChoices() {
+    const st = S.settings;
+    $("pkChoices").replaceChildren(...st.packages.map(p => choice("pkg", p.id, sel.pkg === p.id, p.name, money(priceOf(p)) + (dealOn() ? "  (reg. $" + p.regular + ")" : ""), () => { sel.pkg = p.id; renderSummary(); })));
+    $("sizeChoices").replaceChildren(...st.sizes.map(s => choice("size", s.id, sel.size === s.id, s.label, s.price ? "+" + money(s.price) : "Included", () => { sel.size = s.id; renderSummary(); })));
+    $("locChoices").replaceChildren(
+      choice("loc", "mobile", sel.loc === "mobile", "Come to me", "At your home · need outlet + hose", () => { sel.loc = "mobile"; applyLoc(); renderSummary(); }),
+      choice("loc", "dropoff", sel.loc === "dropoff", "I'll drop it off", "At Andrew's in Newburgh · address by text", () => { sel.loc = "dropoff"; applyLoc(); renderSummary(); }));
+    applyLoc();
+    $("addonChoices").replaceChildren(...st.addons.map(a => choice("addon", a.id, sel.addons.has(a.id), a.label, "+" + money(a.price), (e) => { e.target.checked ? sel.addons.add(a.id) : sel.addons.delete(a.id); renderSummary(); }, "checkbox")));
+  }
+  function applyLoc() {
+    const drop = sel.loc === "dropoff";
+    $("dropNote").hidden = !drop; $("addrRow").hidden = drop; $("hookRow").hidden = drop;
+    $("dropPhone").textContent = S.settings.phone;
+  }
+  function openSlots(date) {
+    if (S.settings.startDate && date < S.settings.startDate) return [];
+    const now = new Date();
+    return slotsFor(date).filter(t => new Date(date + "T" + t + ":00") > new Date(now.getTime() + 2 * 3600e3));
+  }
+  function startBase() { const now = new Date(), s = new Date(S.settings.startDate + "T12:00:00"); return s > now ? s : now; }
+  function renderDays() {
+    const box = $("days"); box.replaceChildren();
+    const base = startBase();
+    for (let i = 0; i < 21; i++) {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i), key = ymd(d);
+      if (!openSlots(key).length) continue;
+      box.append(h("button", { type: "button", class: "day", "aria-pressed": String(sel.date === key), onclick: () => { sel.date = key; sel.time = null; renderDays(); renderSummary(); } },
+        h("small", {}, d.toLocaleDateString(undefined, { weekday: "short" })), h("b", {}, d.getDate()), h("small", {}, d.toLocaleDateString(undefined, { month: "short" }))));
+    }
+    renderSlots();
+  }
+  function renderSlots() {
+    const box = $("slots"); box.replaceChildren();
+    if (!sel.date) { box.append(h("p", { class: "muted", style: "margin:0" }, "Choose a day to see open times.")); return; }
+    const avail = openSlots(sel.date);
+    for (const t of slotsFor(sel.date)) {
+      const taken = S.busy.has(busyKey(sel.date, t)) || !avail.includes(t);
+      box.append(h("button", { type: "button", class: "slot", disabled: taken, "aria-pressed": String(sel.time === t), "aria-label": fmtTime(t) + (taken ? " (taken)" : ""),
+        onclick: () => { sel.time = t; renderSlots(); renderSummary(); } }, fmtTime(t)));
+    }
+  }
+  function nextOpening() {
+    const base = startBase();
+    for (let i = 0; i < 45; i++) {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i), key = ymd(d);
+      const t = openSlots(key).find(t => !S.busy.has(busyKey(key, t)));
+      if (t) return { date: key, time: t };
+    }
+    return null;
+  }
+  function renderNext() {
+    const n = nextOpening(), chip = $("nextChip");
+    chip.hidden = !n; if (!n) return;
+    $("nextText").textContent = "Next opening: " + fmtDate(n.date) + " · " + fmtTime(n.time);
+    chip.onclick = () => { sel.date = n.date; sel.time = n.time; renderDays(); renderSummary(); };
+  }
+  function quote() {
+    const p = pkg(sel.pkg), st = S.settings;
+    const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
+    const adds = st.addons.filter(a => sel.addons.has(a.id));
+    return { p, size, adds, total: priceOf(p) + (size.price || 0) + adds.reduce((n, a) => n + a.price, 0) };
+  }
+  function renderSummary() {
+    const q = quote();
+    $("sumPkg").textContent = q.p.name;
+    const lines = [[q.p.name + (dealOn() ? " (launch price)" : ""), money(priceOf(q.p))]];
+    if (q.size.price) lines.push([q.size.label, "+" + money(q.size.price)]);
+    q.adds.forEach(a => lines.push([a.label, "+" + money(a.price)]));
+    $("sumLines").replaceChildren(...lines.map(([a, b]) => h("div", { class: "line" }, h("span", {}, a), h("span", {}, b))));
+    $("sumTotal").textContent = money(q.total);
+    $("sumWhen").textContent = (sel.date && sel.time ? fmtDate(sel.date) + " at " + fmtTime(sel.time) : sel.date ? fmtDate(sel.date) + " · pick a time" : "Pick a day and time") + (sel.loc === "dropoff" ? " · Drop-off" : " · We come to you");
+  }
+
+  // ---------- booking ----------
+  async function submitBooking() {
+    const err = $("bookErr"); err.hidden = true;
+    const v = (id) => $(id).value.trim();
+    const drop = sel.loc === "dropoff", problems = [];
+    if (!sel.date || !sel.time) problems.push("pick a day and time");
+    if (!v("fName")) problems.push("add your name");
+    if (v("fPhone").replace(/\D/g, "").length < 10) problems.push("add a 10-digit phone number");
+    if (!drop && (!v("fAddr") || !v("fTown"))) problems.push("add your address and town");
+    if (!drop && !$("fHook").checked) problems.push("confirm you have an outlet and hose");
+    if (problems.length) { err.textContent = "Almost there: " + problems.join(", ") + "."; err.hidden = false; return; }
+    if (!apiOn) { err.textContent = "Online booking isn't switched on yet. Call or text " + S.settings.phone + " to book."; err.hidden = false; return; }
+    const q = quote();
+    const item = { action: "book", website: $("hp1").value, package: q.p.id, packageName: q.p.name, size: q.size.id, sizeLabel: q.size.label, addons: q.adds.map(a => a.label),
+      total: q.total, deal: dealOn(), date: sel.date, time: sel.time, location: drop ? "dropoff" : "mobile",
+      name: v("fName"), phone: v("fPhone"), address: drop ? "" : v("fAddr"), town: drop ? "" : v("fTown"), car: v("fCar"), source: v("fSource"), notes: v("fNotes") };
+    const btn = $("bookBtn"); btn.disabled = true; btn.textContent = "Booking…";
+    try {
+      const res = await api("POST", item);
+      if (res && res.ok) { S.busy.add(busyKey(item.date, item.time)); showConfirm(item); }
+      else if (res && res.error === "taken") { S.busy.add(busyKey(item.date, item.time)); sel.time = null; renderSlots(); renderSummary(); err.textContent = "That time was just taken. Pick another one."; err.hidden = false; }
+      else { err.textContent = "That didn't go through. Call or text " + S.settings.phone + " and Andrew will book you."; err.hidden = false; }
+    } catch (e) {
+      err.textContent = "That didn't go through. Check your connection and tap Book again, or call/text " + S.settings.phone + "."; err.hidden = false;
+    } finally { btn.disabled = false; btn.textContent = "Book this detail"; }
+  }
+  function showConfirm(item) {
+    const area = $("bookArea");
+    area.replaceChildren(h("div", { class: "confirm" },
+      h("p", { class: "eyebrow" }, "You're booked"),
+      h("h3", {}, fmtDate(item.date) + " at " + fmtTime(item.time)),
+      h("p", { style: "margin:0;font-weight:700" }, `${item.packageName} · ${item.sizeLabel}${item.addons.length ? " · " + item.addons.join(", ") : ""} · ${money(item.total)}`),
+      h("p", { class: "muted", style: "margin:0" }, item.location === "dropoff"
+        ? `Drop-off at Andrew's in Newburgh. He'll text ${item.phone} to confirm and send the address.`
+        : `Andrew will text ${item.phone} to confirm. Have your outlet and hose ready at ${item.address}, ${item.town}.`),
+      h("p", { class: "muted", style: "margin:0" }, `Need to change or cancel? Call or text ${S.settings.phone}. Pay when the job's done: cash, Cash App ($AndrewLetta) or Venmo (@Andrew-Letts-9).`),
+      h("div", {}, h("button", { class: "btn btn-ghost btn-sm", onclick: () => location.reload() }, "Book another car"))));
+    area.style.gridTemplateColumns = "minmax(0,1fr)";
+    area.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ---------- gallery & reviews ----------
+  function renderGallery() {
+    const g = $("gal"); g.replaceChildren();
+    for (const p of S.settings.gallery) g.append(h("article", { class: "pair" },
+      h("div", { class: "imgs" },
+        h("figure", { class: "b" }, h("img", { src: p.before, alt: "Before: " + p.caption, loading: "lazy" }), h("figcaption", {}, "BEFORE")),
+        h("figure", { class: "a" }, h("img", { src: p.after, alt: "After: " + p.caption, loading: "lazy" }), h("figcaption", {}, "AFTER"))),
+      h("p", {}, p.caption)));
+  }
+  function starsStr(n) { return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
+  function renderReviews() {
+    const rv = S.reviews;
+    const top = $("rvTop"); top.replaceChildren();
+    if (rv.length) {
+      const avg = rv.reduce((n, r) => n + r.stars, 0) / rv.length;
+      top.append(h("span", { class: "rv-avg" }, avg.toFixed(1)), h("div", {}, h("div", { class: "stars", "aria-label": avg.toFixed(1) + " out of 5" }, starsStr(Math.round(avg))), h("span", { class: "muted" }, rv.length + (rv.length === 1 ? " review" : " reviews"))));
+    }
+    const grid = $("rvGrid"); grid.replaceChildren();
+    if (!rv.length) grid.append(h("div", { class: "empty" }, "No reviews yet. Had your car detailed? Be the first to leave one below."));
+    for (const r of rv) grid.append(h("article", { class: "rv" }, h("div", { class: "stars", "aria-label": r.stars + " out of 5" }, starsStr(r.stars)), h("p", {}, r.text), h("b", {}, r.name || "Customer"),
+      h("span", { class: "muted", style: "font-size:13px" }, r.at ? new Date(r.at).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "")));
+    $("rvForm").hidden = !apiOn;
+    renderStarPick();
+  }
+  let rvStars = 5;
+  function renderStarPick() {
+    $("starPick").replaceChildren(...[1, 2, 3, 4, 5].map(n => h("button", { type: "button", "aria-pressed": String(n <= rvStars), "aria-label": n + " star" + (n > 1 ? "s" : ""), onclick: () => { rvStars = n; renderStarPick(); } }, "★")));
+  }
+  async function submitReview(e) {
+    e.preventDefault();
+    const err = $("rvErr"); err.hidden = true;
+    const text = $("rvText").value.trim(), name = $("rvName").value.trim();
+    if (text.length < 4) { err.textContent = "Write a sentence about how it went."; err.hidden = false; return; }
+    try {
+      const res = await api("POST", { action: "review", website: $("hp2").value, stars: rvStars, text, name });
+      if (res && res.ok) { toast("Thanks! Your review is posted."); $("rvText").value = ""; S.reviews.unshift({ stars: rvStars, text, name, at: new Date().toISOString() }); renderReviews(); }
+      else { err.textContent = "That didn't post. Try again in a moment."; err.hidden = false; }
+    } catch (x) { err.textContent = "That didn't post. Try again in a moment."; err.hidden = false; }
+  }
+
+  // ---------- wiring ----------
+  document.querySelectorAll("[data-copy-phone]").forEach(b => b.addEventListener("click", () => copyText(S.settings.phone)));
+  $("bookBtn").addEventListener("click", submitBooking);
+  $("bookForm").addEventListener("submit", (e) => { e.preventDefault(); submitBooking(); });
+  $("rvForm").addEventListener("submit", submitReview);
+  try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) { const v = $("heroVid"); v.removeAttribute("autoplay"); v.pause(); } } catch (e) {}
+  renderPublic(); renderReviews();
+  if (apiOn) {
+    api("GET", { action: "busy", from: ymd(new Date()) }).then(r => { if (r && r.ok) { S.busy = new Set(r.busy || []); renderSlots(); renderNext(); } }).catch(() => {});
+    api("GET", { action: "reviews" }).then(r => { if (r && r.ok) { S.reviews = r.reviews || []; renderReviews(); } }).catch(() => {});
+  }
+})();
+
+</script>
+</body>
+</html>
