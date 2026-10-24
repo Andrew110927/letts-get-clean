@@ -683,7 +683,17 @@ svg.chart text{fill:var(--dim);font-size:11px}
     if (!drop && !$("fHook").checked) problems.push("confirm you have an outlet and hose");
     if (problems.length) { err.textContent = "Almost there: " + problems.join(", ") + "."; err.hidden = false; return; }
     const q = quote();
-    if (!apiOn) { bookByText(q, drop, v); return; }
+    if (!apiOn) {
+      const btn = $("bookBtn"); btn.disabled = true; btn.textContent = "Booking…";
+      const r = await sbSave({ date: sel.date, time: sel.time, name: v("fName").slice(0, 80), phone: v("fPhone").slice(0, 30), location: drop ? "dropoff" : "mobile",
+        address: drop ? null : v("fAddr").slice(0, 150), town: drop ? null : v("fTown").slice(0, 60), car: v("fCar").slice(0, 80) || null,
+        package: q.p.name, size: q.size.label, addons: q.adds.map(a => a.label).join(", ") || null, total: q.total,
+        source: v("fSource").slice(0, 30) || null, notes: v("fNotes").slice(0, 500) || null, deal: dealOn() });
+      btn.disabled = false; btn.textContent = "Book this detail";
+      if (r === "taken") { S.busy.add(busyKey(sel.date, sel.time)); sel.time = null; renderSlots(); renderSummary(); err.textContent = "That time was just taken. Pick another one."; err.hidden = false; return; }
+      S.busy.add(busyKey(sel.date, sel.time));
+      bookByText(q, drop, v); return;
+    }
     const item = { action: "book", website: $("hp1").value, package: q.p.id, packageName: q.p.name, size: q.size.id, sizeLabel: q.size.label, addons: q.adds.map(a => a.label),
       total: q.total, deal: dealOn(), date: sel.date, time: sel.time, location: drop ? "dropoff" : "mobile",
       name: v("fName"), phone: v("fPhone"), address: drop ? "" : v("fAddr"), town: drop ? "" : v("fTown"), car: v("fCar"), source: v("fSource"), notes: v("fNotes") };
@@ -696,6 +706,24 @@ svg.chart text{fill:var(--dim);font-size:11px}
     } catch (e) {
       err.textContent = "That didn't go through. Check your connection and tap Book again, or call/text " + S.settings.phone + "."; err.hidden = false;
     } finally { btn.disabled = false; btn.textContent = "Book this detail"; }
+  }
+  // Supabase: saves the booking so it shows on Andrew's dashboard. Visitors can add bookings but can't read them.
+  const SB_URL = "https://fisenrazdvnobzjpihti.supabase.co/rest/v1/";
+  const SB_KEY = "sb_publishable_mSuKlYGK-2I2aVj4IaFVoQ_2Jm7b0th";
+  const sbHead = { apikey: SB_KEY, "Content-Type": "application/json" };
+  async function sbSave(row) {
+    if ($("hp1").value) return "ok"; // spam trap
+    try {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
+      const r = await fetch(SB_URL + "bookings", { method: "POST", headers: { ...sbHead, Prefer: "return=minimal" }, body: JSON.stringify(row), signal: ctl.signal });
+      clearTimeout(t);
+      if (r.status === 409) return "taken";
+      return r.ok ? "ok" : "fail";
+    } catch (e) { return "fail"; }
+  }
+  function sbBusy() {
+    fetch(SB_URL + "rpc/busy_slots", { method: "POST", headers: sbHead, body: JSON.stringify({ from_date: ymd(new Date()) }) })
+      .then(r => r.ok ? r.json() : []).then(rows => { (rows || []).forEach(x => S.busy.add(busyKey(x.slot_date, x.slot_time))); renderSlots(); renderNext(); }).catch(() => {});
   }
   function bookByText(q, drop, v) {
     const lines = [
@@ -789,6 +817,7 @@ svg.chart text{fill:var(--dim);font-size:11px}
   $("rvForm").addEventListener("submit", submitReview);
   try { if (matchMedia("(prefers-reduced-motion: reduce)").matches) { const v = $("heroVid"); v.removeAttribute("autoplay"); v.pause(); } } catch (e) {}
   renderPublic(); renderReviews();
+  if (!apiOn) sbBusy();
   if (apiOn) {
     api("GET", { action: "busy", from: ymd(new Date()) }).then(r => { if (r && r.ok) { S.busy = new Set(r.busy || []); renderSlots(); renderNext(); } }).catch(() => {});
     api("GET", { action: "reviews" }).then(r => { if (r && r.ok) { S.reviews = r.reviews || []; renderReviews(); } }).catch(() => {});
