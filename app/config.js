@@ -27,6 +27,12 @@ window.APP_CONFIG = {
     key: "sb_publishable_mSuKlYGK-2I2aVj4IaFVoQ_2Jm7b0th"
   },
 
+  // Booking alerts (Web Push). The public half of the VAPID key pair: safe to publish, it only lets phones subscribe.
+  // The private half lives only in the booking-push Edge Function's secrets (VAPID_PRIVATE_KEY). A new pair needs both swapped.
+  push: {
+    publicKey: "BBfr8geY4f1kh8gJuCLyZfEanh4cgFZIdneJnEV5e7Rr0TbBFPYh1Xm7X-so2shYSBn-CbWT2wnesD8G-yVkqy8"
+  },
+
   payments: {
     methods: ["Cash", "Cash App", "Venmo", "Card", "Other"],
     line: "Cash, Cash App ($AndrewLetta) or Venmo (@Andrew-Letts-9)"

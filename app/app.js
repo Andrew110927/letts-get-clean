@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -39,6 +39,7 @@
     share: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4M12 2v14"/>',
     money: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>',
     star: '<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     out: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
@@ -270,7 +271,9 @@
     async deletePost(id) { needLive(); await q(sb.from("social_posts").delete().eq("id", id)); },
     async logStats(rec) { needLive(); return q(sb.from("social_stats").upsert(rec, { onConflict: "day" }).select().single()); },
     async addExpense(e) { needLive(); return q(sb.from("expenses").insert(e).select().single()); },
-    async deleteExpense(id) { needLive(); await q(sb.from("expenses").delete().eq("id", id)); }
+    async deleteExpense(id) { needLive(); await q(sb.from("expenses").delete().eq("id", id)); },
+    async savePushSub(row) { needLive(); await q(sb.from("push_subscriptions").upsert(row, { onConflict: "endpoint" })); },
+    async deletePushSub(endpoint) { needLive(); await q(sb.from("push_subscriptions").delete().eq("endpoint", endpoint)); }
   };
 
   // ===== Data: demo (in memory, so anyone can try every screen without an account) =====
@@ -364,7 +367,10 @@
       async deletePost(id) { await wait(); db.posts = db.posts.filter(p => p.id !== id); },
       async logStats(rec) { await wait(); db.stats = db.stats.filter(s => s.day !== rec.day).concat(rec).sort((a, b) => a.day.localeCompare(b.day)); return clone(rec); },
       async addExpense(e) { await wait(); const x = { ...e, id: uid(), created_at: new Date().toISOString() }; db.expenses.unshift(x); return clone(x); },
-      async deleteExpense(id) { await wait(); db.expenses = db.expenses.filter(e => e.id !== id); }
+      async deleteExpense(id) { await wait(); db.expenses = db.expenses.filter(e => e.id !== id); },
+      // Demo bookings never send alerts, so there's nowhere to save the phone's subscription.
+      async savePushSub() { await wait(); },
+      async deletePushSub() { await wait(); }
     };
   })();
 
@@ -1207,6 +1213,8 @@
       item("money", "Money", "Earnings, tips, expenses, profit", () => go("money", true)),
       item("star", "Reviews", pending ? pending + " waiting for approval" : "Approve and share reviews", () => go("reviews", true), pending ? h("span", { class: "pill st-Requested" }, pending + " new") : null),
       item("gear", "Settings", "Prices, hours, days off, social links", () => go("settings", true))));
+    v.append(h("div", { class: "list" }, alertsItem()));
+    v.append(h("p", { class: "muted small", style: "margin:-6px 4px 0" }, "Alerts work with the app closed. On iPhone they only work in the app added to your home screen, on iOS 16.4 or newer."));
     v.append(h("div", { class: "list" },
       link("globe", "Open the website", CFG.site.url.replace(/^https:\/\//, ""), CFG.site.url),
       item("share", "Share booking link", "Send it to anyone, post it in your bio", shareBookingLink),
@@ -1223,6 +1231,103 @@
       h("p", {}, isIOS ? "In Safari, tap the Share button, then “Add to Home Screen”." : "In Chrome, tap the ⋮ menu, then “Install app” or “Add to Home screen”."),
       h("p", { class: "muted small" }, "It opens full screen like a normal app, remembers your sign-in and works with weak signal.")
     )) }, h("div", { class: "avatar" }, icon("download", 22)), h("div", { class: "main" }, h("b", {}, "Install the app"), h("span", {}, "Put it on your home screen")), icon("chev", 20));
+  }
+
+  // ===== Booking alerts: Web Push, so the phone buzzes for new website bookings even with the app closed =====
+  // The booking-push Edge Function sends them. This side asks permission, subscribes this browser with the public
+  // VAPID key and saves the subscription. "On" belongs to this phone or browser, like the permission itself.
+  const PUSH = { supported: "serviceWorker" in navigator && "PushManager" in window && "Notification" in window, on: false, busy: false };
+  function pushKey() { return Uint8Array.from(atob(CFG.push.publicKey.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)); }
+  function subRow(sub) { const j = sub.toJSON(); return { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }; }
+  // serviceWorker.ready never settles if the worker failed to install, so give up with a reason instead of spinning.
+  function swReady() { return Promise.race([navigator.serviceWorker.ready, new Promise((_, fail) => setTimeout(() => fail(new Error("sw")), 8000))]); }
+  async function currentSub() {
+    if (!PUSH.supported || Notification.permission !== "granted") return null;
+    return (await swReady()).pushManager.getSubscription();
+  }
+  // A subscription made with an older key would never receive alerts signed with the current one.
+  function sameKey(sub) {
+    const k = sub.options && sub.options.applicationServerKey;
+    if (!k) return true;
+    const a = new Uint8Array(k), b = pushKey();
+    return a.length === b.length && a.every((x, i) => x === b[i]);
+  }
+  // On every start: show the real state and re-save the subscription, since browsers can replace it without telling us.
+  async function syncPush() {
+    let sub = null;
+    try {
+      sub = await currentSub();
+      // After the key pair is replaced, swap in a subscription for the new key (no prompt once allowed).
+      // The old row goes away by itself when its push service answers "gone".
+      if (sub && !sameKey(sub)) { await sub.unsubscribe(); sub = null; sub = await (await swReady()).pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushKey() }); }
+      if (sub && S.mode === "live") await api.savePushSub(subRow(sub));
+      PUSH.on = !!sub;
+    } catch (e) { PUSH.on = !!sub && (e.message === "offline" || isNetwork(e)); }
+    if (S.route === "more") softRender();
+  }
+  async function pushOn() {
+    // Ask before any other await: iPhone only shows the prompt when it comes straight from a tap.
+    const perm = await Notification.requestPermission();
+    if (perm === "denied") { pushHelp("blocked"); return; }
+    if (perm !== "granted") { toast("Alerts stay off. Tap again and choose Allow."); return; }
+    const reg = await swReady();
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && !sameKey(sub)) { await sub.unsubscribe(); sub = null; }
+    sub = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pushKey() });
+    try { await api.savePushSub(subRow(sub)); }
+    catch (e) { await sub.unsubscribe().catch(() => {}); throw e; }
+    PUSH.on = true; haptic(20);
+    toast(S.mode === "demo" ? "Alerts on for this browser. Demo bookings don't send any." : "Booking alerts on. This phone buzzes when a customer books.");
+  }
+  // Unsubscribing stops the buzzes right away, even offline. If the saved row can't be deleted now,
+  // booking-push deletes it the first time the push service answers "gone".
+  async function pushOff() {
+    const sub = await currentSub();
+    if (sub) { const { endpoint } = subRow(sub); await sub.unsubscribe(); await api.deletePushSub(endpoint).catch(() => {}); }
+    PUSH.on = false;
+  }
+  async function togglePush() {
+    if (!PUSH.supported) { pushHelp(isIOS && !standalone ? "install" : "unsupported"); return; }
+    if (PUSH.busy) return;
+    PUSH.busy = true;
+    const wasOn = PUSH.on;
+    const work = wasOn ? pushOff() : pushOn(); // started before re-rendering, so the permission prompt is part of this tap
+    softRender();
+    try { await work; if (wasOn) toast("Booking alerts off for this phone."); }
+    catch (e) { toast(pushError(e)); haptic([20, 40, 20]); }
+    finally { PUSH.busy = false; softRender(); }
+  }
+  function pushError(e) {
+    const n = e && e.name, m = String((e && e.message) || "");
+    if (m === "sw") return "The app's background worker isn't running. Close and reopen the app, then try again.";
+    if (n === "NotAllowedError") return "Notifications are blocked for this app. Allow them in your phone's settings, then try again.";
+    if (n === "AbortError" || /push service/i.test(m)) return "This browser couldn't set up push alerts. Try again; if it keeps failing, use Chrome on Android or the home-screen app on iPhone.";
+    return niceError(e);
+  }
+  function pushHelp(kind) {
+    const app = CFG.brand.appName;
+    openSheet("Booking alerts", (body) => {
+      if (kind === "install") body.append(
+        h("p", {}, "On iPhone, alerts only work in the app added to your home screen, on iOS 16.4 or newer."),
+        h("p", { class: "muted small" }, "1. In Safari, tap the Share button, then “Add to Home Screen”."),
+        h("p", { class: "muted small" }, "2. Open " + app + " from your home screen and sign in."),
+        h("p", { class: "muted small" }, "3. Go to More → Booking alerts and tap Allow."));
+      else if (kind === "blocked") body.append(
+        h("p", {}, "Notifications are turned off for " + app + ", so it can't show alerts."),
+        h("p", { class: "muted small" }, isIOS ? "iPhone: Settings → Notifications → " + app + " → Allow Notifications."
+          : "Android: press and hold the " + app + " icon → App info → Notifications. In a Chrome tab: ⋮ → Settings → Site settings → Notifications."),
+        h("p", { class: "muted small" }, "Then come back and turn Booking alerts on."));
+      else body.append(
+        h("p", {}, "This browser can't receive push alerts."),
+        h("p", { class: "muted small" }, "Use Chrome on Android, or on iPhone the app added to your home screen (iOS 16.4 or newer)."));
+    });
+  }
+  function alertsItem() {
+    const sub = !PUSH.supported ? (isIOS && !standalone ? "iPhone: add the app to your home screen first" : isIOS ? "Needs iOS 16.4 or newer" : "Not available in this browser")
+      : PUSH.busy ? "One moment…" : PUSH.on ? "On · this phone buzzes for new bookings" : "Buzz this phone when a customer books";
+    return h("button", { class: "item", type: "button", role: PUSH.supported ? "switch" : null, "aria-checked": PUSH.supported ? String(PUSH.on) : null, disabled: PUSH.busy, onclick: togglePush },
+      h("div", { class: "avatar" }, icon("bell", 22)), h("div", { class: "main" }, h("b", {}, "Booking alerts"), h("span", {}, sub)),
+      PUSH.supported ? h("span", { class: "switch" + (PUSH.on ? " on" : ""), "aria-hidden": "true" }) : icon("chev", 20));
   }
 
   // ===== Money =====
@@ -1420,7 +1525,7 @@
       if (manual) toast("Up to date");
     } catch (e) {
       if (e.message === "offline" || isNetwork(e)) { S.offline = true; if (manual) toast("No connection. Showing your last saved data."); }
-      else if (/jwt|token|session/i.test(e.message || "") || e.code === "PGRST301") { await signOut(); renderAuth("signin", { error: "Your sign-in expired. Sign in again." }); return; }
+      else if (/jwt|token|session/i.test(e.message || "") || e.code === "PGRST301") { await signOut(true); renderAuth("signin", { error: "Your sign-in expired. Sign in again." }); return; }
       else toast(niceError(e));
     } finally {
       S.loading = false; S.ready = true;
@@ -1581,11 +1686,15 @@
     history.replaceState(history.state, "", (mode === "demo" ? "?demo" : location.pathname) + "#/" + S.route);
     render(true);
     refresh();
+    syncPush();
     if (first) { startPolling(); pullToRefresh(); }
   }
   function startDemo() { S.user = { id: "demo", email: "demo" }; startApp("demo", null); }
   function exitDemo() { location.href = location.pathname; }
-  async function signOut() {
+  // keepAlerts: an expired sign-in isn't the owner leaving, so it keeps this phone's booking alerts.
+  async function signOut(keepAlerts) {
+    // Signing out stops this phone's alerts too, so customer names don't keep popping up on it.
+    if (keepAlerts !== true && S.mode === "live") await pushOff().catch(() => {});
     try { if (sb) await sb.auth.signOut(); } catch (e) {}
     store(CACHE_KEY, null); store(SEEN_KEY, null);
     try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {}
@@ -1596,6 +1705,11 @@
   function registerSW() {
     if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});
   }
+  // A tapped booking alert brings the open app forward (sw.js): jump to that screen and pull in the new booking.
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e) => {
+    const d = e.data || {};
+    if (d.type === "open" && S.mode) { go(SCREENS[d.route] ? d.route : "jobs"); refresh(); }
+  });
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); S.installEvt = e; if (S.route === "more") render(false); });
   $("sheetClose").replaceChildren(icon("x", 24));
   $("sheetClose").addEventListener("click", closeSheet);
