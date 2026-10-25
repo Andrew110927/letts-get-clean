@@ -1,3 +1,5 @@
 node_modules/
 # Supabase CLI working files (project link, version cache)
 supabase/.temp/
+# Plate-blur scripts kept on this PC only (see the README there)
+local-tools/
