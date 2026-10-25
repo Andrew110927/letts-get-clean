@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LGC Pro · Letts Get Clean owner app</title>
+<meta name="description" content="Owner app for Letts Get Clean: jobs, customers, social media, money, reviews and website settings.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07080B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LGC Pro">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="app.css">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+
+<!-- Layout: a sign-in screen, then the app: sticky header → scrolling view → bottom tab bar.
+     Details and forms open in one bottom sheet; the phone's back button closes it. -->
+<div id="boot" class="boot" aria-hidden="true"><span class="tile big"></span></div>
+
+<section id="auth" class="auth" hidden aria-label="Sign in"></section>
+
+<div id="shell" class="shell" hidden>
+  <header class="bar">
+    <div class="bar-in">
+      <button class="icon-btn" id="backBtn" type="button" aria-label="Back" hidden></button>
+      <div class="bar-title"><small id="barKicker"></small><h1 id="barTitle">Today</h1></div>
+      <div class="bar-actions" id="barActions"></div>
+    </div>
+    <div class="demo-strip" id="demoStrip" hidden>Demo mode · sample data · nothing is saved <button type="button" id="demoExit">Exit</button></div>
+    <div class="offline-strip" id="offlineStrip" hidden>Offline · showing your last saved data</div>
+  </header>
+  <div class="ptr" id="ptr" aria-hidden="true"><span></span></div>
+  <main id="view" class="view" tabindex="-1"></main>
+  <button class="fab" id="fab" type="button" hidden></button>
+  <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-grab" aria-hidden="true"></div>
+  <div class="sheet-head"><h2 id="sheetTitle"></h2><button class="icon-btn" id="sheetClose" type="button" aria-label="Close"></button></div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p style="padding:24px;color:#fff">This app needs JavaScript turned on.</p></noscript>
+</body>
+</html>
