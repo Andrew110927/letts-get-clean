@@ -1,1 +1,3 @@
 node_modules/
+# Supabase CLI working files (project link, version cache)
+supabase/.temp/

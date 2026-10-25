@@ -106,4 +106,11 @@ await test("alert reads 'New booking: name, day time, package' and opens Jobs", 
   assert.equal(bookingAlert({ ...b, package: null }).body, "Maria Gonzalez, Sat Oct 31 5:30 PM", "no package, no dangling comma");
 });
 
+await test("a house wash says 'all day'; bikes and cars keep their time", async () => {
+  const b = { id: "6f1c2b0e-0000-4000-8000-000000000002", name: "Mike Dawson", date: "2026-10-31", time: "13:30", package: "Full house pressure wash", service: "house" };
+  assert.equal(bookingAlert(b).body, "Mike Dawson, Sat Oct 31 (all day), Full house pressure wash");
+  assert.equal(bookingAlert({ ...b, service: "bike", package: "Bike detail" }).body, "Mike Dawson, Sat Oct 31 1:30 PM, Bike detail");
+  assert.equal(bookingAlert({ ...b, service: undefined, package: "Exterior" }).body, "Mike Dawson, Sat Oct 31 1:30 PM, Exterior", "older rows without a service read as before");
+});
+
 console.log(`\n${passed} passed`);

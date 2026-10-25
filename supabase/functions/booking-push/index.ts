@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
   try { privateJWK = JSON.parse(Deno.env.get("VAPID_PRIVATE_KEY") ?? ""); }
   catch { return reply(500, { error: "VAPID_PRIVATE_KEY isn't set (or isn't the whole {...} key) in Edge Function secrets" }); }
 
-  const { data: booking, error } = await db.from("bookings").select("id, name, date, time, package, created_at").eq("id", booking_id).maybeSingle();
+  const { data: booking, error } = await db.from("bookings").select("id, name, date, time, package, service, created_at").eq("id", booking_id).maybeSingle();
   if (error) return reply(500, { error: "Couldn't read the booking: " + error.message });
   if (!booking) return reply(404, { error: "No booking with that id" });
   if (Date.now() - Date.parse(booking.created_at) > FRESH_MS) return reply(409, { error: "That booking is too old to alert about" });

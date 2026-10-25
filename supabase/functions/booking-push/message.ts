@@ -1,5 +1,5 @@
 // What the alert says, kept apart from the Deno glue so it can be tested anywhere.
-export type Booking = { id: string; name: string; date: string; time: string; package: string | null };
+export type Booking = { id: string; name: string; date: string; time: string; package: string | null; service?: string | null };
 
 // Same wording as the app: "Sat Oct 25 3 PM", "Sun Oct 26 5:30 PM".
 export function when(date: string, time: string): string {
@@ -11,11 +11,12 @@ export function when(date: string, time: string): string {
 }
 
 // Reads as "New booking / Maria Gonzalez, Sat Oct 25 3 PM, The Full Detail" on the lock screen.
+// A house wash takes the whole day, so it says "all day" instead of a start time.
 // tag keeps a retried alert from showing twice; url is where a tap lands (resolved by sw.js).
 export function bookingAlert(b: Booking) {
   return {
     title: "New booking",
-    body: [b.name, when(b.date, b.time), b.package].filter(Boolean).join(", "),
+    body: [b.name, b.service === "house" ? when(b.date, "") + " (all day)" : when(b.date, b.time), b.package].filter(Boolean).join(", "),
     url: "./#/jobs",
     tag: "booking-" + b.id
   };

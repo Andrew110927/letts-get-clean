@@ -1,6 +1,7 @@
 # Letts Get Clean
 
-Website and owner app for Letts Get Clean, mobile car detailing in Orange County, NY.
+Website and owner app for Letts Get Clean: mobile car detailing, bike and e-bike details, and house pressure
+washing in Orange County, NY.
 
 - Live site: https://andrew110927.github.io/letts-get-clean/
 - Owner app: https://andrew110927.github.io/letts-get-clean/app/ (demo with sample data: add `?demo`)
@@ -13,7 +14,13 @@ Website and owner app for Letts Get Clean, mobile car detailing in Orange County
 - **Bookings** go into the `bookings` table in Supabase (project `letts-get-clean`). Visitors can add a booking
   but can't read anyone's details. A unique index stops two bookings on the same day and time.
   After booking, the customer is asked to text Andrew the details so he sees it right away.
-- **Busy times** come from the `busy_slots()` function, so booked times show as taken.
+- **Services**: each booking has a `service`: `car` (packages, sizes and extras), `bike` ($20, regular bike or
+  e-bike) or `house` (full house pressure wash, $300). Bike and house prices live in `site_settings` too.
+- **A house wash takes the whole day.** The `bookings_whole_day` trigger refuses a house wash on a day that already
+  has a booking, and any booking on a day a house wash holds. It locks per day, so two people booking at the same
+  moment can't both get it. The website and app only offer free days, and both read the refusal as "that day's taken".
+- **Busy times** come from the `busy_slots()` function, so booked times show as taken. Its `all_day` column marks
+  days a house wash holds.
 - **Prices, hours, days off and social links** are read from the `site_settings` row, which the owner app
   (and the older "Letts Get Clean" Claude artifact) edits. If that can't load, the site uses the defaults in the
   `DEFAULTS` block near the top of the script.
@@ -89,6 +96,7 @@ npm install --no-save --no-package-lock http_ece@1.2.0 && node supabase/function
 
 ## Changing things
 
-- Prices, hours, days off, social links: owner app → More → Settings (updates the live site right away).
+- Prices (car packages, bike detail, house wash), hours, days off, social links: owner app → More → Settings
+  (updates the live site right away).
 - Text message wording: `messages` in `app/config.js`.
 - Before/after photos: add the files to `media/` and an entry to `GALLERY` in `index.html`.

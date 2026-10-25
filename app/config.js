@@ -62,7 +62,8 @@ window.APP_CONFIG = {
   // {owner} {brand} {phone} {site} {review} {pay}. Edit freely; unknown placeholders are left as typed.
   messages: {
     confirm: "Hi {first}, it's {owner} from {brand}. You're confirmed for {day} at {time}: {package}, {total}. {prep} Pay after the job: {pay}. See you then!",
-    prepMobile: "Please have an outdoor outlet and a hose spigot ready near the car.",
+    prepMobile: "Please have an outdoor outlet and a hose spigot ready.",
+    prepHouse: "It takes the whole day. Please have an outdoor hose spigot and outlet I can use, and move anything fragile away from the walls.",
     prepDropoff: "Drop-off is at my place in Newburgh. I'll text you the address.",
     onMyWay: "Hi {first}, {owner} from {brand} here. I'm on my way and will see you in about 15 minutes.",
     running: "Hi {first}, {owner} from {brand}. I'm running about 15 minutes behind, sorry about that! See you soon.",
@@ -94,6 +95,14 @@ window.APP_CONFIG = {
       { id: "heavy", label: "Extra-dirty interior", price: 10 },
       { id: "wax", label: "Wax coat upgrade", price: 20 }
     ],
+    // Single-price services. A house wash takes the whole day (the database enforces it).
+    bike: { price: 20 },
+    house: { price: 300 },
     socials: { instagram: "https://www.instagram.com/lettsgetclean", tiktok: "https://www.tiktok.com/@lettsgetclean", facebook: "", google: "" }
+  },
+  services: {
+    car: { label: "Car" },
+    bike: { label: "Bike", name: "Bike detail", types: ["Regular bike", "E-bike"] },
+    house: { label: "House", name: "Full house pressure wash" }
   }
 };
