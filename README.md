@@ -129,3 +129,6 @@ node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
 - Text for invoice, receipt and quote messages: `messages.invoice`, `messages.receipt`, `messages.quote` in `app/config.js`.
 - Text message wording: `messages` in `app/config.js`.
 - Before/after photos: add the files to `media/` and an entry to `GALLERY` in `index.html`.
+- Mascot: `media/mascot.webp` (the round badge, cut out, in the hero), `mascot-160.webp` (header and footer),
+  `mascot-lockup.webp` (the full "Mama Letts approved" logo in About), `og-card.jpg` (the picture shown when the link
+  is shared), `favicon-64.png` (browser tab) and `icon-180.png` (iPhone home screen).
