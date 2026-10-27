@@ -28,12 +28,11 @@ p{margin:0}
 .num{font-variant-numeric:tabular-nums}
 svg{flex-shrink:0}
 
-/* brand tile */
-.tile{width:40px;height:40px;border-radius:11px;background:var(--accent);display:grid;place-items:center;transform:rotate(-8deg);box-shadow:3px 3px 0 var(--fg);flex-shrink:0}
-.tile.big{width:72px;height:72px;border-radius:20px;box-shadow:5px 5px 0 var(--fg)}
+/* brand logo: the app icon (icons/icon-192.png), so swapping the icons rebrands it too */
+.brand-logo{width:96px;height:96px;flex-shrink:0}
 .boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg)}
-.boot .tile{animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{50%{transform:rotate(-8deg) scale(.9)}}
+.boot .brand-logo{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(.9)}}
 
 /* buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:999px;border:0;cursor:pointer;font-weight:800;letter-spacing:.2px;text-decoration:none;white-space:nowrap;transition:transform .12s ease,box-shadow .12s ease,background .15s}

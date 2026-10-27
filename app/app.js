@@ -2788,7 +2788,7 @@
     $("boot").hidden = true; $("shell").hidden = true;
     const a = $("auth"); a.hidden = false; a.replaceChildren();
     const words = CFG.brand.name.split(" "), lastWord = words.pop();
-    a.append(h("div", { class: "auth-brand" }, h("span", { class: "tile big" }, h("span", { html: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="${CFG.brand.colors.accentInk}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS.car}</svg>` })),
+    a.append(h("div", { class: "auth-brand" }, h("img", { class: "brand-logo", src: "icons/icon-192.png", alt: "" }),
       h("h1", {}, words.join(" ") + " ", h("span", {}, lastWord)), h("p", { class: "muted" }, "Owner app · jobs, clients, invoices, money")));
     const card = h("div", { class: "auth-card" });
     const msg = (text, kind) => text ? h("div", { class: "note" + (kind ? " " + kind : "") }, text) : null;
