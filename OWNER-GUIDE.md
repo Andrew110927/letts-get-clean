@@ -49,7 +49,7 @@ Updates arrive by themselves: whenever you open the app with signal, you get the
 1. **A booking comes in.** Your phone buzzes, and the job shows on **Jobs** and **Today** as **Needs OK**.
 2. **Confirm it.** Tap the job, tap **Confirm**, then text the customer from the button that appears.
 3. **On the day,** **Today** shows your next job with buttons to navigate, call and text.
-4. **When you finish,** tap **Mark done**. The invoice opens already filled in at the price they booked. Add anything extra (another line, a tip).
+4. **When you finish,** tap **Done** on Today's job card (or **Mark done** on the job's page). The invoice opens already filled in at the price they booked. Add anything extra (another line, a tip).
 5. **Paid now?** On that same screen, tap how they paid: Cash, Cash App or Venmo. If they're paying later, leave it on **Not yet**. Then tap **Save invoice**.
 6. **Send it.** **Share the invoice PDF** sends a branded invoice by Messages, Mail or any app. **Text** sends a message with tap-to-pay Cash App and Venmo links, amount already filled in. Sending a draft marks it as sent.
 7. **Paid later?** Open the invoice and tap the method under **Payments**. For half now and half later, tap **Part payment, other amount or date**.
