@@ -34,8 +34,18 @@ window.APP_CONFIG = {
   },
 
   payments: {
-    methods: ["Cash", "Cash App", "Venmo", "Card", "Other"],
+    methods: ["Cash", "Cash App", "Venmo", "Other"],
     line: "Cash, Cash App ($AndrewLetta) or Venmo (@Andrew-Letts-9)"
+  },
+
+  // What invoices and quotes start with. The owner changes these in More → Settings → Invoices; those saved
+  // values (owner-only invoice_settings row) win. The contact email is set there, not here: this file is public.
+  invoices: {
+    businessName: "Letts Get Clean", ownerName: "Andrew Letts", phone: "(845) 282-9387", email: "",
+    website: "andrew110927.github.io/letts-get-clean",
+    cashApp: "$AndrewLetta", venmo: "@Andrew-Letts-9",
+    taxPercent: 0, invoicePrefix: "LGC-", quotePrefix: "Q-", overdueDays: 7,
+    note: "Thanks for choosing Letts Get Clean!", terms: "Payment is due when the job is done."
   },
 
   social: {

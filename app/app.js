@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.2.0";
+  const VERSION = "1.3.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -168,7 +168,9 @@
     }
     for (const key of ["sizes", "addons"]) {
       if (Array.isArray(d[key]) && d[key].length) {
-        const list = d[key].map(a => a && text(a.id, 30) && text(a.label, 40) && num(a.price) ? { id: a.id, label: a.label, price: Number(a.price) } : fallback(key, a)).filter(Boolean);
+        // web: false marks an extra as invoice-only: the website doesn't offer it.
+        const list = d[key].map(a => a && text(a.id, 30) && text(a.label, 40) && num(a.price)
+          ? { id: a.id, label: a.label, price: Number(a.price), ...(key === "addons" && a.web === false ? { web: false } : {}) } : fallback(key, a)).filter(Boolean);
         if (list.length) out[key] = clone(list);
       }
     }
@@ -216,6 +218,7 @@
   // ===== State =====
   const S = {
     mode: null, user: null, settings: clone(CFG.defaults), bookings: [], reviews: [], posts: [], stats: [], expenses: [], customers: [], vehicles: [],
+    invoices: [], invoiceSettings: clone(CFG.invoices), invFilter: "open", invQuery: "",
     missing: new Set(), ready: false, loading: false, loadedAt: 0, offline: false,
     route: "today", jobFilter: "upcoming", jobQuery: "", clientFilter: "all", clientQuery: "", moneyRange: "month", dirty: false, installEvt: null
   };
@@ -239,16 +242,19 @@
         stats: () => q(sb.from("social_stats").select("*").order("day").limit(500)),
         expenses: () => q(sb.from("expenses").select("*").order("spent_on", { ascending: false }).limit(3000)),
         customers: () => q(sb.from("customers").select("*").order("name").limit(5000)),
-        vehicles: () => q(sb.from("vehicles").select("*").order("created_at").limit(10000))
+        vehicles: () => q(sb.from("vehicles").select("*").order("created_at").limit(10000)),
+        invoices: () => q(sb.from("invoices").select("*").order("created_at", { ascending: false }).limit(10000)),
+        invoiceSettings: () => q(sb.from("invoice_settings").select("data").eq("id", 1).maybeSingle())
       };
+      const single = new Set(["settings", "invoiceSettings"]);
       const keys = Object.keys(tasks);
       const res = await Promise.allSettled(keys.map(k => tasks[k]()));
       const out = { missing: [] };
       let hard = null;
       res.forEach((r, i) => {
         const k = keys[i];
-        if (r.status === "fulfilled") out[k] = k === "settings" ? (r.value && r.value.data) || null : r.value || [];
-        else if (MISSING.has(r.reason && r.reason.code)) { out.missing.push(k); out[k] = k === "settings" ? null : []; }
+        if (r.status === "fulfilled") out[k] = single.has(k) ? (r.value && r.value.data) || null : r.value || [];
+        else if (MISSING.has(r.reason && r.reason.code)) { out.missing.push(k); out[k] = single.has(k) ? null : []; }
         else hard = hard || r.reason;
       });
       if (hard) throw hard;
@@ -295,6 +301,17 @@
       needLive();
       const { id, created_at, ...rest } = v;
       return id ? q(sb.from("vehicles").update(rest).eq("id", id).select().single()) : q(sb.from("vehicles").insert(rest).select().single());
+    },
+    // The database numbers new invoices and keeps the number, kind and prefix from changing (invoice_rules()).
+    async saveInvoice(inv) {
+      needLive();
+      const { id, number, created_at, updated_at, ...rest } = inv;
+      return id ? q(sb.from("invoices").update(rest).eq("id", id).select().single()) : q(sb.from("invoices").insert(rest).select().single());
+    },
+    async saveInvoiceSettings(data) {
+      needLive();
+      const row = await q(sb.from("invoice_settings").upsert({ id: 1, data, updated_at: new Date().toISOString() }).select("data").single());
+      return row.data;
     }
   };
 
@@ -355,8 +372,29 @@
       bookings.push(
         extra({ service: "bike", status: "Done", date: addDays(t, -6), time: "15:00", name: "Devon Thomas", phone: "(845) 555-0102", address: "220 Union Ave", town: "New Windsor", car: "Rad Power RadCity", package: "Bike detail", size: "E-bike", total: 20, source: "Flyer", tip: 5, paid_with: "Cash", customer_id: customers[1].id, vehicle_id: vehicles[8].id }),
         extra({ service: "house", status: "Confirmed", date: addDays(t, 4), time: slotsFor(addDays(t, 4))[0], name: "Mike Dawson", phone: "(845) 555-0105", address: "3 Lake Dr", town: "Warwick", car: null, package: "Full house pressure wash", size: "House", total: 300, source: "Google", notes: "Two-story colonial, vinyl siding. Spigot is by the back door.", customer_id: customers[4].id }));
+
+      // Invoices: an overdue one, one voided by mistake, the last four finished jobs, a walk-up draft, and a house-wash quote.
+      const counters = { invoice: 0, quote: 0 }, names = { bike: CFG.services.bike.name, house: CFG.services.house.name };
+      const mkInv = (o) => {
+        const kind = o.kind || "invoice", tt = LGC.invoiceTotals(o), at = new Date(o.issued_on + "T18:00:00").toISOString();
+        return { id: uid(), created_at: at, updated_at: at, kind, number: ++counters[kind], prefix: kind === "quote" ? "Q-" : "LGC-", state: "sent",
+          vehicle_id: null, booking_id: null, quote_id: null, job_date: o.issued_on, location: "mobile", discount_percent: null, tax_percent: 0, tip_cents: 0,
+          notes: null, void_reason: null, voided_at: null, due_on: kind === "invoice" ? LGC.addDays(o.issued_on, 7) : null, ...o,
+          subtotal_cents: tt.subtotal, discount_cents: tt.discount, tax_cents: tt.tax, total_cents: tt.total };
+      };
+      const fromBooking = (b, o) => mkInv({ customer_id: b.customer_id, vehicle_id: b.vehicle_id, booking_id: b.id, issued_on: b.date, job_date: b.date, location: b.location,
+        items: LGC.linesFromBooking(b, CFG.defaults, names), tip_cents: Math.round((b.tip || 0) * 100), ...o });
+      const done = bookings.filter(b => b.status === "Done").sort((a, b) => a.date.localeCompare(b.date));
+      const invoices = [fromBooking(done[done.length - 6])];
+      invoices.push(mkInv({ customer_id: customers[1].id, vehicle_id: vehicles[1].id, issued_on: addDays(t, -10), items: [{ ref: "pkg:full", name: "The Full Detail", qty: 1, unit_cents: 5000 }],
+        state: "void", voided_at: new Date(addDays(t, -10) + "T18:30:00").toISOString(), void_reason: "Made twice by mistake" }));
+      invoices.push(...done.slice(-4).map(b => fromBooking(b)));
+      invoices.push(mkInv({ kind: "quote", customer_id: customers[4].id, issued_on: addDays(t, -1), job_date: addDays(t, 4),
+        items: [{ ref: "svc:house", name: names.house, qty: 1, unit_cents: 30000 }], notes: "Two-story colonial. Includes gutters and the back deck." }));
+      invoices.push(mkInv({ state: "draft", customer_id: customers[7].id, vehicle_id: vehicles[7].id, issued_on: t, job_date: t, location: "dropoff", discount_percent: 10,
+        items: [{ ref: "pkg:interior", name: "Interior", qty: 1, unit_cents: 3000 }, { ref: "addon:heavy", name: "Extra-dirty interior", qty: 1, unit_cents: 1000 }, { ref: "custom", name: "Pet hair removal", qty: 1, unit_cents: 1500 }] }));
       return {
-        bookings, customers, vehicles, settings: clone(CFG.defaults), missing: [],
+        bookings, customers, vehicles, invoices: invoices.reverse(), counters, invoiceSettings: { email: "andrew@example.com" }, settings: clone(CFG.defaults), missing: [],
         reviews: [
           { id: uid(), created_at: new Date(Date.now() - 2 * 864e5).toISOString(), stars: 5, name: "Chris", text: "Truck looks brand new inside and out. Showed up right on time.", approved: false },
           { id: uid(), created_at: new Date(Date.now() - 9 * 864e5).toISOString(), stars: 5, name: "Devon", text: "Third time using Letts Get Clean. Always spotless and super easy to book.", approved: true },
@@ -424,6 +462,23 @@
         const x = { year: null, make: null, model: null, color: null, notes: null, archived: false, ...v, id: uid(), created_at: new Date().toISOString() };
         db.vehicles.push(x); return clone(x);
       },
+      // Same rules as invoice_rules() in the database: numbered on create; number, kind and prefix fixed; void is final.
+      async saveInvoice(inv) {
+        await wait();
+        const now = new Date().toISOString(), refuse = (m) => { throw Object.assign(new Error(m), { code: "P0001" }); };
+        if (inv.id) {
+          const x = find("invoices", inv.id);
+          if (x.state === "void") refuse("This invoice is void, so it can't be changed. Duplicate it instead.");
+          const { number, kind, prefix, created_at, ...patch } = inv;
+          Object.assign(x, patch, { updated_at: now });
+          x.voided_at = x.state === "void" ? (x.voided_at || now) : null;
+          return clone(x);
+        }
+        if (inv.state === "void") refuse("A new invoice can't start out void.");
+        const x = { vehicle_id: null, booking_id: null, quote_id: null, notes: null, void_reason: null, ...inv, id: uid(), number: ++db.counters[inv.kind], created_at: now, updated_at: now, voided_at: null };
+        db.invoices.unshift(x); return clone(x);
+      },
+      async saveInvoiceSettings(data) { await wait(); db.invoiceSettings = clone(data); return clone(data); },
       async setReview(id, approved) { await wait(); const r = find("reviews", id); r.approved = approved; return clone(r); },
       async deleteReview(id) { await wait(); db.reviews = db.reviews.filter(r => r.id !== id); },
       async saveSettings(data) { await wait(); db.settings = clone(data); return clone(data); },
@@ -450,8 +505,15 @@
     S.expenses = (d.expenses || []).map(e => ({ ...e, amount: Number(e.amount) || 0 }));
     S.customers = d.customers || [];
     S.vehicles = d.vehicles || [];
+    S.invoices = (d.invoices || []).map(normInvoice);
+    S.invoiceSettings = LGC.mergeInvoiceSettings(CFG.invoices, d.invoiceSettings);
     S.settings = mergeSettings(CFG.defaults, d.settings);
     S.missing = new Set(d.missing || []);
+  }
+
+  // numeric columns can arrive as text; the math wants numbers.
+  function normInvoice(i) {
+    return { ...i, items: Array.isArray(i.items) ? i.items : [], discount_percent: i.discount_percent == null ? null : Number(i.discount_percent), tax_percent: Number(i.tax_percent) || 0 };
   }
 
   function niceError(e) {
@@ -549,18 +611,21 @@
     today: { title: () => fmtDate(today(), { weekday: "short", month: "short", day: "numeric" }), kicker: greeting, draw: vToday, fab: ["plus", "Add a booking", () => addBookingSheet()] },
     jobs: { title: () => "Jobs", draw: vJobs, fab: ["plus", "Add a booking", () => addBookingSheet()] },
     clients: { title: () => "Clients", draw: vClients, fab: ["plus", "Add a customer", () => customerSheet()] },
-    invoices: { title: () => "Invoices", draw: vInvoices },
+    invoices: { title: () => "Invoices", draw: vInvoices, fab: ["plus", "New invoice", () => invoiceEditor({ kind: "invoice" })] },
+    invsettings: { title: () => "Invoice settings", kicker: () => "Only you see these", parent: "more", draw: vInvoiceSettings },
     more: { title: () => "More", draw: vMore },
     social: { title: () => "Social", kicker: () => "Post · plan · grow", parent: "more", draw: vSocial, fab: ["plus", "New post", () => composeSheet(null)] },
     money: { title: () => "Money", parent: "more", draw: vMoney, fab: ["plus", "Add an expense", () => expenseSheet()] },
     reviews: { title: () => "Reviews", parent: "more", draw: vReviews },
     settings: { title: () => "Settings", kicker: () => "Updates the website live", parent: "more", draw: vSettings }
   };
+  // Screens that are one big form: leaving or refreshing mustn't wipe unsaved typing.
+  const FORMS = new Set(["settings", "invsettings"]);
   function greeting() { const hr = new Date().getHours(); return (hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening") + ", " + CFG.brand.owner; }
   function routeFromHash() { const r = (location.hash.match(/^#\/(\w+)/) || [])[1]; return r && SCREENS[r] ? r : "today"; }
   function go(route, push) {
     if (route === S.route) { $("view").scrollTo({ top: 0, behavior: "smooth" }); return; }
-    if (S.route === "settings" && S.dirty && !confirm("Leave without saving your settings changes?")) return;
+    if (FORMS.has(S.route) && S.dirty && !confirm("Leave without saving your settings changes?")) return;
     S.dirty = false;
     // Sub-pages (Social, Money, Reviews, Settings) get their own history entry so Back returns to More; tabs replace.
     if (push) history.pushState({ sub: true }, "", "#/" + route); else history.replaceState(null, "", "#/" + route);
@@ -598,7 +663,7 @@
   // Background refreshes skip re-rendering while someone is typing, so their input isn't wiped.
   function softRender() {
     const a = document.activeElement;
-    if (S.route === "settings" && S.dirty) { drawTabs(); return; }
+    if (FORMS.has(S.route) && S.dirty) { drawTabs(); return; }
     if (a && $("view").contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) { drawTabs(); return; }
     render(false);
   }
@@ -669,7 +734,7 @@
         action("nav", "Navigate", drop || !b.address ? { disabled: true } : { href: mapsHref(b) }),
         action("phone", "Call", { href: telHref(b.phone) }),
         action("msg", "Text", { onclick: () => messageSheet(b.id, b.status === "Requested" ? "confirm" : "onMyWay") }),
-        b.status === "Requested" ? action("check", "Confirm", { hot: true, onclick: (e) => confirmJob(b.id, e.currentTarget) }) : action("check", "Done", { hot: true, onclick: () => doneSheet(b.id) })),
+        b.status === "Requested" ? action("check", "Confirm", { hot: true, onclick: (e) => confirmJob(b.id, e.currentTarget) }) : action("check", "Done", { hot: true, onclick: () => finishJob(b.id) })),
       h("button", { class: "link", type: "button", style: "color:var(--accent-ink);padding:0", onclick: () => jobSheet(b.id) }, "Job details →"));
   }
   function noJobsCard() {
@@ -759,11 +824,11 @@
         h("button", { class: "btn btn-primary", type: "button", onclick: (e) => confirmJob(b.id, e.currentTarget) }, icon("check", 18), "Confirm"),
         sureBtn("btn btn-ghost", "Can't make it", "Tap to decline", (btn) => setStatus(b.id, "Cancelled", btn, "Declined · the time is open again", "decline")));
       else if (b.status === "Confirmed") primary.append(
-        h("button", { class: "btn btn-ok", type: "button", onclick: () => doneSheet(b.id) }, icon("check", 18), "Mark done"),
+        h("button", { class: "btn btn-ok", type: "button", onclick: () => finishJob(b.id) }, icon("check", 18), "Mark done"),
         h("button", { class: "btn btn-ghost", type: "button", onclick: () => messageSheet(b.id, "onMyWay") }, icon("car", 18), "On my way"));
       else if (b.status === "Done") primary.append(
         h("button", { class: "btn btn-primary", type: "button", onclick: () => messageSheet(b.id, "thanks") }, icon("star", 18), "Ask for review"),
-        h("button", { class: "btn btn-ghost", type: "button", onclick: () => doneSheet(b.id) }, icon("money", 18), "Payment"));
+        h("button", { class: "btn btn-ghost", type: "button", onclick: () => finishJob(b.id) }, icon("receipt", 18), invoiceFor(b.id) ? "Invoice " + LGC.invoiceNumber(invoiceFor(b.id)) : "Make invoice"));
       else primary.append(h("button", { class: "btn btn-ghost", type: "button", style: "grid-column:1/-1", onclick: (e) => setStatus(b.id, "Confirmed", e.currentTarget, "Restored and confirmed") }, icon("refresh", 18), "Restore booking"));
       body.append(primary);
 
@@ -798,37 +863,6 @@
     if (!ok) return;
     toast("Confirmed · now text them"); haptic(20); render(false);
     if (SH.stack.length) replaceSheet("Text", messageBuilder(id, "confirm")); else messageSheet(id, "confirm");
-  }
-
-  function doneSheet(id) {
-    openSheet("Mark done", (body) => {
-      const b = S.bookings.find(x => x.id === id); if (!b) return;
-      const total = h("input", { type: "number", inputmode: "decimal", min: "0", max: "1000", value: String(b.total) });
-      const tip = h("input", { type: "number", inputmode: "decimal", min: "0", max: "1000", value: b.tip ? String(b.tip) : "", placeholder: "0" });
-      const paid = chipPicker(CFG.payments.methods.map(m => [m, m]), b.paid_with || "", false);
-      const err = h("div", { class: "err", hidden: true });
-      const save = h("button", { class: "btn btn-ok btn-block", type: "submit" }, icon("check", 18), "Save · paid " );
-      const sum = () => { save.lastChild.textContent = "Save · " + money((Number(total.value) || 0) + (Number(tip.value) || 0)); };
-      total.addEventListener("input", sum); tip.addEventListener("input", sum); sum();
-      const form = h("form", { class: "form" },
-        h("p", { class: "muted" }, b.name + " · " + b.package + " · " + dayLabel(b.date)),
-        h("div", { class: "row2" }, field("Job total", h("div", { class: "money-in" }, total)), field("Tip", h("div", { class: "money-in" }, tip))),
-        h("div", { class: "field" }, h("span", { class: "lbl" }, "Paid with"), paid), err, save);
-      // field() sets ids on the wrapper, so label the inputs directly for screen readers.
-      total.setAttribute("aria-label", "Job total"); tip.setAttribute("aria-label", "Tip");
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault(); err.hidden = true;
-        const t = Number(total.value), tp = Number(tip.value || 0);
-        if (!(t >= 0 && t <= 1000) || !(tp >= 0 && tp <= 1000)) { err.textContent = "Total and tip must be between $0 and $1,000."; err.hidden = false; return; }
-        const patch = { status: "Done", total: Math.round(t), tip: Math.round(tp) };
-        if (paid.value()) patch.paid_with = paid.value();
-        const ok = await run(save, async () => { replaceIn(S.bookings, await api.updateBooking(id, patch)); });
-        if (!ok) return;
-        toast("Nice work! " + money(t + tp) + " logged"); haptic([15, 30, 15]); softRender();
-        replaceSheet("Ask for a review", messageBuilder(id, "thanks"));
-      });
-      body.append(form);
-    });
   }
 
   function editJobSheet(id) {
@@ -1130,6 +1164,11 @@
         h("div", { class: "avatar" }, icon("car", 22)), h("div", { class: "main" }, h("b", {}, LGC.vehicleLabel(v)), v.notes ? h("span", {}, v.notes) : null), icon("chev", 20))))
         : h("p", { class: "muted small" }, "No vehicles yet. Add one so it's ready for the invoice."));
 
+      const invs = S.invoices.filter(i => i.customer_id === c.id).sort((a, z) => z.issued_on.localeCompare(a.issued_on) || z.number - a.number);
+      body.append(h("div", { class: "sec-title" }, h("h2", {}, "Invoices"), h("button", { class: "link", type: "button", onclick: () => invoiceEditor({ kind: "invoice", customer_id: c.id }) }, "+ New")));
+      body.append(invs.length ? h("div", { class: "list" }, invs.map(i => invoiceItem({ inv: i, st: statusOf(i), c }, true)))
+        : h("p", { class: "muted small" }, "No invoices or quotes yet."));
+
       body.append(h("div", { class: "sec-title" }, h("h2", {}, "History")));
       body.append(c.jobs.length ? h("div", { class: "list" }, c.jobs.slice().sort((a, b) => byWhen(b, a)).map(b => h("button", { class: "item", type: "button", onclick: () => jobSheet(b.id) },
         h("div", { class: "main" }, h("b", {}, fmtDate(b.date) + " · " + fmtTime(b.time)), h("span", {}, [b.package, b.car].filter(Boolean).join(" · "))),
@@ -1166,7 +1205,8 @@
     };
   }
   // Add or edit a customer. A new customer can get their first car on the same screen, so a walk-up is one form.
-  function customerSheet(id) {
+  // onSaved(customer, vehicleId) hands a new customer back to whatever opened this (the invoice editor) instead of opening their page.
+  function customerSheet(id, onSaved) {
     const c0 = id ? S.customers.find(x => x.id === id) : null;
     openSheet(c0 ? "Edit customer" : "New customer", (body) => {
       const inp = (val, attrs) => h("input", { value: val == null ? "" : String(val), autocomplete: "off", ...(attrs || {}) });
@@ -1198,20 +1238,21 @@
         if (twin) problems.push(fmtPhone(row.phone) + " already belongs to " + twin.name);
         if (car) problems.push(...car.problems(carVal));
         if (problems.length) { err.textContent = "Almost there: " + problems.join(", ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
-        let saved = null;
+        let saved = null, carId = null;
         const ok = await run(save, async () => {
           saved = await api.saveCustomer(c0 ? { id: c0.id, ...row } : row);
           replaceIn(S.customers, saved);
-          if (carVal && (carVal.make || carVal.model)) S.vehicles.push(await api.saveVehicle({ customer_id: saved.id, ...carVal }));
+          if (carVal && (carVal.make || carVal.model)) { const v = await api.saveVehicle({ customer_id: saved.id, ...carVal }); S.vehicles.push(v); carId = v.id; }
         });
         if (!ok) return;
         toast(c0 ? "Saved" : saved.name + " added"); haptic(15); softRender();
-        if (c0) closeSheet(); else replaceSheet(saved.name, clientBuilder(saved.id));
+        if (onSaved) { closeSheet(); onSaved(saved, carId); }
+        else if (c0) closeSheet(); else replaceSheet(saved.name, clientBuilder(saved.id));
       });
       body.append(form);
     });
   }
-  function vehicleSheet(id, customerId) {
+  function vehicleSheet(id, customerId, onSaved) {
     const v0 = id ? S.vehicles.find(x => x.id === id) : null;
     openSheet(v0 ? "Edit vehicle" : "Add vehicle", (body) => {
       const vf = vehicleFields(v0 || {});
@@ -1225,8 +1266,9 @@
         const problems = vf.problems(val);
         if (!val.make && !val.model) problems.push("add the vehicle's make or model");
         if (problems.length) { err.textContent = "Almost there: " + [...new Set(problems)].join(", ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
-        const ok = await run(save, async () => { replaceIn(S.vehicles, await api.saveVehicle(v0 ? { id: v0.id, ...val } : { customer_id: customerId, ...val })); });
-        if (ok) { toast(v0 ? "Saved" : "Vehicle added"); softRender(); closeSheet(); }
+        let saved = null;
+        const ok = await run(save, async () => { saved = await api.saveVehicle(v0 ? { id: v0.id, ...val } : { customer_id: customerId, ...val }); replaceIn(S.vehicles, saved); });
+        if (ok) { toast(v0 ? "Saved" : "Vehicle added"); softRender(); closeSheet(); if (onSaved) onSaved(saved); }
       });
       body.append(form);
       if (v0) body.append(sureBtn("btn btn-ghost btn-block", "Remove this vehicle", "Tap again to remove", async (b) => {
@@ -1236,10 +1278,375 @@
     });
   }
 
-  // ===== Invoices (built in the next stage) =====
+  // ===== Invoices and quotes =====
+  // Payments arrive in the next stage; until then nothing counts as paid.
+  function paidOf(inv) { return 0; }
+  const customerOf = (id) => S.customers.find(c => c.id === id) || null;
+  const vehicleOf = (id) => S.vehicles.find(v => v.id === id) || null;
+  const convertedTo = (q) => S.invoices.find(i => i.quote_id === q.id && i.state !== "void") || null;
+  const invoiceFor = (bookingId) => S.invoices.find(i => i.booking_id === bookingId && i.kind === "invoice" && i.state !== "void") || null;
+  function statusOf(inv) { return LGC.invoiceStatus(inv, paidOf(inv), today(), inv.kind === "quote" && !!convertedTo(inv)); }
+  const invPill = (s) => h("span", { class: "pill st-" + s.replace(/\s/g, "") }, s);
+  const OPEN = new Set(["Draft", "Sent", "Overdue", "Partially Paid"]);
+  // "$50" for whole dollars, "$49.50" otherwise: for chips and buttons.
+  const short = (c) => c % 100 ? LGC.fmtCents(c) : "$" + (c / 100).toLocaleString("en-US");
+  // Cents as a value for a money input: 5000 → "50", 4950 → "49.50", 0 → "".
+  const asInput = (c) => c ? (c % 100 ? (c / 100).toFixed(2) : String(c / 100)) : "";
+  const SERVICE_NAMES = () => ({ bike: CFG.services.bike.name, house: CFG.services.house.name });
+
   function vInvoices(v) {
-    v.append(empty("Invoices are coming next", "Your customers and their cars are ready in Clients. Making, sending and tracking invoices arrives in the next update.",
-      h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => go("clients") }, icon("users", 18), "Open clients")));
+    if (S.missing.has("invoices")) { v.append(missingNote("Invoices")); return; }
+    const rows = S.invoices.map(inv => ({ inv, st: statusOf(inv), c: customerOf(inv.customer_id) }));
+    const F = {
+      open: (r) => r.inv.kind === "invoice" && OPEN.has(r.st), quotes: (r) => r.inv.kind === "quote" && r.st !== "Void",
+      paid: (r) => r.st === "Paid", void: (r) => r.st === "Void", all: () => true
+    };
+    const owed = rows.filter(r => r.inv.kind === "invoice" && r.st !== "Draft" && OPEN.has(r.st)), late = owed.filter(r => r.st === "Overdue");
+    const due = (list) => list.reduce((n, r) => n + r.inv.total_cents - paidOf(r.inv), 0);
+    v.append(h("div", { class: "kpis" },
+      kpi("Waiting on", short(due(owed)), owed.length + " invoice" + (owed.length === 1 ? "" : "s")),
+      kpi("Overdue", short(due(late)), late.length ? late.length + " past due" : "nothing late")));
+    v.append(h("div", { class: "row2" },
+      h("button", { class: "btn btn-primary", type: "button", onclick: () => invoiceEditor({ kind: "invoice" }) }, icon("plus", 18), "New invoice"),
+      h("button", { class: "btn btn-ghost", type: "button", onclick: () => invoiceEditor({ kind: "quote" }) }, icon("plus", 18), "New quote")));
+    const input = h("input", { type: "search", placeholder: "Search number, name, car, service", value: S.invQuery, "aria-label": "Search invoices", autocomplete: "off" });
+    const box = h("div");
+    const draw = () => {
+      const qy = S.invQuery.trim().toLowerCase();
+      const list = rows.filter(F[S.invFilter]).filter(r => !qy || [LGC.invoiceNumber(r.inv), r.c && r.c.name, r.c && r.c.phone, LGC.vehicleLabel(vehicleOf(r.inv.vehicle_id)), ...r.inv.items.map(l => l.name)]
+        .some(x => String(x || "").toLowerCase().includes(qy)))
+        .sort((a, b) => b.inv.issued_on.localeCompare(a.inv.issued_on) || String(b.inv.created_at).localeCompare(String(a.inv.created_at)));
+      box.replaceChildren(list.length ? h("div", { class: "list" }, list.slice(0, 300).map(r => invoiceItem(r)))
+        : empty(qy ? "No matches" : S.invFilter === "quotes" ? "No quotes" : "Nothing here", qy ? "Try a number, a name or a car." : S.invFilter === "quotes" ? "Send a price before a big job, then turn it into an invoice with one tap." : "Make one with New invoice, or tap Done on a job."));
+    };
+    input.addEventListener("input", () => { S.invQuery = input.value; draw(); });
+    v.append(h("div", { class: "search field" }, icon("search", 20), input));
+    v.append(seg([["open", "Open", rows.filter(F.open).length], ["quotes", "Quotes", rows.filter(F.quotes).length], ["paid", "Paid", rows.filter(F.paid).length], ["void", "Void", rows.filter(F.void).length], ["all", "All", rows.length]],
+      S.invFilter, (k) => { S.invFilter = k; render(false); }));
+    v.append(box);
+    draw();
+  }
+  // numberFirst: on a customer's page the name is already known, so lead with the invoice number.
+  function invoiceItem(r, numberFirst) {
+    const inv = r.inv, first = inv.items[0] ? inv.items[0].name + (inv.items.length > 1 ? " +" + (inv.items.length - 1) : "") : "";
+    const who = r.c ? r.c.name : "Customer", no = LGC.invoiceNumber(inv);
+    return h("button", { class: "item", type: "button", onclick: () => invoiceSheet(inv.id) },
+      h("div", { class: "avatar" }, icon(inv.kind === "quote" ? "edit" : "receipt", 20)),
+      h("div", { class: "main" }, h("b", {}, numberFirst ? no : who), h("span", {}, [numberFirst ? null : no, fmtDate(inv.issued_on, { month: "short", day: "numeric" }), first].filter(Boolean).join(" · "))),
+      h("div", { class: "end" }, h("b", {}, LGC.fmtCents(inv.total_cents)), invPill(r.st)));
+  }
+
+  function invoiceSheet(id) { openSheet("Invoice", invoiceBuilder(id)); }
+  function invoiceBuilder(id) {
+    return (body, setTitle) => {
+      const inv = S.invoices.find(x => x.id === id);
+      if (!inv) { body.append(empty("Invoice not found", "Pull down on the Invoices screen to refresh.")); return; }
+      const quote = inv.kind === "quote", st = statusOf(inv), c = customerOf(inv.customer_id), car = vehicleOf(inv.vehicle_id);
+      const isVoid = inv.state === "void", t = LGC.invoiceTotals(inv), job = inv.booking_id && S.bookings.find(b => b.id === inv.booking_id);
+      const what = quote ? "quote" : "invoice";
+      setTitle(LGC.invoiceNumber(inv));
+      body.append(h("div", { style: "display:flex;align-items:center;gap:10px;flex-wrap:wrap" }, invPill(st), h("span", { class: "big-num", style: "font-size:44px" }, LGC.fmtCents(inv.total_cents))));
+      if (!isVoid) {
+        const acts = [action("edit", "Edit", { onclick: () => invoiceEditor({ base: inv }) }), action("copy", "Duplicate", { onclick: () => invoiceEditor({ kind: inv.kind, copy: inv }) })];
+        if (inv.state === "draft") acts.push(action("check", "Mark sent", { onclick: (e) => setInvoiceState(inv, { state: "sent" }, e.currentTarget, "Marked as sent") }));
+        if (c) acts.push(action("users", "Customer", { onclick: () => clientSheet(c.id) }));
+        body.append(h("div", { class: "actions4", style: `grid-template-columns:repeat(${acts.length},minmax(0,1fr))` }, acts));
+      }
+      const made = quote && convertedTo(inv), from = inv.quote_id && S.invoices.find(x => x.id === inv.quote_id);
+      if (quote && !isVoid && !made) body.append(h("button", { class: "btn btn-primary btn-block", type: "button", onclick: () => invoiceEditor({ kind: "invoice", quote: inv }) }, icon("receipt", 18), "Turn into invoice"));
+      if (made) body.append(h("button", { class: "note", type: "button", style: "text-align:left;color:var(--fg);cursor:pointer", onclick: () => invoiceSheet(made.id) }, h("b", {}, "Turned into invoice " + LGC.invoiceNumber(made)), h("span", { class: "muted small" }, "Tap to open it.")));
+      if (from) body.append(h("button", { class: "note", type: "button", style: "text-align:left;color:var(--fg);cursor:pointer", onclick: () => invoiceSheet(from.id) }, h("b", {}, "Made from quote " + LGC.invoiceNumber(from)), h("span", { class: "muted small" }, "Tap to open it.")));
+      if (isVoid) body.append(h("div", { class: "note bad" }, h("b", {}, "Void" + (inv.voided_at ? " since " + new Date(inv.voided_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "")),
+        h("span", {}, (inv.void_reason ? inv.void_reason + ". " : "") + "It stays in your records but doesn't count. Duplicate it to start a fresh one."),
+        h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => invoiceEditor({ kind: inv.kind, copy: inv }) }, icon("copy", 18), "Duplicate")));
+
+      const rows = [["Customer", c ? c.name : ""], ["Phone", c && c.phone ? fmtPhone(c.phone) : ""], ["Vehicle", LGC.vehicleLabel(car)],
+        ["Job date", inv.job_date ? fmtDate(inv.job_date, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : ""],
+        ["Where", inv.location === "dropoff" ? "Drop-off" : c ? [c.address, c.town].filter(Boolean).join(", ") || "At their place" : "At their place"],
+        [quote ? "Quoted" : "Issued", fmtDate(inv.issued_on, { month: "short", day: "numeric", year: "numeric" })],
+        !quote && inv.due_on && !isVoid ? ["Overdue after", fmtDate(inv.due_on, { month: "short", day: "numeric" })] : null].filter(r => r && r[1]);
+      body.append(h("div", { class: "dl" }, rows.map(([k, val]) => h("div", {}, h("span", { class: "k" }, k), h("span", { class: "v" }, val)))));
+
+      body.append(h("div", { class: "list" }, inv.items.map(l => h("div", { class: "item", style: "cursor:default" },
+        h("div", { class: "main" }, h("b", { style: "white-space:normal" }, l.name), l.qty > 1 ? h("span", {}, l.qty + " × " + LGC.fmtCents(l.unit_cents)) : null),
+        h("div", { class: "end" }, h("b", {}, LGC.fmtCents(l.unit_cents * l.qty)))))));
+      body.append(totalsCard(t, inv.tax_percent, inv.discount_percent));
+      if (inv.notes) body.append(h("div", { class: "quote" }, inv.notes));
+      if (job) body.append(h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: () => jobSheet(job.id) }, icon("cal", 18), "Job: " + fmtDate(job.date) + " · " + fmtTime(job.time)));
+      if (job && job.status === "Done" && !quote) body.append(h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: () => messageSheet(job.id, "thanks") }, icon("star", 18), "Text a review request"));
+      if (!isVoid) body.append(h("p", { class: "muted small" }, "Recording payments and sharing the " + what + " as a PDF or text arrive in the next updates."),
+        sureBtn("btn btn-danger btn-block", "Void this " + what, "Tap again to void it", (b) => setInvoiceState(inv, { state: "void" }, b, "Voided · it stays in your records")));
+    };
+  }
+  function totalsCard(t, taxPct, discPct) {
+    const line = (k, val, cls) => h("div", { class: "stat-line" + (cls ? " " + cls : "") }, h("span", {}, k), h("b", { class: "num" }, val));
+    return h("div", { class: "card", style: "display:grid;gap:8px" },
+      line("Subtotal", LGC.fmtCents(t.subtotal)),
+      t.discount ? line("Discount" + (discPct != null ? " " + discPct + "%" : ""), "−" + LGC.fmtCents(t.discount)) : null,
+      taxPct ? line("Sales tax " + taxPct + "%", LGC.fmtCents(t.tax)) : null,
+      t.tip ? line("Tip", LGC.fmtCents(t.tip)) : null,
+      line("Total", LGC.fmtCents(t.total), "total-line"));
+  }
+  async function setInvoiceState(inv, patch, btn, msg) {
+    const ok = await run(btn, async () => { replaceIn(S.invoices, normInvoice(await api.saveInvoice({ id: inv.id, ...patch }))); });
+    if (ok) { toast(msg); haptic(15); softRender(); drawSheet(false); }
+  }
+  // A finished job's invoice: open the one it already has, or start one filled in from the booking.
+  function finishJob(id) {
+    const b = S.bookings.find(x => x.id === id); if (!b) return;
+    const inv = invoiceFor(id);
+    if (inv) invoiceSheet(inv.id); else invoiceEditor({ booking: b });
+  }
+  // Until the Money screen counts invoice payments (a later stage), a job's invoice keeps its booking's total and tip in step.
+  async function syncBooking(inv, paidWith) {
+    const b = inv.booking_id && inv.kind === "invoice" && inv.state !== "void" && S.bookings.find(x => x.id === inv.booking_id);
+    if (!b) return;
+    const dollars = (c) => Math.max(0, Math.min(1000, Math.round(c / 100)));
+    const patch = { status: "Done", total: dollars(inv.total_cents - inv.tip_cents), tip: dollars(inv.tip_cents) };
+    if (paidWith) patch.paid_with = paidWith;
+    if (b.status === patch.status && b.total === patch.total && b.tip === patch.tip && (!paidWith || b.paid_with === paidWith)) return;
+    replaceIn(S.bookings, await api.updateBooking(b.id, patch));
+  }
+
+  // One sheet for new, edit, duplicate, finish-a-job and quote-to-invoice: customer → vehicle → services → save.
+  // Its state lives out here, not in the sheet, so adding a customer or car on top and coming back keeps everything.
+  function invoiceEditor(opts) {
+    const o = opts || {}, base = o.base || null, b = o.booking || null, src = base || o.copy || o.quote || null;
+    const kind = base ? base.kind : o.kind || "invoice", IS = S.invoiceSettings;
+    const taxPct = base ? base.tax_percent : IS.taxPercent;
+    const firstCar = (cid) => { const cars = cid ? carsOf(cid) : []; return cars[0] ? cars[0].id : null; };
+    const st = {
+      customer_id: b ? b.customer_id : src ? src.customer_id : o.customer_id || null,
+      vehicle_id: b ? b.vehicle_id : src ? src.vehicle_id : firstCar(o.customer_id),
+      job_date: b ? b.date : base ? base.job_date || "" : today(),
+      issued_on: base ? base.issued_on : today(),
+      location: b ? b.location || "mobile" : src ? src.location : "mobile",
+      items: b ? LGC.linesFromBooking(b, S.settings, SERVICE_NAMES()) : src ? clone(src.items) : [],
+      discMode: src && src.discount_percent != null ? "percent" : src && src.discount_cents ? "amount" : "none",
+      discValue: src && src.discount_percent != null ? String(src.discount_percent) : src && src.discount_cents ? asInput(src.discount_cents) : "",
+      tip: b ? asInput(Math.round((b.tip || 0) * 100)) : base ? asInput(base.tip_cents) : "",
+      notes: src ? src.notes || "" : "", paidWith: b ? b.paid_with || "" : "", query: b && !b.customer_id ? b.name : ""
+    };
+    const title = base ? "Edit " + LGC.invoiceNumber(base) : b ? "Finish job" : o.quote ? "Invoice from " + LGC.invoiceNumber(o.quote) : o.copy ? "Copy of " + LGC.invoiceNumber(o.copy) : kind === "quote" ? "New quote" : "New invoice";
+    openSheet(title, (body) => {
+      const custBox = h("div", { class: "form", style: "gap:10px" }), carBox = h("div"), chipsBox = h("div", { class: "form", style: "gap:12px" });
+      const itemsBox = h("div", { class: "list" }), totalsBox = h("div");
+      const err = h("div", { class: "err", role: "alert", hidden: true });
+      const save = h("button", { class: "btn btn-primary btn-block", type: "submit" });
+      const jobDay = () => st.job_date || today();
+      const priceNow = (p) => Math.round(LGC.priceFor(p, jobDay(), S.settings.dealEnds) * 100);
+
+      function pickCustomer(id, carId) { st.customer_id = id; st.vehicle_id = carId || firstCar(id); drawCustomer(); drawVehicle(); }
+      function drawCustomer() {
+        const c = customerOf(st.customer_id);
+        if (c) {
+          custBox.replaceChildren(h("div", { class: "pick" }, h("div", { class: "avatar" }, initials(c.name)),
+            h("div", { class: "main" }, h("b", {}, c.name), h("span", {}, [c.phone ? fmtPhone(c.phone) : null, [c.address, c.town].filter(Boolean).join(", ")].filter(Boolean).join(" · "))),
+            h("button", { class: "link", type: "button", onclick: () => { st.customer_id = null; st.vehicle_id = null; drawCustomer(); drawVehicle(); } }, "Change")));
+          return;
+        }
+        // Most recent customers first, so today's job is at the top.
+        const lastSeen = new Map();
+        for (const x of S.bookings) if (x.customer_id && (lastSeen.get(x.customer_id) || "") < x.date) lastSeen.set(x.customer_id, x.date);
+        const q = h("input", { type: "search", placeholder: "Search name, phone or car", value: st.query, autocomplete: "off", "aria-label": "Find a customer" });
+        const results = h("div", { class: "list" });
+        const list = () => {
+          const found = S.customers.filter(x => !x.archived && LGC.customerMatches(x, carsOf(x.id), st.query))
+            .sort((a, z) => (lastSeen.get(z.id) || "").localeCompare(lastSeen.get(a.id) || "") || a.name.localeCompare(z.name)).slice(0, 6);
+          results.replaceChildren(...found.map(x => h("button", { class: "item", type: "button", onclick: () => pickCustomer(x.id) }, h("div", { class: "avatar" }, initials(x.name)),
+            h("div", { class: "main" }, h("b", {}, x.name), h("span", {}, [x.phone ? fmtPhone(x.phone) : null, LGC.vehicleLabel(carsOf(x.id)[0]), x.town].filter(Boolean).join(" · "))))));
+          results.hidden = !found.length;
+        };
+        q.addEventListener("input", () => { st.query = q.value; list(); });
+        custBox.replaceChildren(h("div", { class: "search field" }, icon("search", 20), q), results,
+          h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => customerSheet(null, (saved, carId) => pickCustomer(saved.id, carId)) }, icon("plus", 18), "New customer"));
+        list();
+      }
+      function drawVehicle() {
+        if (!st.customer_id) { carBox.replaceChildren(); return; }
+        const cars = carsOf(st.customer_id);
+        carBox.replaceChildren(h("div", { class: "field" }, h("span", { class: "lbl" }, "Vehicle"),
+          chipPicker([...cars.map(v => [v.id, LGC.vehicleLabel(v)]), ["", "None"]], st.vehicle_id || "", false, (k) => { st.vehicle_id = k || null; }),
+          h("button", { class: "link", type: "button", onclick: () => vehicleSheet(null, st.customer_id, (v) => { st.vehicle_id = v.id; }) }, "+ Add a vehicle")));
+      }
+      function addLine(line) {
+        const same = line.ref !== "custom" && st.items.find(l => l.ref === line.ref && l.unit_cents === line.unit_cents && l.name === line.name);
+        if (same) same.qty = Math.min(99, same.qty + 1); else st.items.push(line);
+        haptic(8); drawItems(); drawTotals();
+      }
+      function drawChips() {
+        const sx = S.settings, deal = LGC.dealFor(jobDay(), sx.dealEnds);
+        const chip = (label, fn) => h("button", { type: "button", class: "chip", onclick: fn }, label);
+        const cents = (d) => Math.round(d * 100);
+        chipsBox.replaceChildren(
+          h("div", { class: "field" }, h("span", { class: "lbl" }, "Packages ", h("small", {}, deal ? "launch prices for this job date" : "regular prices for this job date")),
+            h("div", { class: "chips" }, sx.packages.map(p => chip(p.name + " " + short(priceNow(p)), () => addLine({ ref: "pkg:" + p.id, name: p.name, qty: 1, unit_cents: priceNow(p), auto: true }))))),
+          h("div", { class: "field" }, h("span", { class: "lbl" }, "Size & extras"),
+            h("div", { class: "chips" }, sx.sizes.filter(z => z.price).map(z => chip(z.label + " +" + short(cents(z.price)), () => addLine({ ref: "size:" + z.id, name: z.label + " size", qty: 1, unit_cents: cents(z.price) }))),
+              sx.addons.map(a => chip(a.label + " +" + short(cents(a.price)), () => addLine({ ref: "addon:" + a.id, name: a.label, qty: 1, unit_cents: cents(a.price) }))))),
+          h("div", { class: "field" }, h("span", { class: "lbl" }, "Other"),
+            h("div", { class: "chips" },
+              chip(CFG.services.bike.name + " " + short(cents(sx.bike.price)), () => addLine({ ref: "svc:bike", name: CFG.services.bike.name, qty: 1, unit_cents: cents(sx.bike.price) })),
+              chip("House wash " + short(cents(sx.house.price)), () => addLine({ ref: "svc:house", name: CFG.services.house.name, qty: 1, unit_cents: cents(sx.house.price) })),
+              chip("+ Custom item", () => { addLine({ ref: "custom", name: "", qty: 1, unit_cents: 0 }); const last = itemsBox.lastChild && itemsBox.lastChild.querySelector("input"); if (last) last.focus(); }))));
+      }
+      function drawItems() {
+        if (!st.items.length) { itemsBox.replaceChildren(h("p", { class: "muted small", style: "padding:14px;margin:0" }, "Tap a package, extra or service above to add it.")); return; }
+        itemsBox.replaceChildren(...st.items.map((l, i) => {
+          const name = h("input", { value: l.name, maxlength: "80", placeholder: "Description", autocomplete: "off", "aria-label": "Line " + (i + 1) + " description" });
+          name.addEventListener("input", () => { l.name = name.value; });
+          const price = h("input", { type: "text", inputmode: "decimal", value: asInput(l.unit_cents), placeholder: "0", autocomplete: "off", "aria-label": "Line " + (i + 1) + " price each" });
+          const lineTotal = h("b", { class: "line-total" }, LGC.fmtCents(l.unit_cents * l.qty));
+          price.addEventListener("input", () => {
+            const c = price.value.trim() === "" ? 0 : LGC.toCents(price.value);
+            l.unit_cents = Number.isNaN(c) ? -1 : c; l.auto = false;
+            lineTotal.textContent = Number.isNaN(c) ? "–" : LGC.fmtCents(c * l.qty); drawTotals();
+          });
+          const step = (d) => { l.qty = Math.max(0, Math.min(99, l.qty + d)); if (!l.qty) st.items.splice(i, 1); haptic(8); drawItems(); drawTotals(); };
+          return h("div", { class: "inv-line" }, name,
+            h("div", { class: "inv-line-row" },
+              h("div", { class: "qty" }, h("button", { type: "button", "aria-label": l.qty > 1 ? "One fewer" : "Remove this line", onclick: () => step(-1) }, l.qty > 1 ? "−" : "×"),
+                h("span", { "aria-label": "Quantity" }, l.qty), h("button", { type: "button", "aria-label": "One more", onclick: () => step(1) }, "+")),
+              h("div", { class: "money-in" }, price), lineTotal));
+        }));
+      }
+      function buildRow() {
+        const dv = String(st.discValue || "").trim();
+        const row = {
+          kind, customer_id: st.customer_id, vehicle_id: st.vehicle_id || null, job_date: st.job_date || null, issued_on: st.issued_on, location: st.location,
+          items: st.items.map(({ auto, ...l }) => ({ ...l, name: String(l.name || "").trim().slice(0, 80) })),
+          discount_percent: st.discMode === "percent" ? (dv === "" ? 0 : Number(dv)) : null,
+          discount_cents: st.discMode === "amount" ? (dv === "" ? 0 : LGC.toCents(dv)) : 0,
+          tax_percent: taxPct, tip_cents: st.tip.trim() === "" ? 0 : LGC.toCents(st.tip), notes: st.notes.trim().slice(0, 1000) || null
+        };
+        const t = LGC.invoiceTotals(row);
+        return { ...row, subtotal_cents: t.subtotal, discount_cents: t.discount, tax_cents: t.tax, total_cents: t.total };
+      }
+      function drawTotals() {
+        const r = buildRow();
+        totalsBox.replaceChildren(totalsCard({ subtotal: r.subtotal_cents, discount: r.discount_cents, tax: r.tax_cents, tip: r.tip_cents || 0, total: r.total_cents }, taxPct, r.discount_percent));
+        save.replaceChildren(icon("check", 18), (base ? "Save changes" : kind === "quote" ? "Save quote" : "Save invoice") + " · " + LGC.fmtCents(r.total_cents));
+      }
+
+      const date = h("input", { type: "date", value: st.job_date || "" });
+      date.addEventListener("change", () => {
+        st.job_date = date.value;
+        // Packages added from the chips follow the job date (launch vs regular); prices typed by hand stay put.
+        for (const l of st.items) { const p = l.auto && S.settings.packages.find(x => "pkg:" + x.id === l.ref); if (p) l.unit_cents = priceNow(p); }
+        drawChips(); drawItems(); drawTotals();
+      });
+      const loc = chipPicker([["mobile", "Their place"], ["dropoff", "Drop-off"]], st.location, false, (k) => { st.location = k; });
+      const discVal = h("input", { type: "text", inputmode: "decimal", value: st.discValue, placeholder: "0", autocomplete: "off", "aria-label": "Discount" });
+      const discWrap = h("div", { class: st.discMode === "percent" ? "pct-in" : "money-in", hidden: st.discMode === "none" }, discVal);
+      discVal.addEventListener("input", () => { st.discValue = discVal.value; drawTotals(); });
+      const discMode = chipPicker([["none", "No discount"], ["amount", "$ off"], ["percent", "% off"]], st.discMode, false, (k) => {
+        st.discMode = k; discWrap.className = k === "percent" ? "pct-in" : "money-in"; discWrap.hidden = k === "none"; drawTotals();
+        if (k !== "none") discVal.focus();
+      });
+      const tip = h("input", { type: "text", inputmode: "decimal", value: st.tip, placeholder: "0", autocomplete: "off", "aria-label": "Tip" });
+      tip.addEventListener("input", () => { st.tip = tip.value; drawTotals(); });
+      const notes = h("textarea", { maxlength: "1000", placeholder: kind === "quote" ? "What's included, how long it takes…" : "Anything the customer should see on the invoice" }, st.notes);
+      notes.addEventListener("input", () => { st.notes = notes.value; });
+      const paid = b ? h("div", { class: "field" }, h("span", { class: "lbl" }, "Paid with ", h("small", {}, "optional")),
+        chipPicker(CFG.payments.methods.map(m => [m, m]), st.paidWith, false, (k) => { st.paidWith = k; })) : null;
+
+      const form = h("form", { class: "form" },
+        h("div", { class: "field" }, h("span", { class: "lbl" }, "Customer"), custBox), carBox,
+        h("div", { class: "row2" }, field("Job date", date), h("div", { class: "field" }, h("span", { class: "lbl" }, "Where"), loc)),
+        h("div", { class: "sec-title" }, h("h2", {}, "Services")), chipsBox, itemsBox,
+        h("div", { class: "field" }, h("span", { class: "lbl" }, "Discount"), discMode), discWrap,
+        field("Tip", h("div", { class: "money-in" }, tip), "optional"),
+        totalsBox, field("Notes", notes, "optional"), paid, err, save);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault(); err.hidden = true;
+        const row = buildRow(), problems = [];
+        if (st.discMode === "amount" && st.discValue.trim() && Number.isNaN(LGC.toCents(st.discValue))) problems.push("Check the discount amount.");
+        if (st.tip.trim() && Number.isNaN(LGC.toCents(st.tip))) problems.push("Check the tip amount.");
+        if (st.job_date && !/^\d{4}-\d{2}-\d{2}$/.test(st.job_date)) problems.push("Pick the job date again.");
+        if (!problems.length) problems.push(...LGC.invoiceProblems(row));
+        if (problems.length) { err.textContent = problems.join(" "); err.hidden = false; haptic([20, 40, 20]); err.scrollIntoView({ block: "nearest" }); return; }
+        if (!base) {
+          row.prefix = kind === "quote" ? IS.quotePrefix : IS.invoicePrefix;
+          // A finished job's invoice is already in the customer's hands, so it starts out sent.
+          row.state = kind === "invoice" && (b || o.quote) ? "sent" : "draft";
+          row.due_on = kind === "invoice" ? LGC.addDays(row.issued_on, IS.overdueDays) : null;
+          if (b) row.booking_id = b.id;
+          if (o.quote) row.quote_id = o.quote.id;
+        }
+        let saved = null;
+        const ok = await run(save, async () => {
+          saved = normInvoice(await api.saveInvoice(base ? { id: base.id, ...row } : row));
+          replaceIn(S.invoices, saved);
+          await syncBooking(saved, b ? st.paidWith : null);
+        });
+        if (!ok) return;
+        toast(base ? "Saved" : (kind === "quote" ? "Quote " : "Invoice ") + LGC.invoiceNumber(saved) + " saved"); haptic(15); softRender();
+        if (base) closeSheet(); else replaceSheet(LGC.invoiceNumber(saved), invoiceBuilder(saved.id));
+      });
+      drawCustomer(); drawVehicle(); drawChips(); drawItems(); drawTotals();
+      body.append(form);
+    });
+  }
+
+  // ===== Invoice settings (owner-only invoice_settings row; prints on every invoice and quote) =====
+  function vInvoiceSettings(v) {
+    const s = clone(S.invoiceSettings);
+    const dirty = () => { S.dirty = true; saveBtn.disabled = false; };
+    const inp = (key, attrs) => { const i = h("input", { value: s[key] == null ? "" : String(s[key]), autocomplete: "off", ...(attrs || {}) }); i.addEventListener("input", dirty); return i; };
+    const area = (key) => { const t = h("textarea", { maxlength: "300", style: "min-height:80px" }, s[key] || ""); t.addEventListener("input", dirty); return t; };
+    const f = {
+      businessName: inp("businessName", { maxlength: "60" }), ownerName: inp("ownerName", { maxlength: "60" }),
+      phone: inp("phone", { type: "tel", inputmode: "tel" }), email: inp("email", { type: "email", inputmode: "email", maxlength: "120" }),
+      website: inp("website", { inputmode: "url", maxlength: "120" }),
+      cashApp: inp("cashApp", { maxlength: "31", placeholder: "$YourCashtag" }), venmo: inp("venmo", { maxlength: "31", placeholder: "@your-username" }),
+      invoicePrefix: inp("invoicePrefix", { maxlength: "10" }), quotePrefix: inp("quotePrefix", { maxlength: "10" }),
+      taxPercent: inp("taxPercent", { inputmode: "decimal" }), overdueDays: inp("overdueDays", { type: "number", inputmode: "numeric", min: "0", max: "90" }),
+      note: area("note"), terms: area("terms")
+    };
+    const nextNo = S.invoices.filter(i => i.kind === "invoice").reduce((n, i) => Math.max(n, i.number || 0), 0) + 1;
+    const preview = h("span", {});
+    const showPreview = () => { preview.textContent = "Your next invoice will be " + LGC.invoiceNumber({ prefix: f.invoicePrefix.value.trim(), number: nextNo }) + "."; };
+    f.invoicePrefix.addEventListener("input", showPreview); showPreview();
+    const err = h("div", { class: "err", role: "alert", hidden: true });
+    const saveBtn = h("button", { class: "btn btn-primary btn-block", type: "submit", disabled: true }, icon("check", 18), "Save invoice settings");
+    const section = (title, ...kids) => h("div", { class: "card" }, h("h3", {}, title), ...kids);
+    const form = h("form", { class: "form", style: "gap:16px" },
+      h("div", { class: "note" }, "Only you see this screen. It's what prints on your invoices and quotes. Your home address is never printed."),
+      section("Business details", field("Business name", f.businessName), field("Your name", f.ownerName, "blank hides it"),
+        h("div", { class: "row2" }, field("Phone", f.phone), field("Email", f.email)), field("Website", f.website, "blank hides it")),
+      section("Payment options", h("div", { class: "row2" }, field("Cash App", f.cashApp), field("Venmo", f.venmo)),
+        h("p", { class: "muted small" }, "Shown on every invoice, with tap-to-pay links. Blank hides one.")),
+      section("Numbers, tax and due date", h("div", { class: "row2" }, field("Invoice prefix", f.invoicePrefix), field("Quote prefix", f.quotePrefix)),
+        h("p", { class: "muted small" }, preview, " Changing the prefix only affects new ones."),
+        h("div", { class: "row2" }, field("Sales tax %", f.taxPercent), field("Overdue after (days)", f.overdueDays)),
+        h("p", { class: "muted small" }, "Tax stays at 0% until your accountant confirms the New York rules. When it's on, it's added to new invoices on the price after discounts, never on tips.")),
+      section("Wording", field("Thank-you note", f.note), field("Terms", f.terms)),
+      err, saveBtn);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault(); err.hidden = true;
+      const val = (k) => f[k].value.trim();
+      const tag = (v, sym) => v && !v.startsWith(sym) ? sym + v : v;
+      const next = {
+        businessName: val("businessName"), ownerName: val("ownerName"), phone: val("phone") ? fmtPhone(val("phone")) : "", email: val("email").toLowerCase(), website: val("website").replace(/^https?:\/\//, "").replace(/\/$/, ""),
+        cashApp: tag(val("cashApp").replace(/\s/g, ""), "$"), venmo: tag(val("venmo").replace(/\s/g, ""), "@"),
+        invoicePrefix: val("invoicePrefix"), quotePrefix: val("quotePrefix"),
+        taxPercent: val("taxPercent") === "" ? 0 : Number(val("taxPercent")), overdueDays: val("overdueDays") === "" ? 0 : Number(val("overdueDays")),
+        note: val("note"), terms: val("terms")
+      };
+      const problems = [];
+      if (!next.businessName) problems.push("add the business name");
+      if (next.phone && digits10(next.phone).length !== 10) problems.push("use a 10-digit phone");
+      if (next.email && !LGC.isEmail(next.email)) problems.push("check the email address");
+      if (next.cashApp && !/^\$[A-Za-z][A-Za-z0-9_-]{0,30}$/.test(next.cashApp)) problems.push("a Cash App tag is $ then letters and numbers");
+      if (next.venmo && !/^@[A-Za-z0-9_-]{1,30}$/.test(next.venmo)) problems.push("a Venmo name is @ then letters, numbers and dashes");
+      for (const k of ["invoicePrefix", "quotePrefix"]) if (!/^[A-Za-z0-9-]{0,10}$/.test(next[k])) problems.push("prefixes use letters, numbers and dashes (up to 10)");
+      if (!(next.taxPercent >= 0 && next.taxPercent <= 25)) problems.push("sales tax must be 0–25%");
+      if (!(Number.isInteger(next.overdueDays) && next.overdueDays >= 0 && next.overdueDays <= 90)) problems.push("overdue days must be a whole number from 0 to 90");
+      if (problems.length) { err.textContent = "Fix first: " + [...new Set(problems)].join("; ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
+      const ok = await run(saveBtn, async () => { S.invoiceSettings = LGC.mergeInvoiceSettings(CFG.invoices, await api.saveInvoiceSettings(next)); });
+      if (ok) { S.dirty = false; toast("Invoice settings saved"); haptic(20); render(false); }
+    });
+    v.append(form);
   }
 
   // ===== Social =====
@@ -1459,7 +1866,8 @@
       item("money", "Money", "Earnings, tips, expenses, profit", () => go("money", true)),
       item("megaphone", "Social", "Post templates, planner, followers", () => go("social", true)),
       item("star", "Reviews", pending ? pending + " waiting for approval" : "Approve and share reviews", () => go("reviews", true), pending ? h("span", { class: "pill st-Requested" }, pending + " new") : null),
-      item("gear", "Settings", "Prices, hours, days off, social links", () => go("settings", true))));
+      item("gear", "Settings", "Prices, extras, hours, days off, social links", () => go("settings", true)),
+      item("receipt", "Invoice settings", "Business details, payment handles, tax, numbering", () => go("invsettings", true))));
     v.append(h("div", { class: "list" }, alertsItem()));
     v.append(h("p", { class: "muted small", style: "margin:-6px 4px 0" }, "Alerts work with the app closed. On iPhone they only work in the app added to your home screen, on iOS 16.4 or newer."));
     v.append(h("div", { class: "list" },
@@ -1714,6 +2122,34 @@
       h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => { const d = offIn.value; if (/^\d{4}-\d{2}-\d{2}$/.test(d) && !st.daysOff.includes(d)) { st.daysOff.push(d); drawOff(); dirty(); } offIn.value = ""; } }, "Add"));
     drawOff();
     const num = (val, label, on) => { const i = h("input", { type: "number", inputmode: "numeric", min: "0", max: "1000", value: String(val), "aria-label": label }); i.addEventListener("input", () => { on(Number(i.value)); dirty(); }); return h("div", { class: "money-in" }, i); };
+    // Extras: rename, reprice, remove, add new ones (pet hair, engine bay…), and choose which the website offers.
+    const extrasBox = h("div", { style: "display:grid;gap:10px" });
+    const newLabel = h("input", { class: "input", maxlength: "40", placeholder: "e.g. Pet hair removal", "aria-label": "New extra name" });
+    const newPrice = h("input", { type: "number", inputmode: "numeric", min: "0", max: "1000", placeholder: "25", "aria-label": "New extra price" });
+    const drawExtras = () => extrasBox.replaceChildren(...st.addons.map((a, i) => {
+      const label = h("input", { class: "input", value: a.label, maxlength: "40", "aria-label": "Extra name" });
+      label.addEventListener("input", () => { a.label = label.value; dirty(); });
+      const onWeb = a.web !== false;
+      return h("div", { class: "extra-row" },
+        h("div", { class: "row2" }, label, num(a.price, a.label + " price", (x) => a.price = x)),
+        h("div", { class: "extra-foot" },
+          h("button", { class: "toggle", type: "button", role: "switch", "aria-checked": String(onWeb), onclick: () => { if (onWeb) a.web = false; else delete a.web; dirty(); drawExtras(); } },
+            h("span", { class: "switch" + (onWeb ? " on" : ""), "aria-hidden": "true" }), onWeb ? "On the website" : "Invoices only"),
+          h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => {
+            if (st.addons.length < 2) { toast("Keep at least one extra. Switch it to Invoices only to hide it from the website."); return; }
+            st.addons.splice(i, 1); dirty(); drawExtras();
+          } }, icon("trash", 16), "Remove")));
+    }), h("div", { class: "extra-row" }, h("div", { class: "row2" }, newLabel, h("div", { class: "money-in" }, newPrice)),
+      h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => {
+        const label = newLabel.value.trim(), price = Number(newPrice.value);
+        if (!label) { toast("Name the extra first"); newLabel.focus(); return; }
+        if (st.addons.some(a => a.label.trim().toLowerCase() === label.toLowerCase())) { toast("You already have " + label); return; }
+        if (newPrice.value === "" || !(price >= 0 && price <= 1000)) { toast("Give it a price from $0 to $1,000"); newPrice.focus(); return; }
+        // New extras start as invoice-only, so the public website never changes by surprise.
+        const id = (label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20) || "extra") + "-" + Math.random().toString(36).slice(2, 6);
+        st.addons.push({ id, label, price, web: false }); newLabel.value = ""; newPrice.value = ""; dirty(); drawExtras();
+      } }, icon("plus", 16), "Add extra")));
+    drawExtras();
     const phone = h("input", { type: "tel", inputmode: "tel", value: st.phone });
     const deal = h("input", { type: "date", value: st.dealEnds || "" });
     const start = h("input", { type: "date", value: st.startDate || "" });
@@ -1724,10 +2160,11 @@
     const form = h("form", { class: "form", style: "gap:16px" },
       h("div", { class: "note" }, "Saving here changes the live website right away: prices, open times, days off and links."),
       section("Contact", field("Phone customers call or text", phone)),
-      section("Launch deal", field("Deal ends (last day)", deal), h("p", { class: "muted small" }, "After that day the website switches to regular prices by itself. Clear it to end the deal now.")),
+      section("Launch deal", field("Deal ends (last day)", deal), h("p", { class: "muted small" }, "After that day the website switches to regular prices by itself, and new invoices use launch prices only for jobs dated on or before it. Clear it to end the deal now.")),
       section("Prices", ...st.packages.map(p => h("div", { class: "field" }, h("span", { class: "lbl" }, p.name),
         h("div", { class: "row2" }, h("div", { class: "field" }, h("small", {}, "Deal price"), num(p.deal, p.name + " deal price", (x) => p.deal = x)), h("div", { class: "field" }, h("small", {}, "Regular price"), num(p.regular, p.name + " regular price", (x) => p.regular = x)))))),
-      section("Vehicle sizes & extras", h("p", { class: "muted small" }, "Added on top of the package price."), ...[...st.sizes, ...st.addons].map(a => h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, a.label), num(a.price, a.label + " price", (x) => a.price = x)))),
+      section("Vehicle sizes", h("p", { class: "muted small" }, "Added on top of the package price."), ...st.sizes.map(a => h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, a.label), num(a.price, a.label + " price", (x) => a.price = x)))),
+      section("Extras & add-on services", h("p", { class: "muted small" }, "Added on top of a package, on the website and on invoices. New ones start as Invoices only; switch one on to offer it on the website too."), extrasBox),
       section("Bikes & house washing", h("p", { class: "muted small" }, "One price each. A house wash books the whole day."),
         h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Bike or e-bike detail"), num(st.bike.price, "Bike detail price", (x) => st.bike.price = x)),
         h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Full house pressure wash"), num(st.house.price, "House wash price", (x) => st.house.price = x))),
@@ -1749,7 +2186,10 @@
       const problems = [];
       if (digits10(next.phone).length !== 10) problems.push("the phone needs 10 digits");
       for (const p of next.packages) if (!(p.deal >= 0 && p.deal <= 1000 && p.regular >= 0 && p.regular <= 1000)) problems.push(p.name + " prices must be $0–$1,000");
-      for (const a of [...next.sizes, ...next.addons]) if (!(a.price >= 0 && a.price <= 1000)) problems.push(a.label + " must be $0–$1,000");
+      for (const a of next.addons) a.label = a.label.trim();
+      if (next.addons.some(a => !a.label)) problems.push("every extra needs a name");
+      if (new Set(next.addons.map(a => a.label.toLowerCase())).size < next.addons.length) problems.push("two extras have the same name");
+      for (const a of [...next.sizes, ...next.addons]) if (!(a.price >= 0 && a.price <= 1000)) problems.push((a.label || "An extra") + " must be $0–$1,000");
       if (!(next.bike.price >= 0 && next.bike.price <= 1000)) problems.push("the bike price must be $0–$1,000");
       if (!(next.house.price >= 0 && next.house.price <= 1000)) problems.push("the house wash price must be $0–$1,000");
       for (const [k, val] of Object.entries(next.socials)) if (val && !/^https:\/\/[^\s"'<>]+$/.test(val)) problems.push(SOC.find(s => s.k === k).label + " link must start with https://");
