@@ -279,6 +279,8 @@ nav.links a:hover{color:var(--fg);background:var(--panel)}
 .summary .eyebrow{color:#0a6f93}
 .summary .line{display:flex;justify-content:space-between;gap:12px;font-weight:600;font-variant-numeric:tabular-nums}
 .summary .line span:first-child{color:#3a414c}
+.summary .line span:last-child{white-space:nowrap}
+.summary .line.save span{color:#0a6b35;font-weight:800}
 .summary .total{border-top:2px dashed #c9ced6;padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end}
 .summary .total b{font-family:var(--display);font-weight:400;font-size:58px;line-height:.9}
 .summary .when{font-weight:800}
@@ -674,10 +676,13 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
 <div class="mbar" id="mbar"><div><b id="mbarPrice">From $25</b><small id="mbarSub">Mobile detailing · Orange County</small></div><div class="btns"><a class="btn btn-ghost btn-sm" data-sms href="sms:+18452829387" aria-label="Text Andrew">Text</a><a class="btn btn-primary btn-sm" id="mbarBtn" href="#book">Book now</a></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="app/discounts.js"></script>
 <script>
 (() => {
   "use strict";
   document.documentElement.classList.add("js");
+  // Discount rules shared with LGC Pro (app/discounts.js). If that file can't load, quotes simply carry no discount.
+  const LGD = window.LGD || null;
 
   // ===== Defaults. The owner dashboard can override these live (prices, hours, links, days off)
   // through the site_settings row in Supabase; the site falls back to these if that can't load. =====
@@ -705,7 +710,9 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     ],
     bike: { price: 20 },
     house: { price: 300 },
-    socials: { instagram: "https://www.instagram.com/lettsgetclean", tiktok: "https://www.tiktok.com/@lettsgetclean", facebook: "", google: "" }
+    socials: { instagram: "https://www.instagram.com/lettsgetclean", tiktok: "https://www.tiktok.com/@lettsgetclean", facebook: "", google: "" },
+    // Holiday promos, military and two-car deals, each with an on/off switch (edited in LGC Pro → Settings).
+    discounts: LGD ? LGD.DEFAULT_DISCOUNTS : null
   };
   // Bikes and houses have one price each; cars have packages, sizes and extras.
   const SERVICE_NAMES = { bike: "Bike detail", house: "Full house pressure wash" };
@@ -842,6 +849,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       for (const s of SOC) { const v = d.socials[s.k]; out.socials[s.k] = typeof v === "string" && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : ""; }
     }
     for (const k of ["bike", "house"]) if (d[k] && num(d[k].price)) out[k] = { price: Number(d[k].price) };
+    if (LGD) out.discounts = LGD.mergeDiscounts(base.discounts, d.discounts);
     return out;
   }
 
@@ -1069,17 +1077,26 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
   }
 
   // name/label/adds are what the booking row stores (package, size, addons); lines are the quote card.
+  // discount is the one discount this booking gets (the biggest it qualifies for), already taken off total.
   function quote() {
     const st = S.settings, svc = sel.service;
-    if (svc === "bike") return { svc, name: SERVICE_NAMES.bike, label: sel.bike, adds: [], total: st.bike.price, deal: false, lines: [[SERVICE_NAMES.bike + " · " + sel.bike, money(st.bike.price)]] };
-    if (svc === "house") return { svc, name: SERVICE_NAMES.house, label: "House", adds: [], total: st.house.price, deal: false, lines: [[SERVICE_NAMES.house + " · whole day", money(st.house.price)]] };
-    const p = pkg(sel.pkg);
-    const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
-    const adds = st.addons.filter(a => sel.addons.has(a.id));
-    const lines = [[p.name + (dealOn() && p.regular > p.deal ? " (launch price)" : ""), money(priceOf(p))]];
-    if (size.price) lines.push([size.label, "+" + money(size.price)]);
-    adds.forEach(a => lines.push([a.label, "+" + money(a.price)]));
-    return { svc, name: p.name, label: size.label, adds, total: priceOf(p) + (size.price || 0) + adds.reduce((n, a) => n + a.price, 0), deal: dealOn(), lines };
+    let q;
+    if (svc === "bike") q = { svc, name: SERVICE_NAMES.bike, label: sel.bike, adds: [], subtotal: st.bike.price, deal: false, lines: [[SERVICE_NAMES.bike + " · " + sel.bike, money(st.bike.price)]] };
+    else if (svc === "house") q = { svc, name: SERVICE_NAMES.house, label: "House", adds: [], subtotal: st.house.price, deal: false, lines: [[SERVICE_NAMES.house + " · whole day", money(st.house.price)]] };
+    else {
+      const p = pkg(sel.pkg);
+      const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
+      const adds = st.addons.filter(a => sel.addons.has(a.id));
+      const lines = [[p.name + (dealOn() && p.regular > p.deal ? " (launch price)" : ""), money(priceOf(p))]];
+      if (size.price) lines.push([size.label, "+" + money(size.price)]);
+      adds.forEach(a => lines.push([a.label, "+" + money(a.price)]));
+      q = { svc, name: p.name, label: size.label, adds, subtotal: priceOf(p) + (size.price || 0) + adds.reduce((n, a) => n + a.price, 0), deal: dealOn(), lines };
+    }
+    // Promos follow the day of booking, the same way the launch price does.
+    q.discount = LGD && st.discounts ? LGD.bestDiscount({ service: svc, subtotal: q.subtotal }, st.discounts, ymd(new Date())) : null;
+    if (q.discount) q.lines.push([q.discount.label, "−" + money(q.discount.amount)]);
+    q.total = q.subtotal - (q.discount ? q.discount.amount : 0);
+    return q;
   }
   function whenText(date, time) {
     return fmtDate(date, { weekday: "long", month: "short", day: "numeric" }) + (sel.service === "house" ? " · all day" : " at " + fmtTime(time));
@@ -1092,7 +1109,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
   function renderSummary() {
     const q = quote();
     $("sumPkg").textContent = q.svc === "house" ? "House wash" : q.name;
-    $("sumLines").replaceChildren(...q.lines.map(([a, b]) => h("div", { class: "line" }, h("span", {}, a), h("span", {}, b))));
+    $("sumLines").replaceChildren(...q.lines.map(([a, b]) => h("div", { class: "line" + (b.startsWith("−") ? " save" : "") }, h("span", {}, a), h("span", {}, b))));
     $("sumTotal").textContent = money(q.total);
     $("sumWhen").textContent = (sel.date && sel.time ? whenText(sel.date, sel.time) : sel.date ? fmtDate(sel.date) + " · pick a time" : sel.service === "house" ? "Pick a free day" : "Pick a day and time") + (sel.loc === "dropoff" ? " · Drop-off" : " · We come to you");
     // Bikes and houses skip the vehicle step, so they have 3 steps instead of 4.
@@ -1138,6 +1155,8 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       package: q.name.slice(0, 40), size: q.label.slice(0, 40), addons: q.adds.map(a => a.label).join(", ").slice(0, 150) || null, total: q.total,
       source: v("fSource").slice(0, 30) || null, notes: v("fNotes").slice(0, 500) || null, deal: q.deal
     };
+    // Only sent when there is one, so a booking without a discount never depends on the newer columns.
+    if (q.discount) { booking.discount = q.discount.label.slice(0, 80); booking.discount_amount = q.discount.amount; }
     const btn = $("bookBtn"); btn.disabled = true; btn.textContent = "Booking…";
     let result = "fail";
     if ($("hp1").value) result = "ok"; // spam trap: pretend it worked
@@ -1168,6 +1187,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       "Hi Andrew! Booking request - Letts Get Clean",
       fmtDate(b.date, { weekday: "long", month: "short", day: "numeric" }) + (q.svc === "house" ? " (all day)" : " at " + fmtTime(b.time)),
       q.name + " - " + q.label + (q.adds.length ? " - " + q.adds.map(a => a.label).join(", ") : ""),
+      ...(q.discount ? ["Discount: " + q.discount.label + " -" + money(q.discount.amount)] : []),
       "Total: " + money(q.total),
       b.location === "dropoff" ? "Drop-off at your place (please text me the address)" : "At my place: " + b.address + ", " + b.town,
       "Name: " + b.name, "Phone: " + b.phone
@@ -1213,7 +1233,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       h("h3", {}, when),
       h("div", { class: "recap" },
         h("b", {}, `${q.name} · ${q.label}${q.adds.length ? " · " + q.adds.map(a => a.label).join(", ") : ""}`),
-        h("span", { class: "muted" }, "Total " + money(q.total) + " · pay after the job"),
+        h("span", { class: "muted" }, "Total " + money(q.total) + (q.discount ? " (you save " + money(q.discount.amount) + ": " + q.discount.label + ")" : "") + " · pay after the job"),
         h("span", { class: "muted" }, b.location === "dropoff" ? "Drop-off at Andrew's in Newburgh" : b.address + ", " + b.town)),
       saved
         ? h("ol", {}, h("li", {}, h("b", {}, "Send Andrew the booking text"), " (tap the button below) so he sees it right away."),

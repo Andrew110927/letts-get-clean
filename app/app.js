@@ -148,6 +148,8 @@
   const SOC = CFG.social.platforms;
   function mergeSettings(base, d) {
     const out = clone(base);
+    // Discounts follow the same rules as the website (discounts.js), even before any have been saved.
+    out.discounts = LGD.mergeDiscounts(base.discounts || LGD.DEFAULT_DISCOUNTS, d && d.discounts);
     if (!d || typeof d !== "object") return out;
     const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
     const isTimes = (v) => Array.isArray(v) && v.length > 0 && v.every(t => typeof t === "string" && /^\d{2}:\d{2}$/.test(t));
@@ -773,6 +775,7 @@
         [b.service === "bike" ? "Bike type" : "Vehicle", isHouse(b) ? null : b.size], ["Extras", b.addons], [b.service === "bike" ? "Bike" : "Car", b.car],
         ["Where", drop ? "Drop-off at your place" : [b.address, b.town].filter(Boolean).join(", ")],
         ["Phone", fmtPhone(b.phone)], ["Heard about us", b.source],
+        b.discount ? ["Discount", b.discount + " · −" + money(b.discount_amount)] : null,
         ["Total", money(b.total) + (b.deal ? " · launch price" : "")],
         b.status === "Done" ? ["Tip", money(b.tip)] : null, b.paid_with ? ["Paid with", b.paid_with] : null,
         ["Booked", b.created_at ? new Date(b.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : ""]
@@ -1714,6 +1717,44 @@
       h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => { const d = offIn.value; if (/^\d{4}-\d{2}-\d{2}$/.test(d) && !st.daysOff.includes(d)) { st.daysOff.push(d); drawOff(); dirty(); } offIn.value = ""; } }, "Add"));
     drawOff();
     const num = (val, label, on) => { const i = h("input", { type: "number", inputmode: "numeric", min: "0", max: "1000", value: String(val), "aria-label": label }); i.addEventListener("input", () => { on(Number(i.value)); dirty(); }); return h("div", { class: "money-in" }, i); };
+
+    // Discounts: each has its own switch, and a booking only ever gets the single biggest one (discounts.js).
+    const disc = st.discounts;
+    const onOff = (title, sub, get, set) => {
+      const sw = h("span", { class: "switch" + (get() ? " on" : ""), "aria-hidden": "true" });
+      const b = h("button", { class: "item", type: "button", role: "switch", "aria-checked": String(get()), style: "padding:8px 0;min-height:52px" },
+        h("div", { class: "main" }, h("b", {}, title), sub ? h("span", {}, sub) : null), sw);
+      b.addEventListener("click", () => { set(!get()); b.setAttribute("aria-checked", String(get())); sw.classList.toggle("on", get()); dirty(); });
+      return b;
+    };
+    const plain = (val, label, on) => { const i = h("input", { type: "number", inputmode: "numeric", min: "1", max: "500", value: String(val), "aria-label": label }); i.addEventListener("input", () => { on(Number(i.value)); dirty(); }); return i; };
+    const SVC_LABEL = { car: "Car details", bike: "Bike details", house: "House washes" };
+    const svcChecks = (p) => h("div", { class: "chips" }, ...LGD.SERVICES.map(s => {
+      const c = h("input", { type: "checkbox", checked: p.services.includes(s) });
+      c.addEventListener("change", () => { p.services = c.checked ? [...new Set([...p.services, s])] : p.services.filter(x => x !== s); dirty(); });
+      return h("label", { class: "check", style: "padding:8px 12px" }, c, SVC_LABEL[s]);
+    }));
+    const promoState = (p) => !p.on ? "Off" : today() < p.start ? "On · starts " + fmtDate(p.start) : today() > p.end ? "On · ended " + fmtDate(p.end) : "On · running now";
+    const promoBox = h("div", { style: "display:grid;gap:12px" });
+    const drawPromos = () => promoBox.replaceChildren(...disc.promos.map((p, i) => {
+      const text = (key, max) => { const t = h("input", { value: p[key] || "", maxlength: String(max) }); t.addEventListener("input", () => { p[key] = t.value; dirty(); }); return t; };
+      const date = (key) => { const t = h("input", { type: "date", value: p[key] }); t.addEventListener("input", () => { p[key] = t.value; dirty(); }); return t; };
+      const kind = h("select", {}, h("option", { value: "percent", selected: p.kind === "percent" }, "% off"), h("option", { value: "amount", selected: p.kind === "amount" }, "$ off"));
+      kind.addEventListener("change", () => { p.kind = kind.value; dirty(); });
+      return h("div", { class: "card", style: "background:var(--panel2);gap:10px" },
+        onOff(p.name || "Promo", promoState(p), () => p.on, (x) => { p.on = x; drawPromos(); }),
+        field("Name", text("name", 60)), field("Banner message", text("message", 120)),
+        h("div", { class: "row2" }, field("Discount", kind), field("Amount", plain(p.value, "Promo amount", (x) => p.value = x))),
+        // Stacked, not side by side: phone date boxes are too wide for two in a row.
+        field("Starts", date("start")), field("Ends (last day)", date("end")),
+        h("div", { class: "field" }, h("span", { class: "lbl" }, "Applies to"), svcChecks(p)),
+        sureBtn("btn btn-ghost btn-sm", "Remove this promo", "Tap to remove", () => { disc.promos.splice(i, 1); drawPromos(); dirty(); }));
+    }), h("button", { class: "btn btn-ghost", type: "button", onclick: () => {
+      const t = today();
+      disc.promos.push({ id: "promo-" + Date.now().toString(36), name: "New promo", message: "", kind: "percent", value: 10, start: t, end: addDays(t, 7), on: false, services: ["car"] });
+      drawPromos(); dirty();
+    } }, icon("plus", 18), "Add a promo"));
+    drawPromos();
     const phone = h("input", { type: "tel", inputmode: "tel", value: st.phone });
     const deal = h("input", { type: "date", value: st.dealEnds || "" });
     const start = h("input", { type: "date", value: st.startDate || "" });
@@ -1725,6 +1766,13 @@
       h("div", { class: "note" }, "Saving here changes the live website right away: prices, open times, days off and links."),
       section("Contact", field("Phone customers call or text", phone)),
       section("Launch deal", field("Deal ends (last day)", deal), h("p", { class: "muted small" }, "After that day the website switches to regular prices by itself. Clear it to end the deal now.")),
+      section("Discounts & promos",
+        h("p", { class: "muted small" }, "A booking gets one discount at most: whichever saves the customer the most. Discounts come off launch prices too, and promos follow the day the customer books."),
+        onOff("Military & first responders", "When they tick the box on the booking form. They show ID at the job.", () => disc.military.on, (x) => { disc.military.on = x; }),
+        h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Percent off"), plain(disc.military.percent, "Military percent off", (x) => disc.military.percent = x)),
+        onOff("Two-car deal", "Two cars at the same address on the same day.", () => disc.twoCar.on, (x) => { disc.twoCar.on = x; }),
+        h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Off the second car"), num(disc.twoCar.amount, "Two-car dollars off", (x) => disc.twoCar.amount = x)),
+        h("div", { class: "field" }, h("span", { class: "lbl" }, "Holiday & seasonal promos"), promoBox)),
       section("Prices", ...st.packages.map(p => h("div", { class: "field" }, h("span", { class: "lbl" }, p.name),
         h("div", { class: "row2" }, h("div", { class: "field" }, h("small", {}, "Deal price"), num(p.deal, p.name + " deal price", (x) => p.deal = x)), h("div", { class: "field" }, h("small", {}, "Regular price"), num(p.regular, p.name + " regular price", (x) => p.regular = x)))))),
       section("Vehicle sizes & extras", h("p", { class: "muted small" }, "Added on top of the package price."), ...[...st.sizes, ...st.addons].map(a => h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, a.label), num(a.price, a.label + " price", (x) => a.price = x)))),
@@ -1753,6 +1801,18 @@
       if (!(next.bike.price >= 0 && next.bike.price <= 1000)) problems.push("the bike price must be $0–$1,000");
       if (!(next.house.price >= 0 && next.house.price <= 1000)) problems.push("the house wash price must be $0–$1,000");
       for (const [k, val] of Object.entries(next.socials)) if (val && !/^https:\/\/[^\s"'<>]+$/.test(val)) problems.push(SOC.find(s => s.k === k).label + " link must start with https://");
+      const D = next.discounts, whole = (x, lo, hi) => Number.isInteger(x) && x >= lo && x <= hi;
+      if (!whole(D.military.percent, 1, 90)) problems.push("the military discount must be 1–90%");
+      if (!whole(D.twoCar.amount, 1, 500)) problems.push("the two-car deal must be $1–$500");
+      for (const p of D.promos) {
+        p.name = String(p.name || "").trim(); p.message = String(p.message || "").trim() || p.name;
+        const n = p.name || "A promo";
+        if (!p.name) problems.push("every promo needs a name");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(p.start) || !/^\d{4}-\d{2}-\d{2}$/.test(p.end)) problems.push(n + " needs a start and end date");
+        else if (p.end < p.start) problems.push(n + " ends before it starts");
+        if (!whole(p.value, 1, p.kind === "percent" ? 90 : 500)) problems.push(n + (p.kind === "percent" ? " must be 1–90% off" : " must be $1–$500 off"));
+        if (!p.services.length) problems.push(n + " has to apply to at least one service");
+      }
       if (problems.length) { err.textContent = "Fix first: " + problems.join("; ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
       const ok = await run(saveBtn, async () => { S.settings = mergeSettings(CFG.defaults, await api.saveSettings(next)); });
       if (ok) { S.dirty = false; toast("Saved · the website is updated"); haptic(20); render(false); }
