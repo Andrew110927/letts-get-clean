@@ -134,6 +134,45 @@ test("negative profit is written as a plain negative number", () => {
   assert.equal(parseCsv(LGC.toCsv([total]))[0][7], "-215.00", "not turned into text by the formula guard");
 });
 
+// A pretend table behind a server that hands back at most `cap` rows per request.
+function server(n, cap, withCount = true) {
+  const table = Array.from({ length: n }, (_, i) => ({ id: i })), calls = [];
+  const fetchPage = async (from, to, first) => {
+    calls.push([from, to]);
+    return { data: table.slice(from, Math.min(to, from + cap - 1) + 1), count: first && withCount ? n : null };
+  };
+  return { fetchPage, calls };
+}
+
+test("reading a whole table: every row once, in order, past the server's per-request limit", async () => {
+  const s = server(2500, 1000), rows = await LGC.readAll(s.fetchPage);
+  assert.equal(rows.length, 2500);
+  assert.ok(rows.every((r, i) => r.id === i), "no row skipped or repeated");
+  assert.deepEqual(s.calls, [[0, 999], [1000, 1999], [2000, 2999]], "stops once the count is reached");
+});
+
+test("reading a whole table: a lower server limit than expected still gets everything", async () => {
+  const s = server(250, 100), rows = await LGC.readAll(s.fetchPage);
+  assert.equal(rows.length, 250);
+  assert.ok(rows.every((r, i) => r.id === i));
+  assert.deepEqual(s.calls.map(c => c[0]), [0, 100, 200], "each page starts where the last one ended");
+});
+
+test("reading a whole table: empty tables, exact page sizes and a missing count", async () => {
+  assert.deepEqual(await LGC.readAll(server(0, 1000).fetchPage), []);
+  const exact = server(1000, 1000);
+  assert.equal((await LGC.readAll(exact.fetchPage)).length, 1000);
+  assert.equal(exact.calls.length, 1, "the count saves asking for an empty second page");
+  const blind = server(1500, 1000, false);
+  assert.equal((await LGC.readAll(blind.fetchPage)).length, 1500, "without a count it reads until a page comes back empty");
+  assert.equal(blind.calls.length, 3);
+});
+
+test("reading a whole table: a failed page fails the whole read", async () => {
+  let n = 0;
+  await assert.rejects(LGC.readAll(async () => { if (n++) throw new Error("offline"); return { data: [{ id: 0 }], count: 5 }; }), /offline/);
+});
+
 test("backup: every business table, counted, and nothing tied to a phone or a sign-in", () => {
   const b = LGC.makeBackup({ customers: [{ id: "c1" }, { id: "c2" }], invoices: [{ id: "i1" }], push_subscriptions: [{ endpoint: "x" }], owner_emails: [{ email: "x" }] }, "2026-10-27T12:00:00.000Z", { app: "LGC Pro", demo: true });
   assert.deepEqual(Object.keys(b.tables), LGC.BACKUP_TABLES);

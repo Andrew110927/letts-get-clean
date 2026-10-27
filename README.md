@@ -3,6 +3,10 @@
 Website and owner app for Letts Get Clean: mobile car detailing, bike and e-bike details, and house pressure
 washing in Orange County, NY.
 
+**Running the business? Read [OWNER-GUIDE.md](OWNER-GUIDE.md).** It covers installing the app, a job from booking
+to payment, changing prices, reports for your accountant and backups, in plain English. The rest of this page is
+for whoever works on the code.
+
 - Live site: https://andrew110927.github.io/letts-get-clean/
 - Owner app: https://andrew110927.github.io/letts-get-clean/app/ (demo with sample data: add `?demo`)
 - Review link to text customers: https://andrew110927.github.io/letts-get-clean/#review
@@ -59,6 +63,8 @@ No build step: plain HTML, CSS and JavaScript, with supabase-js from a CDN.
 - **Sign-in**: Supabase Auth, email + password. Only emails listed in `owner_emails` (with a confirmed address) can
   read or change anything; any other account sees nothing. Add an owner in the Supabase SQL editor:
   `insert into public.owner_emails (email) values ('owner@example.com');`
+- **Loading**: bookings, customers, cars, invoices, payments and expenses are read in full, a page at a time
+  (`readAll()` in `app/core.js`), so nothing is cut off at the server's per-request row limit.
 - **Offline**: `sw.js` caches the app files; the app keeps its last-loaded data on the phone, so it opens with no signal.
 - **Demo**: `app/?demo` runs every screen on sample data in memory. Nothing is saved.
 - **Rebranding**: everything business-specific (name, colors, owner, links, Supabase project, message templates,

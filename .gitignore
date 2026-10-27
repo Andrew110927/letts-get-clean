@@ -3,3 +3,5 @@ node_modules/
 supabase/.temp/
 # Plate-blur scripts kept on this PC only (see the README there)
 local-tools/
+# Secret keys for the Edge Functions (set with `supabase secrets set --env-file`), never committed
+supabase/.env*

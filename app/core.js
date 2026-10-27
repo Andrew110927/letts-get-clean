@@ -344,6 +344,22 @@
     ];
   }
 
+  // ===== Reading whole tables =====
+  // The server hands back a limited number of rows per request (Supabase's API limit, 1,000 unless changed).
+  // fetchPage(from, to, first) asks for rows from..to and, on the first call, how many there are in all.
+  // Each next page starts where the rows so far end, so a lower limit than expected never skips any.
+  async function readAll(fetchPage, size) {
+    const rows = [], step = size || 1000;
+    let total = Infinity;
+    for (;;) {
+      const { data, count } = await fetchPage(rows.length, rows.length + step - 1, rows.length === 0);
+      if (rows.length === 0 && count != null) total = count;
+      if (!data || !data.length) return rows;
+      rows.push(...data);
+      if (rows.length >= total) return rows;
+    }
+  }
+
   // ===== Backup =====
   // Every table the owner keeps, in one file. Alert subscriptions and the owner list are left out on purpose:
   // they belong to a phone and to sign-in, not to the business.
@@ -379,7 +395,7 @@
     fmtCents, toCents, dealFor, priceFor, linesFromBooking,
     invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, cashAppLink, venmoLink, addDays, mergeInvoiceSettings,
     moneyIn, completedJobs, invoicePackage, between, sumCents, tally, owedInvoices,
-    toCsv, invoicesCsv, moneyInCsv, expenseRows, reportYears, yearSummary, summaryCsv, BACKUP_TABLES, makeBackup
+    toCsv, invoicesCsv, moneyInCsv, expenseRows, reportYears, yearSummary, summaryCsv, readAll, BACKUP_TABLES, makeBackup
   };
   if (typeof module === "object" && module.exports) module.exports = LGC; else root.LGC = LGC;
 })(this);

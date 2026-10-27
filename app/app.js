@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.6.0";
+  const VERSION = "1.6.1";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1", BACKUP_KEY = "lgcpro.lastBackup.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -232,21 +232,32 @@
   async function q(promise) { const { data, error } = await promise; if (error) throw sbErr(error); return data; }
   function isNetwork(e) { return !!e && !e.code && /fetch|network|load failed|offline|timed? ?out/i.test(String(e.message || e)); }
   function needLive() { if (!sb) throw new Error("offline"); }
+  // A whole table, a page at a time (core.js readAll), so nothing gets cut off at the server's per-request limit.
+  // Every order ends on the key, so rows can't shuffle between pages.
+  function whole(table, ...orders) {
+    return LGC.readAll(async (from, to, first) => {
+      let req = sb.from(table).select("*", first ? { count: "exact" } : undefined);
+      for (const [col, asc] of orders) req = req.order(col, { ascending: asc !== false });
+      const { data, error, count } = await req.range(from, to);
+      if (error) throw sbErr(error);
+      return { data, count };
+    });
+  }
 
   const live = {
     async loadAll() {
       needLive();
       const tasks = {
-        bookings: () => q(sb.from("bookings").select("*").order("date").order("time").limit(3000)),
+        bookings: () => whole("bookings", ["date"], ["time"], ["id"]),
         reviews: () => q(sb.from("reviews").select("*").order("created_at", { ascending: false }).limit(500)),
         settings: () => q(sb.from("site_settings").select("data").eq("id", 1).maybeSingle()),
         posts: () => q(sb.from("social_posts").select("*").order("post_date", { ascending: true, nullsFirst: false }).limit(500)),
         stats: () => q(sb.from("social_stats").select("*").order("day").limit(500)),
-        expenses: () => q(sb.from("expenses").select("*").order("spent_on", { ascending: false }).limit(3000)),
-        customers: () => q(sb.from("customers").select("*").order("name").limit(5000)),
-        vehicles: () => q(sb.from("vehicles").select("*").order("created_at").limit(10000)),
-        invoices: () => q(sb.from("invoices").select("*").order("created_at", { ascending: false }).limit(10000)),
-        payments: () => q(sb.from("payments").select("*").order("paid_on", { ascending: false }).limit(20000)),
+        expenses: () => whole("expenses", ["spent_on", false], ["id"]),
+        customers: () => whole("customers", ["name"], ["id"]),
+        vehicles: () => whole("vehicles", ["created_at"], ["id"]),
+        invoices: () => whole("invoices", ["created_at", false], ["id"]),
+        payments: () => whole("payments", ["paid_on", false], ["id"]),
         invoiceSettings: () => q(sb.from("invoice_settings").select("data").eq("id", 1).maybeSingle())
       };
       const single = new Set(["settings", "invoiceSettings"]);
@@ -263,19 +274,10 @@
       if (hard) throw hard;
       return out;
     },
-    // Everything the owner keeps, read fresh and whole for the backup file. The server hands back at most
-    // 1,000 rows per request, so each table is read a page at a time until a short page says that's all.
+    // Everything the owner keeps, read fresh and whole for the backup file.
     async backup() {
       needLive();
-      const key = { social_stats: "day" };
-      const read = async (t) => {
-        const rows = [];
-        for (let at = 0; ; at += 1000) {
-          const page = await q(sb.from(t).select("*").order(key[t] || "id").range(at, at + 999));
-          rows.push(...page);
-          if (page.length < 1000) return rows;
-        }
-      };
+      const read = (t) => whole(t, [t === "social_stats" ? "day" : "id"]);
       const res = await Promise.allSettled(LGC.BACKUP_TABLES.map(read)), tables = {}, missing = [];
       res.forEach((r, i) => {
         const t = LGC.BACKUP_TABLES[i];
