@@ -182,6 +182,18 @@ test("a total can't drop below what's already paid; removing a payment frees the
   });
 });
 
+test("extra cash can be counted as a tip: raise the tip, then the payment fits", async () => {
+  await as("owner", async () => {
+    const c = await one("select id from public.customers limit 1");
+    const inv = await invoice({ customer_id: c.id });
+    await pay(inv.id, 2000);
+    await assert.rejects(pay(inv.id, 4000), /more than the balance due/);
+    await db.query("update public.invoices set tip_cents = 1000, total_cents = 6000 where id = $1", [inv.id]);
+    await pay(inv.id, 4000);
+    assert.equal((await one("select sum(amount_cents)::int as n from public.payments where invoice_id = $1 and voided_at is null", [inv.id])).n, 6000);
+  });
+});
+
 test("quotes can't take payments", async () => {
   await as("owner", async () => {
     const c = await one("select id from public.customers limit 1");

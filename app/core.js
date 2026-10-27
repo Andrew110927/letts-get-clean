@@ -121,6 +121,21 @@
     return inv.state === "sent" ? "Sent" : "Draft";
   }
 
+  // ===== Payments =====
+  // Removed payments (voided_at set) stay on record but don't count.
+  function paidCents(payments) { return (payments || []).filter(p => !p.voided_at).reduce((n, p) => n + p.amount_cents, 0); }
+  function balanceDue(inv, payments) { return inv.state === "void" || inv.kind === "quote" ? 0 : Math.max(0, inv.total_cents - paidCents(payments)); }
+  // Why a payment can't be recorded, as a sentence; null when it can. The database checks the same things.
+  function paymentProblem(inv, payments, amountCents) {
+    if (inv.kind === "quote") return "A quote can't take payments. Turn it into an invoice first.";
+    if (inv.state === "void") return "This invoice is void, so it can't take payments.";
+    if (!(Number.isInteger(amountCents) && amountCents > 0)) return "Enter an amount more than $0.";
+    const due = balanceDue(inv, payments);
+    if (!due) return "This invoice is already paid in full.";
+    if (amountCents > due) return "That's " + fmtCents(amountCents - due) + " more than the " + fmtCents(due) + " still owed.";
+    return null;
+  }
+
   // ===== Dates =====
   function addDays(ymd, n) { const d = new Date(ymd + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
@@ -144,7 +159,7 @@
   const LGC = {
     phoneKey, vehicleLabel, isEmail, customerMatches,
     fmtCents, toCents, dealFor, priceFor, linesFromBooking,
-    invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, addDays, mergeInvoiceSettings
+    invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, addDays, mergeInvoiceSettings
   };
   if (typeof module === "object" && module.exports) module.exports = LGC; else root.LGC = LGC;
 })(this);
