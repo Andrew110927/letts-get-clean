@@ -66,6 +66,7 @@ before(async () => {
     ('Confirmed', '2026-10-30', '15:00', 'Joe Baum', '+1 (845) 555-0103', '3 Lake Dr', 'Warwick', null, 'house', '2026-10-25'),
     ('Cancelled', '2026-11-03', '15:00', 'TEST booking', '(845) 555-0000', null, null, 'Test car', 'car', '2026-10-25');`);
   await db.exec(await sql("20261026_invoices"));
+  await db.exec(await sql("20261026_booking_discounts"));
 });
 
 test("existing bookings become one customer per phone, skipping cancelled-only people", async () => {
@@ -224,4 +225,17 @@ test("the house wash rule still holds with customers attached", async () => {
   });
   // The refused booking didn't leave a half-made customer behind.
   assert.equal((await one("select count(*)::int as n from public.customers")).n, 6);
+});
+
+// Last, and on dates no other test uses, because it adds customers the earlier tests count.
+test("a website booking can say which discount it got; without one it's $0 off", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, total, discount, discount_amount)
+    values ($1, '15:00', 'Vet', '(845) 555-0160', 63, 'Military / first responder (10% off)', 7)`, [future(50)]));
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, total) values ($1, '17:00', 'Plain', '(845) 555-0161', 70)`, [future(50)]));
+  const got = await rows("select name, total, discount, discount_amount from public.bookings where date = $1 order by name", [future(50)]);
+  assert.deepEqual(got, [
+    { name: "Plain", total: 70, discount: null, discount_amount: 0 },
+    { name: "Vet", total: 63, discount: "Military / first responder (10% off)", discount_amount: 7 }]);
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, discount_amount) values ($1, '15:00', 'X', '(845) 555-0162', -5)`, [future(51)])));
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, discount) values ($1, '15:00', 'X', '(845) 555-0162', $2)`, [future(51), "x".repeat(81)])));
 });
