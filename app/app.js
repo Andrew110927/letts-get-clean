@@ -1,8 +1,8 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.5.0";
-  const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1";
+  const VERSION = "1.6.0";
+  const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1", BACKUP_KEY = "lgcpro.lastBackup.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -263,6 +263,28 @@
       if (hard) throw hard;
       return out;
     },
+    // Everything the owner keeps, read fresh and whole for the backup file. The server hands back at most
+    // 1,000 rows per request, so each table is read a page at a time until a short page says that's all.
+    async backup() {
+      needLive();
+      const key = { social_stats: "day" };
+      const read = async (t) => {
+        const rows = [];
+        for (let at = 0; ; at += 1000) {
+          const page = await q(sb.from(t).select("*").order(key[t] || "id").range(at, at + 999));
+          rows.push(...page);
+          if (page.length < 1000) return rows;
+        }
+      };
+      const res = await Promise.allSettled(LGC.BACKUP_TABLES.map(read)), tables = {}, missing = [];
+      res.forEach((r, i) => {
+        const t = LGC.BACKUP_TABLES[i];
+        if (r.status === "fulfilled") tables[t] = r.value;
+        else if (MISSING.has(r.reason && r.reason.code)) { tables[t] = []; missing.push(t); }
+        else throw r.reason;
+      });
+      return { tables, missing };
+    },
     async updateBooking(id, patch) {
       needLive();
       let { data, error } = await sb.from("bookings").update(patch).eq("id", id).select().maybeSingle();
@@ -452,6 +474,12 @@
     }
     return {
       async loadAll() { if (!db) db = seed(); await wait(); return clone(db); },
+      async backup() {
+        if (!db) db = seed(); await wait();
+        const d = clone(db);
+        return { tables: { customers: d.customers, vehicles: d.vehicles, bookings: d.bookings, invoices: d.invoices, payments: d.payments, expenses: d.expenses, reviews: d.reviews,
+          social_posts: d.posts, social_stats: d.stats, site_settings: [{ id: 1, data: d.settings }], invoice_settings: [{ id: 1, data: d.invoiceSettings }] }, missing: [] };
+      },
       async updateBooking(id, patch) {
         await wait(); const b = find("bookings", id), next = { ...b, ...patch };
         if (clash(next)) throw Object.assign(new Error("dup"), { code: "23505" });
@@ -651,6 +679,7 @@
     more: { title: () => "More", draw: vMore },
     social: { title: () => "Social", kicker: () => "Post · plan · grow", parent: "more", draw: vSocial, fab: ["plus", "New post", () => composeSheet(null)] },
     money: { title: () => "Money", parent: "more", draw: vMoney, fab: ["plus", "Add an expense", () => expenseSheet()] },
+    reports: { title: () => "Reports & backup", kicker: () => "For your accountant", parent: "more", draw: vReports },
     reviews: { title: () => "Reviews", parent: "more", draw: vReviews },
     settings: { title: () => "Settings", kicker: () => "Updates the website live", parent: "more", draw: vSettings }
   };
@@ -2147,6 +2176,7 @@
     const link = (ic, label, sub, href) => h("a", { class: "item", href, target: "_blank", rel: "noopener" }, h("div", { class: "avatar" }, icon(ic, 22)), h("div", { class: "main" }, h("b", {}, label), h("span", {}, sub)), icon("chev", 20));
     v.append(h("div", { class: "list" },
       item("money", "Money", "Earnings, tips, expenses, profit", () => go("money", true)),
+      item("download", "Reports & backup", "Spreadsheets, year summary for your accountant, backup", () => go("reports", true)),
       item("megaphone", "Social", "Post templates, planner, followers", () => go("social", true)),
       item("star", "Reviews", pending ? pending + " waiting for approval" : "Approve and share reviews", () => go("reviews", true), pending ? h("span", { class: "pill st-Requested" }, pending + " new") : null),
       item("gear", "Settings", "Prices, extras, hours, days off, social links", () => go("settings", true)),
@@ -2286,7 +2316,8 @@
 
     const { ins, jobs } = pick(r), label = RANGES.find(x => x[0] === r)[1].toLowerCase();
     const exp = S.expenses.filter(e => e.spent_on >= rangeStart(r, t) && e.spent_on <= t);
-    const earnedC = LGC.sumCents(ins), tips = LGC.sumCents(ins, "tip_cents"), costs = exp.reduce((n, e) => n + Math.round(e.amount * 100), 0), profit = earnedC - costs;
+    // Sales tax collected belongs to the state, so profit leaves it out (same as the accountant's year summary).
+    const earnedC = LGC.sumCents(ins), tips = LGC.sumCents(ins, "tip_cents"), tax = LGC.sumCents(ins, "tax_cents"), costs = exp.reduce((n, e) => n + Math.round(e.amount * 100), 0), profit = earnedC - tax - costs;
     const line = (k, val, cls) => h("div", { class: "stat-line" }, h("span", {}, k), h("b", { class: "num" + (cls ? " " + cls : "") }, val));
     v.append(h("div", { class: "card" },
       h("small", { class: "muted", style: "font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:11px" }, "Profit " + label),
@@ -2294,6 +2325,7 @@
       h("div", { style: "display:grid;gap:6px" },
         line("Money in", LGC.fmtCents(earnedC)),
         line("Tips (included)", LGC.fmtCents(tips)),
+        tax ? line("Sales tax (owed to the state)", "−" + LGC.fmtCents(tax), "down") : null,
         line("Expenses", costs ? "−" + LGC.fmtCents(costs) : "$0.00", costs ? "down" : ""),
         h("div", { style: "border-top:1px solid var(--line);margin:2px 0" }),
         line("Jobs completed", String(jobs.length)),
@@ -2341,6 +2373,119 @@
     else expCard.append(h("div", { class: "list", style: "background:var(--panel2)" }, exp.slice(0, 50).map(e => h("button", { class: "item", type: "button", onclick: () => expenseSheet(e) },
       h("div", { class: "avatar" }, icon("receipt", 20)), h("div", { class: "main" }, h("b", {}, e.category), h("span", {}, [fmtDate(e.spent_on), e.note].filter(Boolean).join(" · "))), h("div", { class: "end" }, h("b", {}, money2(e.amount)))))));
     v.append(expCard);
+  }
+  // ===== Reports & backup: spreadsheets for any dates, the accountant's year, and everything in one file =====
+  // CSVs start with a byte-order mark so Excel reads them as UTF-8 (accents in names, the × in "2 × Floor mats").
+  function csvFile(rows, name) { return new File(["﻿" + LGC.toCsv(rows)], name, { type: "text/csv" }); }
+  const fileSlug = () => S.invoiceSettings.businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "letts";
+  // iPhone gets the share sheet (Save to Files, Mail, Drive), since downloads in the home-screen app are unreliable
+  // there. Android and computers download the file.
+  async function saveFile(file) {
+    if (isIOS && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return true; }
+      catch (e) { if (e && e.name === "AbortError") return false; }
+    }
+    downloadFile(file); return true;
+  }
+  const REPORT_RANGES = [["thism", "This month"], ["lastm", "Last month"], ["thisy", "This year"], ["lasty", "Last year"], ["all", "All time"]];
+  function reportRange(k, t, first) {
+    const y = Number(t.slice(0, 4)), monthStart = t.slice(0, 8) + "01", lastEnd = addDays(monthStart, -1);
+    if (k === "thism") return [monthStart, t];
+    if (k === "lastm") return [lastEnd.slice(0, 8) + "01", lastEnd];
+    if (k === "thisy") return [y + "-01-01", t];
+    if (k === "lasty") return [(y - 1) + "-01-01", (y - 1) + "-12-31"];
+    return [first || t, t];
+  }
+  function vReports(v) {
+    const t = today(), md = moneyData(), exp = LGC.expenseRows(S.expenses);
+    const first = [...S.invoices.map(i => i.issued_on), ...md.ins.map(r => r.on)].filter(Boolean).sort()[0];
+    if (!S.report) { const [from, to] = reportRange("thisy", t); S.report = { from, to }; }
+    const R = S.report;
+
+    // Spreadsheets for any dates
+    const fromIn = h("input", { type: "date", value: R.from, max: t }), toIn = h("input", { type: "date", value: R.to, max: t });
+    const counts = h("p", { class: "muted small", "aria-live": "polite", style: "margin:0" });
+    const invBtn = h("button", { class: "btn btn-primary btn-sm", type: "button" }, icon("download", 18), "Invoices");
+    const payBtn = h("button", { class: "btn btn-primary btn-sm", type: "button" }, icon("download", 18), "Payments");
+    const update = () => {
+      R.from = fromIn.value; R.to = toIn.value;
+      const ok = R.from && R.to && R.from <= R.to;
+      invBtn.disabled = payBtn.disabled = !ok;
+      if (!ok) { counts.textContent = "Pick a start date on or before the end date."; return; }
+      const nInv = S.invoices.filter(i => i.kind === "invoice" && i.issued_on >= R.from && i.issued_on <= R.to).length, ins = LGC.between(md.ins, R.from, R.to);
+      counts.textContent = nInv + (nInv === 1 ? " invoice" : " invoices") + " issued · " + LGC.fmtCents(LGC.sumCents(ins)) + " came in (" + ins.length + (ins.length === 1 ? " payment)" : " payments)");
+    };
+    fromIn.addEventListener("change", update); toIn.addEventListener("change", update);
+    const span = () => R.from + "-to-" + R.to;
+    invBtn.onclick = () => saveFile(csvFile(LGC.invoicesCsv(S.invoices, S.payments, S.customers, S.vehicles, R.from, R.to, t), fileSlug() + "-invoices-" + span() + ".csv"));
+    payBtn.onclick = () => saveFile(csvFile(LGC.moneyInCsv(md.ins, S.invoices, S.bookings, S.customers, SERVICE_NAMES(), R.from, R.to), fileSlug() + "-payments-" + span() + ".csv"));
+    update();
+    v.append(h("div", { class: "card", style: "display:grid;gap:12px" }, h("h3", {}, "Spreadsheets"),
+      h("div", { class: "row2" }, field("From", fromIn), field("To", toIn)),
+      h("div", { class: "chips" }, REPORT_RANGES.map(([k, label]) => h("button", { class: "chip", type: "button", onclick: () => { haptic(8); [fromIn.value, toIn.value] = reportRange(k, t, first); update(); } }, label))),
+      counts, h("div", { class: "row2" }, invBtn, payBtn),
+      h("p", { class: "muted small", style: "margin:0" }, "Opens in Excel, Google Sheets or Numbers. Invoices go by the day they were issued. Payments go by the day they were paid, and include jobs marked Done before invoices.")));
+
+    // The accountant's year
+    const years = LGC.reportYears(t, md.ins, md.jobs, exp);
+    if (!years.includes(S.reportYear)) S.reportYear = years[0];
+    const s = LGC.yearSummary(md.ins, md.jobs, exp, S.reportYear, t), T = s.total;
+    const line = (k, val, cls) => h("div", { class: "stat-line" }, h("span", {}, k), h("b", { class: "num" + (cls ? " " + cls : "") }, val));
+    const breakdown = (title, rows) => rows.length ? h("div", { style: "display:grid;gap:8px" }, h("b", {}, title),
+      h("div", { class: "dl" }, rows.map(([k, c]) => h("div", {}, h("span", { class: "k" }, k), h("span", { class: "v num" }, LGC.fmtCents(c)))))) : null;
+    v.append(h("div", { class: "sec-title" }, h("h2", {}, "Year summary")));
+    if (years.length > 1) v.append(seg(years.map(y => [y, y]), S.reportYear, (y) => { S.reportYear = y; render(false); }));
+    v.append(h("div", { class: "card", style: "display:grid;gap:14px" },
+      h("div", {}, h("small", { class: "muted", style: "font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:11px" }, "Profit " + s.year),
+        h("div", { class: "big-num " + (T.profit < 0 ? "down" : "") }, (T.profit < 0 ? "−" : "") + short(Math.abs(T.profit)))),
+      h("div", { style: "display:grid;gap:6px" },
+        line("Money in", LGC.fmtCents(T.in)),
+        line("Services", LGC.fmtCents(T.services)),
+        line("Tips", LGC.fmtCents(T.tips)),
+        T.tax ? line("Sales tax (owed to the state)", "−" + LGC.fmtCents(T.tax), "down") : null,
+        line("Expenses", T.expenses ? "−" + LGC.fmtCents(T.expenses) : "$0.00", T.expenses ? "down" : ""),
+        line("Jobs done", String(T.jobs))),
+      monthTable(s),
+      breakdown("Expenses by type", s.byCategory),
+      breakdown("How they paid", s.byMethod),
+      h("button", { class: "btn btn-primary btn-block", type: "button", onclick: () => saveFile(csvFile(LGC.summaryCsv(s, S.invoiceSettings.businessName), fileSlug() + "-summary-" + s.year + ".csv")) },
+        icon("download", 18), "Download the " + s.year + " summary"),
+      h("p", { class: "muted small", style: "margin:0" }, "For your accountant: month by month, with tips, sales tax and expenses by type. Money counts on the day it was paid.")));
+
+    // Everything in one file
+    const last = S.mode === "live" ? load(BACKUP_KEY) : null;
+    v.append(h("div", { class: "sec-title" }, h("h2", {}, "Backup")));
+    v.append(h("div", { class: "card", style: "display:grid;gap:12px" },
+      h("p", { style: "margin:0" }, "Saves everything to one file: customers, cars, bookings, invoices, payments, expenses, reviews, social posts and settings."),
+      h("p", { class: "muted small", style: "margin:0" }, S.mode === "demo" ? "In the demo, the backup holds the fake demo data." : last ? "Last backup from this device: " + fmtDate(last, { month: "short", day: "numeric", year: "numeric" }) + "." : "No backup from this device yet."),
+      h("button", { class: "btn btn-primary btn-block", type: "button", onclick: (e) => backupNow(e.currentTarget) }, icon("download", 18), "Download backup"),
+      h("p", { class: "muted small", style: "margin:0" }, "Keep a copy off your phone, like in your email or Google Drive. Once a month is plenty. It has customers' names and phone numbers, so keep it private.")));
+  }
+  // On screen the table starts at the first month with anything in it; the spreadsheet keeps every month.
+  function monthTable(s) {
+    const tax = s.total.tax > 0, cell = (c) => c ? short(c) : "–", start = Math.max(0, s.months.findIndex(m => m.in || m.expenses || m.jobs));
+    const row = (r, cls) => h("tr", { class: cls || null },
+      h("th", { scope: "row" }, cls ? r.label : r.label.slice(0, 3)), h("td", {}, cell(r.in)), h("td", {}, cell(r.tips)), tax ? h("td", {}, cell(r.tax)) : null,
+      h("td", {}, cell(r.expenses)), h("td", { class: r.profit < 0 ? "down" : null }, (r.profit < 0 ? "−" : "") + cell(Math.abs(r.profit))));
+    return h("div", { class: "table-wrap" }, h("table", { class: "month-table num" },
+      h("thead", {}, h("tr", {}, ["Month", "In", "Tips", tax ? "Tax" : null, "Costs", "Profit"].filter(Boolean).map(x => h("th", { scope: "col" }, x)))),
+      h("tbody", {}, s.months.slice(start).map(r => row(r)), row(s.total, "total"))));
+  }
+  const BACKUP_LABELS = [["customers", "Customers"], ["vehicles", "Cars"], ["bookings", "Bookings"], ["invoices", "Invoices and quotes"], ["payments", "Payments"], ["expenses", "Expenses"], ["reviews", "Reviews"], ["social_posts", "Social posts"]];
+  async function backupNow(btn) {
+    let data;
+    if (!await run(btn, async () => { data = await api.backup(); })) return;
+    const day = today(), backup = LGC.makeBackup(data.tables, new Date().toISOString(), { app: CFG.brand.appName + " " + VERSION, demo: S.mode === "demo", missing: data.missing });
+    const file = new File([JSON.stringify(backup, null, 2)], fileSlug() + "-backup-" + day + ".json", { type: "application/json" });
+    openSheet("Backup ready", (body) => body.append(
+      h("p", {}, "Everything is in one file (" + Math.max(1, Math.round(file.size / 1024)).toLocaleString() + " KB). Save it somewhere safe."),
+      h("div", { class: "dl" }, BACKUP_LABELS.map(([k, label]) => h("div", {}, h("span", { class: "k" }, label), h("span", { class: "v num" }, backup.counts[k].toLocaleString())))),
+      data.missing.length ? h("div", { class: "note warn" }, h("span", {}, "Not in this backup yet (needs a database update): " + data.missing.join(", ") + ".")) : "",
+      h("button", { class: "btn btn-primary btn-block", type: "button", onclick: async () => {
+        if (!await saveFile(file)) return;
+        if (S.mode === "live") store(BACKUP_KEY, day);
+        toast("Backup saved"); haptic(20); closeSheet(); softRender();
+      } }, icon("download", 18), "Save the file")));
   }
   function owedItem(r) {
     const c = customerOf(r.inv.customer_id), when = r.daysLate ? r.daysLate + (r.daysLate === 1 ? " day" : " days") + " late" : r.inv.due_on ? "due " + fmtDate(r.inv.due_on, { month: "short", day: "numeric" }) : null;

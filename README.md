@@ -34,7 +34,12 @@ washing in Orange County, NY.
   and won't let payments add up past an invoice's total.
 - **Money in** is counted from payments, on the day they were paid. Jobs marked Done before invoices existed
   (or without one) count from the booking's total and tip instead. Once a job has an invoice, only its payments
-  count, so nothing is added twice (`moneyIn()` in `app/core.js`).
+  count, so nothing is added twice (`moneyIn()` in `app/core.js`). Inside an invoice the tip is the last money in,
+  and sales tax is split across part payments so it adds up exactly. Profit leaves sales tax out (it's owed to the state).
+- **Reports and backup** (More → Reports & backup) are made on the phone from what the app has loaded: spreadsheets
+  (CSV) of invoices and of money in for any dates, and a yearly summary by month for an accountant (money in,
+  services, tips, sales tax, expenses, profit). The backup reads every business table fresh from the database, a
+  page at a time, into one JSON file. Restoring it is a developer job: the file has every row and column.
 
 `supabase/migrations/` has the SQL for every table and policy. `supabase/functions/` has the Edge Functions.
 
@@ -49,7 +54,7 @@ No build step: plain HTML, CSS and JavaScript, with supabase-js from a CDN.
 | Jobs | All bookings by day; confirm, text, mark done with tip and payment, edit, cancel, add phone bookings |
 | Clients | Customer records: phone, email, address, notes (gate codes, where the hose is), one or more vehicles, quick search (name, phone, car, town), visits, spend, full history, "due for a detail" rebook nudges, add / edit / hide |
 | Invoices | Invoices and quotes (LGC-0001, Q-0001…): pick a customer, car and services in one screen; packages priced by the job date (launch through the deal's last day, regular after); sizes, extras, bike, house wash and custom lines; per-line price changes; $ or % discount, tip, tax; Draft / Sent / Overdue / Void; duplicate; quote → invoice in one tap. "Done" on a job opens its invoice filled in at the price the customer booked. Payments: "Paid now?" when saving, one tap "paid in full" by method (Cash, Cash App, Venmo, Other), part payments with any amount and date, balance due, Paid / Partially Paid worked out from the payments, extra cash added as a tip, payments removed (never deleted). Sending: a branded PDF (logo, brand color, services, totals, balance, Cash App / Venmo tap-to-pay links and QR codes with the amount filled in, or PAID IN FULL) shared through the phone's share menu, opened to print, or a text / email with tap-to-pay links. Sharing marks a draft as sent. A website discount on a booking shows as its own discount line |
-| More | Money (what came in this week / month / year / all time from invoice payments, profit after expenses, tips, jobs completed, average job, who owes you with late invoices first, unsent drafts, most popular package, last 8 weeks, how customers paid), Social (post templates from live data, planner, share-to-app posting, follower log, where bookings come from), Reviews (approve, hide, ask), Settings (updates the website live), Invoice settings (owner-only), Booking alerts (phone buzzes for new bookings) |
+| More | Money (what came in this week / month / year / all time from invoice payments, profit after expenses, tips, jobs completed, average job, who owes you with late invoices first, unsent drafts, most popular package, last 8 weeks, how customers paid), Reports & backup (invoice and payment spreadsheets for any dates, a yearly summary for the accountant, download a full backup), Social (post templates from live data, planner, share-to-app posting, follower log, where bookings come from), Reviews (approve, hide, ask), Settings (updates the website live), Invoice settings (owner-only), Booking alerts (phone buzzes for new bookings) |
 
 - **Sign-in**: Supabase Auth, email + password. Only emails listed in `owner_emails` (with a confirmed address) can
   read or change anything; any other account sees nothing. Add an owner in the Supabase SQL editor:

@@ -164,7 +164,8 @@
   // Money that came in, one row per payment, dated the day it was paid. Once a job has an invoice, its payments are
   // the truth. Jobs marked Done without one (everything from before invoices) count the old way: the booking's
   // total and tip on the job's day. A voided invoice still claims its job, so voiding takes that money out.
-  // Inside one invoice the tip is the last money in: a part payment pays for the work first.
+  // Inside one invoice the tip is the last money in: a part payment pays for the work first, and its sales tax
+  // share follows the work paid so far, so the parts add up to the invoice's tax exactly once it's paid in full.
   function moneyIn(invoices, payments, bookings) {
     const out = [], live = new Map(), claimed = new Set(), byInvoice = new Map();
     for (const inv of invoices || []) {
@@ -177,19 +178,22 @@
       const l = byInvoice.get(p.invoice_id); l ? l.push(p) : byInvoice.set(p.invoice_id, [p]);
     }
     for (const [id, list] of byInvoice) {
-      const inv = live.get(id), work = inv.total_cents - (inv.tip_cents || 0);
+      const inv = live.get(id), work = inv.total_cents - (inv.tip_cents || 0), taxAll = inv.tax_cents || 0;
       list.sort((a, b) => a.paid_on.localeCompare(b.paid_on) || String(a.created_at || "").localeCompare(String(b.created_at || "")));
-      let before = 0;
+      let before = 0, taxBefore = 0;
       for (const p of list) {
         const tip = Math.max(0, Math.min(p.amount_cents, before + p.amount_cents - work));
         before += p.amount_cents;
-        out.push({ on: p.paid_on, cents: p.amount_cents, tip_cents: tip, method: p.method || "Other", customer_id: inv.customer_id || null, invoice_id: id, booking_id: inv.booking_id || null });
+        const taxSoFar = work > 0 ? roundDiv(Math.min(before, work) * taxAll, work) : 0;
+        out.push({ on: p.paid_on, cents: p.amount_cents, tip_cents: tip, tax_cents: taxSoFar - taxBefore, method: p.method || "Other", note: p.note || null,
+          customer_id: inv.customer_id || null, invoice_id: id, booking_id: inv.booking_id || null });
+        taxBefore = taxSoFar;
       }
     }
     for (const b of bookings || []) {
       if (b.status !== "Done" || claimed.has(b.id)) continue;
       const tip = bookingCents(b.tip), cents = bookingCents(b.total) + tip;
-      if (cents > 0) out.push({ on: b.date, cents, tip_cents: tip, method: b.paid_with || "Not recorded", customer_id: b.customer_id || null, invoice_id: null, booking_id: b.id });
+      if (cents > 0) out.push({ on: b.date, cents, tip_cents: tip, tax_cents: 0, method: b.paid_with || "Not recorded", note: null, customer_id: b.customer_id || null, invoice_id: null, booking_id: b.id });
     }
     return out;
   }
@@ -250,6 +254,106 @@
     return out.sort((a, b) => b.daysLate - a.daysLate || String(a.inv.due_on || "9999").localeCompare(String(b.inv.due_on || "9999")) || a.inv.number - b.inv.number);
   }
 
+  // ===== Reports: spreadsheets (CSV) and the accountant's year =====
+  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  // "80.00": dollars as a plain number, so Excel can add the column up.
+  const dollars = (c) => ((Math.round(Number(c) || 0)) / 100).toFixed(2);
+  const byId = (rows) => new Map((rows || []).map(r => [r.id, r]));
+  const servicesText = (items) => (items || []).map(l => (l.qty > 1 ? l.qty + " × " : "") + l.name).join("; ");
+
+  // Spreadsheet text: commas between cells, quotes around any cell that needs them, Windows line endings.
+  // Names come from the public booking form, so a cell that starts like a formula (=, +, -, @) gets a leading
+  // apostrophe and Excel shows it as text instead of running it. Plain numbers like -5.00 stay numbers.
+  function toCsv(rows) {
+    const cell = (v) => {
+      if (v == null) return "";
+      let s = String(v);
+      if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = "'" + s;
+      return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    return rows.map(r => r.map(cell).join(",")).join("\r\n") + "\r\n";
+  }
+
+  // One row per invoice issued from..to, oldest first; quotes are left out. Paid and still owed are as of today.
+  function invoicesCsv(invoices, payments, customers, vehicles, from, to, today) {
+    const paid = new Map(), people = byId(customers), cars = byId(vehicles);
+    for (const p of payments || []) if (!p.voided_at) paid.set(p.invoice_id, (paid.get(p.invoice_id) || 0) + p.amount_cents);
+    const list = (invoices || []).filter(i => i.kind === "invoice" && i.issued_on >= from && i.issued_on <= to)
+      .sort((a, b) => a.issued_on.localeCompare(b.issued_on) || a.number - b.number);
+    const rows = [["Invoice", "Status", "Issued", "Job date", "Due", "Customer", "Phone", "Email", "Car", "Services", "Subtotal", "Discount", "Sales tax", "Tip", "Total", "Paid", "Still owed", "Notes"]];
+    for (const inv of list) {
+      const got = paid.get(inv.id) || 0, c = people.get(inv.customer_id) || {}, owed = inv.state === "void" ? 0 : Math.max(0, inv.total_cents - got);
+      rows.push([invoiceNumber(inv), invoiceStatus(inv, got, today, false), inv.issued_on, inv.job_date, inv.due_on, c.name, c.phone, c.email, vehicleLabel(cars.get(inv.vehicle_id)),
+        servicesText(inv.items), dollars(inv.subtotal_cents), dollars(inv.discount_cents), dollars(inv.tax_cents), dollars(inv.tip_cents), dollars(inv.total_cents),
+        dollars(got), dollars(owed), inv.state === "void" ? "Void" + (inv.void_reason ? ": " + inv.void_reason : "") : inv.notes]);
+    }
+    return rows;
+  }
+
+  // Every bit of money in (moneyIn rows) paid from..to, oldest first: the same money the Money screen counts.
+  function moneyInCsv(ins, invoices, bookings, customers, names, from, to) {
+    const invs = byId(invoices), jobs = byId(bookings), people = byId(customers);
+    const rows = [["Date paid", "Customer", "Invoice", "For", "Paid with", "Amount", "Tip", "Sales tax", "Note"]];
+    for (const r of between(ins, from, to).sort((a, b) => a.on.localeCompare(b.on))) {
+      const inv = invs.get(r.invoice_id), b = jobs.get(r.booking_id), c = people.get(r.customer_id);
+      rows.push([r.on, c ? c.name : b ? b.name : "", inv ? invoiceNumber(inv) : "", inv ? servicesText(inv.items) : b ? bookingPackage(b, names) : "",
+        r.method, dollars(r.cents), dollars(r.tip_cents), dollars(r.tax_cents), inv ? r.note : "Job marked Done before invoices"]);
+    }
+    return rows;
+  }
+
+  // Expenses are stored in dollars; reports work in cents.
+  function expenseRows(expenses) {
+    return (expenses || []).map(e => ({ on: e.spent_on, cents: Math.round((Number(e.amount) || 0) * 100), category: e.category || "Other" }));
+  }
+  // Years that have anything in them, newest first, always including this one.
+  function reportYears(today, ...lists) {
+    const ys = new Set([today.slice(0, 4)]);
+    for (const l of lists) for (const r of l || []) if (r.on && r.on <= today) ys.add(r.on.slice(0, 4));
+    return [...ys].sort().reverse();
+  }
+  function summaryRow(label, ins, jobs, expenses) {
+    const got = sumCents(ins), tips = sumCents(ins, "tip_cents"), tax = sumCents(ins, "tax_cents");
+    return { label, jobs, in: got, services: got - tips - tax, tips, tax, expenses, profit: got - tax - expenses };
+  }
+  // The accountant's year, month by month. Cash basis: money counts on the day it was paid, expenses on the day
+  // they were spent. Money in = services + tips + sales tax; profit leaves out the sales tax, which belongs to the
+  // state. A year that's still going stops at this month, and the total is always the months added up.
+  function yearSummary(ins, jobs, expenses, year, today) {
+    const y = String(year), last = y === today.slice(0, 4) ? Number(today.slice(5, 7)) : 12, months = [];
+    const end = (m) => y + "-" + String(m).padStart(2, "0") + "-31";
+    for (let m = 1; m <= last; m++) {
+      const from = y + "-" + String(m).padStart(2, "0") + "-01", to = end(m), e = between(expenses, from, to);
+      months.push(summaryRow(MONTHS[m - 1], between(ins, from, to), between(jobs, from, to).length, sumCents(e)));
+    }
+    const yi = between(ins, y + "-01-01", end(last)), ye = between(expenses, y + "-01-01", end(last));
+    return { year: y, months, total: summaryRow("Total", yi, between(jobs, y + "-01-01", end(last)).length, sumCents(ye)), byMethod: tally(yi, "method"), byCategory: tally(ye, "category") };
+  }
+  function summaryCsv(s, business) {
+    const line = (r) => [r.label, r.jobs, dollars(r.in), dollars(r.services), dollars(r.tips), dollars(r.tax), dollars(r.expenses), dollars(r.profit)];
+    const list = (rows) => rows.length ? rows.map(([k, c]) => [k, dollars(c)]) : [["None", "0.00"]];
+    return [
+      [business + " income summary " + s.year],
+      ["Money counts on the day it was paid. Money in is services plus tips plus sales tax. Profit is money in minus sales tax and expenses."],
+      [],
+      ["Month", "Jobs done", "Money in", "Services", "Tips", "Sales tax", "Expenses", "Profit"], ...s.months.map(line), line(s.total),
+      [],
+      ["Expenses by type", "Amount"], ...list(s.byCategory),
+      [],
+      ["Money in by how they paid", "Amount"], ...list(s.byMethod)
+    ];
+  }
+
+  // ===== Backup =====
+  // Every table the owner keeps, in one file. Alert subscriptions and the owner list are left out on purpose:
+  // they belong to a phone and to sign-in, not to the business.
+  const BACKUP_TABLES = ["customers", "vehicles", "bookings", "invoices", "payments", "expenses", "reviews", "social_posts", "social_stats", "site_settings", "invoice_settings"];
+  function makeBackup(tables, madeAt, meta) {
+    const out = { kind: "letts-get-clean-backup", format: 1, made_at: madeAt, ...meta, counts: {}, tables: {} };
+    for (const t of BACKUP_TABLES) { const rows = (tables && tables[t]) || []; out.tables[t] = rows; out.counts[t] = rows.length; }
+    return out;
+  }
+
   // ===== Invoice settings (owner-only invoice_settings row), checked the same way every time they're loaded =====
   function mergeInvoiceSettings(base, d) {
     const out = JSON.parse(JSON.stringify(base));
@@ -274,7 +378,8 @@
     phoneKey, vehicleLabel, isEmail, customerMatches,
     fmtCents, toCents, dealFor, priceFor, linesFromBooking,
     invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, cashAppLink, venmoLink, addDays, mergeInvoiceSettings,
-    moneyIn, completedJobs, invoicePackage, between, sumCents, tally, owedInvoices
+    moneyIn, completedJobs, invoicePackage, between, sumCents, tally, owedInvoices,
+    toCsv, invoicesCsv, moneyInCsv, expenseRows, reportYears, yearSummary, summaryCsv, BACKUP_TABLES, makeBackup
   };
   if (typeof module === "object" && module.exports) module.exports = LGC; else root.LGC = LGC;
 })(this);

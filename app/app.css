@@ -137,6 +137,14 @@ svg{flex-shrink:0}
 .pick-kpi:active{transform:scale(.985)}
 .pick-kpi[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pick-kpi[aria-pressed="true"] small{color:var(--accent)}
+/* Reports: the accountant's year, one row per month */
+.table-wrap{overflow-x:auto;margin:0 -4px}
+.month-table{width:100%;border-collapse:collapse;font-size:14px}
+.month-table th,.month-table td{padding:8px 4px;text-align:right;white-space:nowrap;font-weight:600}
+.month-table thead th{color:var(--dim);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--line)}
+.month-table th:first-child{text-align:left;color:var(--dim)}
+.month-table tbody tr + tr > *{border-top:1px solid var(--line)}
+.month-table .total > *{font-weight:800;color:var(--fg);border-top:1.5px solid var(--line2)}
 .big-num{font-family:var(--display);font-size:64px;line-height:.9;font-variant-numeric:tabular-nums}
 
 /* lists */
@@ -194,7 +202,7 @@ svg{flex-shrink:0}
 .field{display:grid;gap:6px;min-width:0}
 .field label,.field .lbl{font-weight:700;font-size:14px}
 .field small{color:var(--mute);font-weight:500}
-.input,.field input,.field select,.field textarea{width:100%;min-height:50px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line2);background:var(--panel2);font-size:16px}
+.input,.field input,.field select,.field textarea{width:100%;min-width:0;min-height:50px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line2);background:var(--panel2);font-size:16px}
 .field textarea{min-height:110px;resize:vertical;line-height:1.45}
 .field input:focus,.field select:focus,.field textarea:focus,.input:focus{border-color:var(--accent);outline:none}
 .field [aria-invalid="true"]{border-color:var(--bad)}
