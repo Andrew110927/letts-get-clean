@@ -123,6 +123,16 @@ test("if the booking total was changed by hand, the invoice still matches it", (
   assert.deepEqual(low.map(l => [l.name, l.unit_cents]), [["Interior", 2000]]);
 });
 
+test("a booking with a website discount is invoiced at full price, with the discount taken off separately", () => {
+  // Military 10% on a $50 Full Detail: the booking says total $45, discount_amount $5.
+  const b = { service: "car", package: "The Full Detail", size: "Car / sedan", addons: null, total: 45, discount_amount: 5, discount: "Military 10% off", deal: true };
+  const items = LGC.linesFromBooking(b, ST, NAMES);
+  assert.deepEqual(items.map(l => [l.name, l.unit_cents]), [["The Full Detail", 5000]]);
+  const t = LGC.invoiceTotals({ items, discount_cents: 500, tax_percent: 0, tip_cents: 0 });
+  assert.equal(t.total, 4500, "the invoice still comes to what the booking said");
+  assert.deepEqual(LGC.linesFromBooking({ service: "house", total: 270, discount_amount: 30 }, ST, NAMES).map(l => l.unit_cents), [30000]);
+});
+
 test("bike and house bookings become one line at their booked price", () => {
   assert.deepEqual(LGC.linesFromBooking({ service: "bike", size: "E-bike", total: 20 }, ST, NAMES), [{ ref: "svc:bike", name: "Bike detail · E-bike", qty: 1, unit_cents: 2000 }]);
   assert.deepEqual(LGC.linesFromBooking({ service: "house", size: "House", total: 300 }, ST, NAMES), [{ ref: "svc:house", name: "Full house pressure wash", qty: 1, unit_cents: 30000 }]);

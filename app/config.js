@@ -45,7 +45,9 @@ window.APP_CONFIG = {
     website: "andrew110927.github.io/letts-get-clean",
     cashApp: "$AndrewLetta", venmo: "@Andrew-Letts-9",
     taxPercent: 0, invoicePrefix: "LGC-", quotePrefix: "Q-", overdueDays: 7,
-    note: "Thanks for choosing Letts Get Clean!", terms: "Payment is due when the job is done."
+    note: "Thanks for choosing Letts Get Clean!", terms: "Payment is due when the job is done.",
+    // Brand color on the PDF (header band, table header). logo "" = use icons/icon-192.png.
+    accent: "#29C8FF", logo: ""
   },
 
   social: {
@@ -69,8 +71,12 @@ window.APP_CONFIG = {
   },
 
   // Text messages the app pre-fills. Placeholders: {first} {day} {time} {package} {total} {where} {prep}
-  // {owner} {brand} {phone} {site} {review} {pay}. Edit freely; unknown placeholders are left as typed.
+  // {owner} {brand} {phone} {site} {review} {pay}; invoices also have {number} {balance} {services}, and their
+  // {pay} is the Cash App / Venmo links with the amount filled in. Edit freely; unknown placeholders are left as typed.
   messages: {
+    invoice: "Hi {first}, it's {owner} from {brand}. Here's your invoice {number}: {balance} due. You can pay with {pay}. Thank you!",
+    receipt: "Hi {first}, thanks for your payment! Here's your receipt for invoice {number} from {brand}: {total}, paid in full.",
+    quote: "Hi {first}, it's {owner} from {brand}. Here's your quote {number}: {total} for {services}. Just reply to book it!",
     confirm: "Hi {first}, it's {owner} from {brand}. You're confirmed for {day} at {time}: {package}, {total}. {prep} Pay after the job: {pay}. See you then!",
     prepMobile: "Please have an outdoor outlet and a hose spigot ready.",
     prepHouse: "It takes the whole day. Please have an outdoor hose spigot and outlet I can use, and move anything fragile away from the walls.",

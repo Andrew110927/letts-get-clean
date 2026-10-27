@@ -46,10 +46,11 @@
 
   // Invoice lines for a booking, at the price the customer was shown when they booked (the website locks in the
   // launch price on the day of booking). If the booking's total was changed since, the main line absorbs the
-  // difference so the invoice matches what was agreed.
+  // difference so the invoice matches what was agreed. A booking's total is after any website discount
+  // (discount_amount); the lines are before it, and the invoice carries the discount separately.
   function linesFromBooking(b, st, names) {
     const dollars = (n) => Math.round(Number(n) * 100);
-    const agreed = dollars(b.total || 0);
+    const agreed = dollars((Number(b.total) || 0) + (Number(b.discount_amount) || 0));
     if (b.service === "bike" || b.service === "house") {
       const unit = agreed || dollars(b.service === "bike" ? st.bike.price : st.house.price);
       return [{ ref: "svc:" + b.service, name: (b.service === "bike" ? names.bike : names.house) + (b.size && b.service === "bike" ? " · " + b.size : ""), qty: 1, unit_cents: unit }];
@@ -136,6 +137,22 @@
     return null;
   }
 
+  // Tap-to-pay links with the amount filled in, used on the PDF, its QR codes and text messages.
+  // Cash App: cash.app/$tag/amount. Venmo: a pay screen addressed to the handle, with amount and note.
+  function cashAppLink(tag, cents) {
+    const t = String(tag || "").trim().replace(/^\$/, "");
+    if (!t) return "";
+    return "https://cash.app/$" + encodeURIComponent(t) + (cents > 0 ? "/" + (cents % 100 ? (cents / 100).toFixed(2) : String(cents / 100)) : "");
+  }
+  function venmoLink(handle, cents, note) {
+    const u = String(handle || "").trim().replace(/^@/, "");
+    if (!u) return "";
+    const q = new URLSearchParams({ txn: "pay", recipients: u });
+    if (cents > 0) q.set("amount", (cents / 100).toFixed(2));
+    if (note) q.set("note", note);
+    return "https://venmo.com/?" + q.toString();
+  }
+
   // ===== Dates =====
   function addDays(ymd, n) { const d = new Date(ymd + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
@@ -153,13 +170,16 @@
     for (const k of ["invoicePrefix", "quotePrefix"]) if (typeof d[k] === "string" && /^[A-Za-z0-9-]{0,10}$/.test(d[k])) out[k] = d[k];
     if (Number.isFinite(Number(d.taxPercent)) && Number(d.taxPercent) >= 0 && Number(d.taxPercent) <= 25 && d.taxPercent !== "") out.taxPercent = Math.round(Number(d.taxPercent) * 1000) / 1000;
     if (Number.isInteger(Number(d.overdueDays)) && Number(d.overdueDays) >= 0 && Number(d.overdueDays) <= 90 && d.overdueDays !== "") out.overdueDays = Number(d.overdueDays);
+    if (typeof d.accent === "string" && /^#[0-9a-f]{6}$/i.test(d.accent)) out.accent = d.accent.toUpperCase();
+    // The logo is a small picture saved right in the settings ("" means use the app icon).
+    if (d.logo === "" || (typeof d.logo === "string" && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(d.logo) && d.logo.length <= 350000)) out.logo = d.logo;
     return out;
   }
 
   const LGC = {
     phoneKey, vehicleLabel, isEmail, customerMatches,
     fmtCents, toCents, dealFor, priceFor, linesFromBooking,
-    invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, addDays, mergeInvoiceSettings
+    invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, cashAppLink, venmoLink, addDays, mergeInvoiceSettings
   };
   if (typeof module === "object" && module.exports) module.exports = LGC; else root.LGC = LGC;
 })(this);

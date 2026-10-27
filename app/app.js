@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.4.0";
+  const VERSION = "1.5.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -1409,12 +1409,119 @@
       if (inv.notes) body.append(h("div", { class: "quote" }, inv.notes));
       if (job) body.append(h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: () => jobSheet(job.id) }, icon("cal", 18), "Job: " + fmtDate(job.date) + " · " + fmtTime(job.time)));
       if (job && job.status === "Done" && !quote) body.append(h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: () => messageSheet(job.id, "thanks") }, icon("star", 18), "Text a review request"));
-      if (!isVoid) body.append(h("p", { class: "muted small" }, "Sharing the " + what + " as a PDF or text arrives in the next update."));
+      if (!isVoid) { body.append(sendCard(inv)); pdfFile(inv).catch(() => {}); } // made ahead, so Share opens instantly
       // The database won't void an invoice that still has payments, so the button only shows once there are none.
       if (!isVoid && paidOf(inv) > 0) body.append(h("p", { class: "muted small" }, "To void this invoice, remove its payments first."));
       else if (!isVoid) body.append(sureBtn("btn btn-danger btn-block", "Void this " + what, "Tap again to void it", (b) => setInvoiceState(inv, { state: "void" }, b, "Voided · it stays in your records")));
     };
   }
+  // ===== Sending: the PDF (share, open, print), a text with tap-to-pay links, or an email =====
+  // jsPDF and the QR maker load the first time a PDF is made; the service worker then keeps them for offline use.
+  // Pinned versions with integrity hashes, so a changed copy on the CDN is refused.
+  const PDF_LIBS = [
+    ["https://cdn.jsdelivr.net/npm/jspdf@3.0.3/dist/jspdf.umd.min.js", "sha384-GwHhSt8QjC7J+v0zZ0Flfho/T76YHEcCL9w4rvjTIUHauh6gWJeBSIi3vWXxNhtA"],
+    ["https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js", "sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz"]
+  ];
+  let pdfLibs = null, appIcon = null;
+  function loadPdfLibs() {
+    if (!pdfLibs) pdfLibs = Promise.all(PDF_LIBS.map(([src, integrity]) => new Promise((ok, fail) => {
+      const s = document.createElement("script");
+      s.src = src; s.integrity = integrity; s.crossOrigin = "anonymous"; s.onload = ok; s.onerror = () => fail(new Error("offline"));
+      document.head.append(s);
+    }))).then(() => ({ jsPDF: window.jspdf.jsPDF, qrcode: window.qrcode, LGC })).catch((e) => { pdfLibs = null; throw e; });
+    return pdfLibs;
+  }
+  // The saved logo, or the app icon when there isn't one.
+  function logoData() {
+    if (S.invoiceSettings.logo) return Promise.resolve(S.invoiceSettings.logo);
+    if (!appIcon) appIcon = fetch("icons/icon-192.png").then(r => r.blob()).then(b => new Promise((ok) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(b); })).catch(() => { appIcon = null; return null; });
+    return appIcon;
+  }
+  function pdfData(inv) {
+    const IS = S.invoiceSettings, c = customerOf(inv.customer_id) || { name: "Customer" }, number = LGC.invoiceNumber(inv);
+    const due = LGC.balanceDue(inv, paymentsOf(inv.id)), t = LGC.invoiceTotals(inv), long = { month: "short", day: "numeric", year: "numeric" };
+    return {
+      kind: inv.kind, number, status: statusOf(inv),
+      issued: fmtDate(inv.issued_on, long), jobDate: inv.job_date ? fmtDate(inv.job_date, { weekday: "short", ...long }) : "",
+      due: inv.kind === "invoice" ? (due ? "On receipt" : "Paid") : null, where: inv.location === "dropoff" ? "Drop-off" : "At your place",
+      business: { name: IS.businessName, owner: IS.ownerName, tagline: CFG.brand.tagline, phone: IS.phone, email: IS.email, website: IS.website },
+      customer: { name: c.name, phone: c.phone ? fmtPhone(c.phone) : "", email: c.email || "", address: inv.location === "dropoff" ? "" : [c.address, c.town].filter(Boolean).join(", ") },
+      vehicle: LGC.vehicleLabel(vehicleOf(inv.vehicle_id)), items: inv.items,
+      totals: { ...t, discountLabel: inv.discount_percent != null ? "Discount " + inv.discount_percent + "%" : "Discount", taxLabel: "Sales tax " + inv.tax_percent + "%" },
+      paid: paidOf(inv), balance: due,
+      pay: [{ label: "Cash App", handle: IS.cashApp, link: LGC.cashAppLink(IS.cashApp, due) }, { label: "Venmo", handle: IS.venmo, link: LGC.venmoLink(IS.venmo, due, number) }],
+      notes: inv.notes, thanks: IS.note, terms: IS.terms, accent: IS.accent
+    };
+  }
+  // Built once per version of the invoice (its details, payments and the settings), then reused.
+  const pdfCache = new Map();
+  function pdfFile(inv) {
+    const data = pdfData(inv), key = JSON.stringify(data) + "|" + S.invoiceSettings.logo.length, hit = pdfCache.get(inv.id);
+    if (hit && hit.key === key) return hit.file;
+    const name = (S.invoiceSettings.businessName + " " + data.number).replace(/[^A-Za-z0-9-]+/g, "-") + ".pdf";
+    const file = Promise.all([loadPdfLibs(), logoData()]).then(([libs, logo]) =>
+      new File([LGCPdf.build({ ...data, logo }, libs).output("blob")], name, { type: "application/pdf" }));
+    file.catch(() => pdfCache.delete(inv.id));
+    pdfCache.set(inv.id, { key, file });
+    return file;
+  }
+  function shareText(inv) {
+    const IS = S.invoiceSettings, c = customerOf(inv.customer_id), number = LGC.invoiceNumber(inv), due = LGC.balanceDue(inv, paymentsOf(inv.id));
+    const ways = [IS.cashApp && "Cash App " + LGC.cashAppLink(IS.cashApp, due), IS.venmo && "Venmo " + LGC.venmoLink(IS.venmo, due, number), "cash"].filter(Boolean);
+    const pay = ways.length > 1 ? ways.slice(0, -1).join(", ") + " or " + ways[ways.length - 1] : ways[0];
+    return fill(CFG.messages[inv.kind === "quote" ? "quote" : due ? "invoice" : "receipt"], {
+      first: firstName(c && c.name), owner: CFG.brand.owner, brand: IS.businessName, number, total: LGC.fmtCents(inv.total_cents), balance: LGC.fmtCents(due),
+      pay, services: inv.items.map(l => l.name).join(", "), site: CFG.site.url, phone: IS.phone
+    });
+  }
+  // Handing it to the customer means it's been sent.
+  async function markSent(inv) {
+    const cur = S.invoices.find(x => x.id === inv.id);
+    if (!cur || cur.state !== "draft") return;
+    try { replaceIn(S.invoices, normInvoice(await api.saveInvoice({ id: cur.id, state: "sent" }))); softRender(); drawSheet(false); } catch (e) { /* stays a draft; Mark sent still works */ }
+  }
+  async function sharePdf(inv, btn) {
+    let file;
+    btn.disabled = true;
+    try { file = await pdfFile(inv); }
+    catch (e) { toast(e.message === "offline" ? "Making the first PDF needs signal. Try again once you're connected." : "Couldn't make the PDF. Try again."); return; }
+    finally { btn.disabled = false; }
+    const title = (inv.kind === "quote" ? "Quote " : "Invoice ") + LGC.invoiceNumber(inv);
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title, text: shareText(inv) }); markSent(inv); return; }
+      catch (e) {
+        if (e && e.name === "AbortError") return;
+        // The very first PDF can take long enough that the phone stops treating it as a tap. It's ready now.
+        if (e && e.name === "NotAllowedError") { toast("Your PDF is ready. Tap Share again."); return; }
+      }
+    }
+    downloadFile(file); markSent(inv);
+  }
+  function downloadFile(file) {
+    const url = URL.createObjectURL(file), a = h("a", { href: url, download: file.name, style: "display:none" });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  async function openPdf(inv, btn) {
+    btn.disabled = true;
+    try {
+      const url = URL.createObjectURL(await pdfFile(inv));
+      if (!window.open(url, "_blank")) { const a = h("a", { href: url, target: "_blank", rel: "noopener", style: "display:none" }); document.body.append(a); a.click(); a.remove(); }
+      setTimeout(() => URL.revokeObjectURL(url), 120000);
+    } catch (e) { toast(e.message === "offline" ? "Making the first PDF needs signal. Try again once you're connected." : "Couldn't open the PDF. Try again."); }
+    finally { btn.disabled = false; }
+  }
+  function sendCard(inv) {
+    const c = customerOf(inv.customer_id), what = inv.kind === "quote" ? "quote" : "invoice", subject = (inv.kind === "quote" ? "Quote " : "Invoice ") + LGC.invoiceNumber(inv) + " from " + S.invoiceSettings.businessName;
+    return h("div", { class: "card", style: "display:grid;gap:10px" }, h("h3", {}, "Send it"),
+      h("button", { class: "btn btn-primary btn-block", type: "button", onclick: (e) => sharePdf(inv, e.currentTarget) }, icon("share", 18), "Share the " + what + " PDF"),
+      h("div", { class: "send-grid" },
+        c && c.phone ? h("a", { class: "btn btn-ghost btn-sm", href: smsHref(c.phone, shareText(inv)), onclick: () => markSent(inv) }, icon("msg", 18), "Text " + firstName(c.name)) : null,
+        c && c.email ? h("a", { class: "btn btn-ghost btn-sm", href: "mailto:" + encodeURIComponent(c.email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(shareText(inv)), onclick: () => markSent(inv) }, icon("out", 18), "Email") : null,
+        h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => { copyText(shareText(inv), "Message copied"); markSent(inv); } }, icon("copy", 18), "Copy message"),
+        h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: (e) => openPdf(inv, e.currentTarget) }, icon("download", 18), "Open PDF · print")),
+      h("p", { class: "muted small" }, "Share sends the PDF by Messages, Mail or any app. Text and Email send a message with tap-to-pay links."));
+  }
+
   // What's been paid, what's left, one-tap "paid in full" by method, and the payments so far.
   function paymentsCard(inv) {
     const list = paymentsOf(inv.id).slice().sort((a, b) => b.paid_on.localeCompare(a.paid_on) || String(b.created_at).localeCompare(String(a.created_at)));
@@ -1537,10 +1644,11 @@
       issued_on: base ? base.issued_on : today(),
       location: b ? b.location || "mobile" : src ? src.location : "mobile",
       items: b ? LGC.linesFromBooking(b, S.settings, SERVICE_NAMES()) : src ? clone(src.items) : [],
-      discMode: src && src.discount_percent != null ? "percent" : src && src.discount_cents ? "amount" : "none",
-      discValue: src && src.discount_percent != null ? String(src.discount_percent) : src && src.discount_cents ? asInput(src.discount_cents) : "",
+      // A booking's website discount (military, second car, promo) comes across as a $ discount, named in the notes.
+      discMode: b ? (b.discount_amount > 0 ? "amount" : "none") : src && src.discount_percent != null ? "percent" : src && src.discount_cents ? "amount" : "none",
+      discValue: b ? (b.discount_amount > 0 ? String(b.discount_amount) : "") : src && src.discount_percent != null ? String(src.discount_percent) : src && src.discount_cents ? asInput(src.discount_cents) : "",
       tip: b ? asInput(Math.round((b.tip || 0) * 100)) : base ? asInput(base.tip_cents) : "",
-      notes: src ? src.notes || "" : "", paidWith: b ? b.paid_with || "" : "", query: b && !b.customer_id ? b.name : ""
+      notes: b ? (b.discount_amount > 0 && b.discount ? b.discount : "") : src ? src.notes || "" : "", paidWith: b ? b.paid_with || "" : "", query: b && !b.customer_id ? b.name : ""
     };
     const title = base ? "Edit " + LGC.invoiceNumber(base) : b ? "Finish job" : o.quote ? "Invoice from " + LGC.invoiceNumber(o.quote) : o.copy ? "Copy of " + LGC.invoiceNumber(o.copy) : kind === "quote" ? "New quote" : "New invoice";
     openSheet(title, (body) => {
@@ -1714,6 +1822,27 @@
     });
   }
 
+  // A picture shrunk to fit maxSide pixels, as a PNG data URL (JPEG if the PNG would be too big to save).
+  function shrinkImage(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, maxSide / Math.max(img.width, img.height)), c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        let out = c.toDataURL("image/png");
+        if (out.length > 300000) {
+          const ctx = c.getContext("2d"); ctx.globalCompositeOperation = "destination-over"; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+          out = c.toDataURL("image/jpeg", 0.85);
+        }
+        out.length <= 300000 ? resolve(out) : reject(new Error("too big"));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("not an image")); };
+      img.src = url;
+    });
+  }
+
   // ===== Invoice settings (owner-only invoice_settings row; prints on every invoice and quote) =====
   function vInvoiceSettings(v) {
     const s = clone(S.invoiceSettings);
@@ -1729,6 +1858,17 @@
       taxPercent: inp("taxPercent", { inputmode: "decimal" }), overdueDays: inp("overdueDays", { type: "number", inputmode: "numeric", min: "0", max: "90" }),
       note: area("note"), terms: area("terms")
     };
+    // Logo: shrunk on the phone to a small picture saved with the settings. Blank = the app icon.
+    const logoImg = h("img", { alt: "Invoice logo", class: "logo-preview", src: s.logo || "icons/icon-192.png" });
+    const logoFile = h("input", { type: "file", accept: "image/png,image/jpeg,image/webp", hidden: true });
+    logoFile.addEventListener("change", async () => {
+      const file = logoFile.files && logoFile.files[0]; logoFile.value = "";
+      if (!file) return;
+      try { s.logo = await shrinkImage(file, 320); logoImg.src = s.logo; dirty(); }
+      catch (e) { toast("Couldn't use that picture. Try a PNG or JPG."); }
+    });
+    const accent = h("input", { type: "color", value: s.accent, "aria-label": "Brand color" });
+    accent.addEventListener("input", dirty);
     const nextNo = S.invoices.filter(i => i.kind === "invoice").reduce((n, i) => Math.max(n, i.number || 0), 0) + 1;
     const preview = h("span", {});
     const showPreview = () => { preview.textContent = "Your next invoice will be " + LGC.invoiceNumber({ prefix: f.invoicePrefix.value.trim(), number: nextNo }) + "."; };
@@ -1747,6 +1887,12 @@
         h("div", { class: "row2" }, field("Sales tax %", f.taxPercent), field("Overdue after (days)", f.overdueDays)),
         h("p", { class: "muted small" }, "Tax stays at 0% until your accountant confirms the New York rules. When it's on, it's added to new invoices on the price after discounts, never on tips.")),
       section("Wording", field("Thank-you note", f.note), field("Terms", f.terms)),
+      section("Logo and color", h("div", { class: "logo-row" }, logoImg,
+        h("div", { style: "display:grid;gap:8px" },
+          h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => logoFile.click() }, icon("image", 18), "Choose a logo"),
+          h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => { s.logo = ""; logoImg.src = "icons/icon-192.png"; dirty(); } }, "Use the app icon"))), logoFile,
+        h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Brand color"), accent),
+        h("p", { class: "muted small" }, "The color runs across the top of every invoice and quote. The page itself stays white so it prints cleanly.")),
       err, saveBtn);
     form.addEventListener("submit", async (e) => {
       e.preventDefault(); err.hidden = true;
@@ -1757,9 +1903,10 @@
         cashApp: tag(val("cashApp").replace(/\s/g, ""), "$"), venmo: tag(val("venmo").replace(/\s/g, ""), "@"),
         invoicePrefix: val("invoicePrefix"), quotePrefix: val("quotePrefix"),
         taxPercent: val("taxPercent") === "" ? 0 : Number(val("taxPercent")), overdueDays: val("overdueDays") === "" ? 0 : Number(val("overdueDays")),
-        note: val("note"), terms: val("terms")
+        note: val("note"), terms: val("terms"), accent: accent.value.toUpperCase(), logo: s.logo || ""
       };
       const problems = [];
+      if (!/^#[0-9A-F]{6}$/.test(next.accent)) problems.push("pick the brand color again");
       if (!next.businessName) problems.push("add the business name");
       if (next.phone && digits10(next.phone).length !== 10) problems.push("use a 10-digit phone");
       if (next.email && !LGC.isEmail(next.email)) problems.push("check the email address");

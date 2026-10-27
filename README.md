@@ -45,7 +45,7 @@ No build step: plain HTML, CSS and JavaScript, with supabase-js from a CDN.
 | Today | Next job with navigate / call / text / done, requests to confirm, week stats, quick actions |
 | Jobs | All bookings by day; confirm, text, mark done with tip and payment, edit, cancel, add phone bookings |
 | Clients | Customer records: phone, email, address, notes (gate codes, where the hose is), one or more vehicles, quick search (name, phone, car, town), visits, spend, full history, "due for a detail" rebook nudges, add / edit / hide |
-| Invoices | Invoices and quotes (LGC-0001, Q-0001…): pick a customer, car and services in one screen; packages priced by the job date (launch through the deal's last day, regular after); sizes, extras, bike, house wash and custom lines; per-line price changes; $ or % discount, tip, tax; Draft / Sent / Overdue / Void; duplicate; quote → invoice in one tap. "Done" on a job opens its invoice filled in at the price the customer booked. Payments: "Paid now?" when saving, one tap "paid in full" by method (Cash, Cash App, Venmo, Other), part payments with any amount and date, balance due, Paid / Partially Paid worked out from the payments, extra cash added as a tip, payments removed (never deleted). PDFs come in a later stage |
+| Invoices | Invoices and quotes (LGC-0001, Q-0001…): pick a customer, car and services in one screen; packages priced by the job date (launch through the deal's last day, regular after); sizes, extras, bike, house wash and custom lines; per-line price changes; $ or % discount, tip, tax; Draft / Sent / Overdue / Void; duplicate; quote → invoice in one tap. "Done" on a job opens its invoice filled in at the price the customer booked. Payments: "Paid now?" when saving, one tap "paid in full" by method (Cash, Cash App, Venmo, Other), part payments with any amount and date, balance due, Paid / Partially Paid worked out from the payments, extra cash added as a tip, payments removed (never deleted). Sending: a branded PDF (logo, brand color, services, totals, balance, Cash App / Venmo tap-to-pay links and QR codes with the amount filled in, or PAID IN FULL) shared through the phone's share menu, opened to print, or a text / email with tap-to-pay links. Sharing marks a draft as sent. A website discount on a booking shows as its own discount line |
 | More | Money (earnings, tips, expenses, profit), Social (post templates from live data, planner, share-to-app posting, follower log, where bookings come from), Reviews (approve, hide, ask), Settings (updates the website live), Invoice settings (owner-only), Booking alerts (phone buzzes for new bookings) |
 
 - **Sign-in**: Supabase Auth, email + password. Only emails listed in `owner_emails` (with a confirmed address) can
@@ -101,7 +101,7 @@ Node 24+. One install, then the app logic and database rules (`tests/`, run agai
 same migrations, never the live data) and the push encryption (checked against the `http_ece` reference decoder):
 
 ```bash
-npm install --no-save --no-package-lock @electric-sql/pglite@0.5.8 http_ece@1.2.0
+npm install --no-save --no-package-lock @electric-sql/pglite@0.5.8 http_ece@1.2.0 jspdf@3.0.3 qrcode-generator@1.4.4
 ```
 
 ```bash
@@ -115,6 +115,9 @@ node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
 - Extras (add pet hair removal, engine bay…): More → Settings → Extras & add-on services. New ones start as
   "Invoices only"; flip the switch to offer one on the website too (stored as `web: false` in `site_settings.addons`).
 - What prints on invoices (business name, phone, email, website, Cash App / Venmo, tax %, number prefixes, overdue
-  days, thank-you note, terms): More → Invoice settings. Saved in the owner-only `invoice_settings` row.
+  days, thank-you note, terms, logo, brand color): More → Invoice settings. Saved in the owner-only `invoice_settings` row.
+  The PDF is drawn on the phone by `app/pdf.js` with jsPDF 3.0.3 and qrcode-generator 1.4.4, loaded from jsDelivr the
+  first time with integrity hashes (pinned in `PDF_LIBS` in `app/app.js`). The home address is never printed.
+- Text for invoice, receipt and quote messages: `messages.invoice`, `messages.receipt`, `messages.quote` in `app/config.js`.
 - Text message wording: `messages` in `app/config.js`.
 - Before/after photos: add the files to `media/` and an entry to `GALLERY` in `index.html`.
