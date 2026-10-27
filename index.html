@@ -8,12 +8,15 @@
 <link rel="canonical" href="https://andrew110927.github.io/letts-get-clean/">
 <meta property="og:title" content="Letts Get Clean · Mobile Car Detailing">
 <meta property="og:description" content="Dirty car? Not for long. Hand wash and deep interior cleaning in your driveway. Book online in Orange County, NY.">
-<meta property="og:image" content="https://andrew110927.github.io/letts-get-clean/media/hero_poster.jpg">
+<meta property="og:image" content="https://andrew110927.github.io/letts-get-clean/media/og-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Letts Get Clean mascot over the words Mama Letts approved. Mobile detailing, Orange County, NY.">
 <meta property="og:url" content="https://andrew110927.github.io/letts-get-clean/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#07080B">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='14' fill='%2329C8FF' transform='rotate(-8 32 32)'/%3E%3Cpath d='M17 41h30v-8l-4-10H21l-4 10z' fill='none' stroke='%2304131A' stroke-width='4' stroke-linejoin='round'/%3E%3Ccircle cx='23' cy='42' r='3.5' fill='%2304131A'/%3E%3Ccircle cx='41' cy='42' r='3.5' fill='%2304131A'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="64x64" href="media/favicon-64.png">
 <link rel="apple-touch-icon" href="media/icon-180.png">
 <script type="application/ld+json">
 {
@@ -23,6 +26,7 @@
   "description": "Mobile car detailing in Orange County, NY: exterior, interior and full details at your home or drop-off in Newburgh, bike and e-bike details, and full house pressure washing.",
   "url": "https://andrew110927.github.io/letts-get-clean/",
   "image": "https://andrew110927.github.io/letts-get-clean/media/hero_poster.jpg",
+  "logo": "https://andrew110927.github.io/letts-get-clean/media/mascot.webp",
   "telephone": "+1-845-282-9387",
   "priceRange": "$20-$300",
   "paymentAccepted": "Cash, Cash App, Venmo",
@@ -86,7 +90,7 @@ section{padding-block:80px}
 header.top{position:sticky;top:0;z-index:50;background:rgba(7,8,11,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:68px}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--fg)}
-.brand .tile{width:40px;height:40px;border-radius:11px;background:var(--accent);display:grid;place-items:center;transform:rotate(-8deg);flex-shrink:0;box-shadow:3px 3px 0 var(--fg)}
+.brand img{width:46px;height:46px;border-radius:50%;flex-shrink:0;filter:drop-shadow(0 0 8px rgba(41,200,255,.35))}
 .brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:1px;text-transform:uppercase;transform:skewX(-8deg);white-space:nowrap}
 .brand b span{color:var(--accent)}
 nav.links{display:flex;gap:2px}
@@ -137,6 +141,10 @@ nav.links a:hover{color:var(--fg);background:var(--panel)}
 .spark.w{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.9)}
 @keyframes twinkle{0%,100%{transform:scale(.4) rotate(0);opacity:.25}50%{transform:scale(1.15) rotate(45deg);opacity:1}}
 @media (max-width:900px){.spark{display:none}}
+.mascot{display:grid;justify-items:center;margin-bottom:8px}
+.mascot img{width:clamp(116px,14vw,188px);height:auto;border-radius:50%;filter:drop-shadow(0 0 26px rgba(41,200,255,.45));animation:bob 4s ease-in-out infinite}
+.mascot .approved{position:relative;margin-top:-16px;background:var(--fg);color:var(--bg);font-family:var(--display);font-size:17px;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;padding:5px 16px;border-radius:999px;transform:rotate(-4deg);box-shadow:0 0 0 3px var(--accent),0 0 24px rgba(41,200,255,.55)}
+@keyframes bob{50%{transform:translateY(-6px)}}
 
 /* ticker */
 .ticker{position:relative;overflow:hidden;background:repeating-linear-gradient(-45deg,var(--accent) 0 18px,var(--bg) 18px 36px);padding-block:10px;transform:rotate(-1.5deg);margin:10px -20px}
@@ -321,11 +329,7 @@ nav.links a:hover{color:var(--fg);background:var(--panel)}
 /* about */
 .about{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
 @media (max-width:860px){.about{grid-template-columns:minmax(0,1fr)}}
-.about-card{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:4/3;background:#000 url(media/int_after.jpg) center 40%/cover;box-shadow:10px 10px 0 var(--accent)}
-.about-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,8,11,0) 40%,rgba(7,8,11,.9))}
-.about-card .sig{position:absolute;left:22px;bottom:20px;z-index:1;display:grid;gap:2px}
-.about-card .sig b{font-family:var(--display);font-size:34px;text-transform:uppercase;letter-spacing:1px}
-.about-card .sig span{color:var(--dim);font-weight:600}
+.about-logo{width:100%;height:auto;border-radius:24px;box-shadow:10px 10px 0 var(--accent)}
 .about p.big{font-size:20px;line-height:1.6;color:var(--fg)}
 .promises{list-style:none;padding:0;margin:24px 0 0;display:grid;gap:14px}
 .promises li{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
@@ -386,7 +390,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .hero h1,.hero h1 .l2,.spark,.next-chip i,.ticker .run{animation:none}
+  .hero h1,.hero h1 .l2,.spark,.mascot img,.next-chip i,.ticker .run{animation:none}
   .pk,.pk:hover{transition:none;transform:none}
   .js .reveal{opacity:1;transform:none;transition:none}
 }
@@ -397,7 +401,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="Letts Get Clean home">
-      <span class="tile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#04131A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14v-4l-2-5H7l-2 5v4z"/><path d="M3 13h18"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg></span>
+      <img src="media/mascot-160.webp" width="46" height="46" alt="">
       <b>Letts <span>Get Clean</span></b>
     </a>
     <nav class="links" aria-label="Sections">
@@ -452,6 +456,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
         <a class="next-chip" href="#book" id="nextChip" hidden><i aria-hidden="true"></i><span id="nextText">Next opening</span></a>
       </div>
       <div class="facts">
+        <div class="mascot"><img src="media/mascot.webp" width="640" height="640" alt="The Letts Get Clean mascot, a cartoon dog in sunglasses holding a soapy sponge"><span class="approved"><span aria-hidden="true">★</span> Mama Letts approved <span aria-hidden="true">★</span></span></div>
         <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span><div><b>We come to you</b><span class="t">Most appointments are at your home. Or drop your car off with Andrew in Newburgh.</span></div></div>
         <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div><b>Have power + a hose ready</b><span class="t">We hook up to your outdoor outlet and water spigot.</span></div></div>
         <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><b>Hours</b><span class="t" id="hoursText">Weekdays from 3 PM · Weekends from 1:30 PM</span></div></div>
@@ -625,7 +630,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
 
   <section id="about" style="background:var(--panel)">
     <div class="wrap about">
-      <div class="about-card reveal" role="img" aria-label="A freshly detailed car interior"><div class="sig"><b>Andrew Letts</b><span>Owner · Newburgh, NY</span></div></div>
+      <img class="about-logo reveal" src="media/mascot-lockup.webp" width="1080" height="1055" loading="lazy" alt="Letts Get Clean logo: the mascot, a cartoon dog in sunglasses holding a soapy sponge, over the words Mama Letts approved. Mobile detailing, Orange County, NY.">
       <div class="reveal">
         <p class="eyebrow">Who's washing your car</p>
         <h2 style="font-size:clamp(42px,6.5vw,68px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36;margin:12px 0 22px">Hey, I'm Andrew</h2>
@@ -665,7 +670,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
 <footer>
   <div class="wrap">
     <div style="display:grid;gap:12px;max-width:360px">
-      <a class="brand" href="#top"><span class="tile"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#04131A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14v-4l-2-5H7l-2 5v4z"/><path d="M3 13h18"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg></span><b>Letts <span>Get Clean</span></b></a>
+      <a class="brand" href="#top"><img src="media/mascot-160.webp" width="46" height="46" alt=""><b>Letts <span>Get Clean</span></b></a>
       <span class="muted">Mobile car and bike detailing and house washing in Orange County, NY.</span>
       <div class="socials" id="socials"></div>
     </div>
