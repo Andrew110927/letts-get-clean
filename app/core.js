@@ -155,6 +155,100 @@
 
   // ===== Dates =====
   function addDays(ymd, n) { const d = new Date(ymd + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  const daysBetween = (from, to) => Math.round((Date.parse(to + "T12:00:00Z") - Date.parse(from + "T12:00:00Z")) / 864e5);
+
+  // ===== Money dashboard =====
+  // Bookings keep whole dollars; everything here is cents.
+  const bookingCents = (n) => Math.round((Number(n) || 0) * 100);
+
+  // Money that came in, one row per payment, dated the day it was paid. Once a job has an invoice, its payments are
+  // the truth. Jobs marked Done without one (everything from before invoices) count the old way: the booking's
+  // total and tip on the job's day. A voided invoice still claims its job, so voiding takes that money out.
+  // Inside one invoice the tip is the last money in: a part payment pays for the work first.
+  function moneyIn(invoices, payments, bookings) {
+    const out = [], live = new Map(), claimed = new Set(), byInvoice = new Map();
+    for (const inv of invoices || []) {
+      if (inv.kind !== "invoice") continue;
+      if (inv.booking_id) claimed.add(inv.booking_id);
+      if (inv.state !== "void") live.set(inv.id, inv);
+    }
+    for (const p of payments || []) {
+      if (p.voided_at || !live.has(p.invoice_id)) continue;
+      const l = byInvoice.get(p.invoice_id); l ? l.push(p) : byInvoice.set(p.invoice_id, [p]);
+    }
+    for (const [id, list] of byInvoice) {
+      const inv = live.get(id), work = inv.total_cents - (inv.tip_cents || 0);
+      list.sort((a, b) => a.paid_on.localeCompare(b.paid_on) || String(a.created_at || "").localeCompare(String(b.created_at || "")));
+      let before = 0;
+      for (const p of list) {
+        const tip = Math.max(0, Math.min(p.amount_cents, before + p.amount_cents - work));
+        before += p.amount_cents;
+        out.push({ on: p.paid_on, cents: p.amount_cents, tip_cents: tip, method: p.method || "Other", customer_id: inv.customer_id || null, invoice_id: id, booking_id: inv.booking_id || null });
+      }
+    }
+    for (const b of bookings || []) {
+      if (b.status !== "Done" || claimed.has(b.id)) continue;
+      const tip = bookingCents(b.tip), cents = bookingCents(b.total) + tip;
+      if (cents > 0) out.push({ on: b.date, cents, tip_cents: tip, method: b.paid_with || "Not recorded", customer_id: b.customer_id || null, invoice_id: null, booking_id: b.id });
+    }
+    return out;
+  }
+
+  // What kind of job it was, for "most popular": the package name, or the bike or house service.
+  function bookingPackage(b, names) { return b.service === "bike" ? names.bike : b.service === "house" ? names.house : b.package || "Other"; }
+  function invoicePackage(inv, st, names) {
+    for (const l of inv.items || []) {
+      const ref = String(l.ref || "");
+      if (ref === "svc:bike") return names.bike;
+      if (ref === "svc:house") return names.house;
+      if (ref.startsWith("pkg:")) { const p = ((st && st.packages) || []).find(x => "pkg:" + x.id === ref); return p ? p.name : l.name; }
+    }
+    return "Other";
+  }
+
+  // Finished jobs: bookings marked Done (on the job's day), plus sent invoices for work that was never booked
+  // (on the job date). cents is what the job came to: its invoice total, or the booking's total and tip.
+  function completedJobs(bookings, invoices, st, names) {
+    const out = [], byBooking = new Map();
+    for (const inv of invoices || []) if (inv.kind === "invoice" && inv.state !== "void" && inv.booking_id) byBooking.set(inv.booking_id, inv);
+    for (const b of bookings || []) {
+      if (b.status !== "Done") continue;
+      const inv = byBooking.get(b.id);
+      out.push({ on: b.date, cents: inv ? inv.total_cents : bookingCents(b.total) + bookingCents(b.tip), package: bookingPackage(b, names), customer_id: b.customer_id || null });
+    }
+    for (const inv of invoices || []) {
+      if (inv.kind === "invoice" && inv.state === "sent" && !inv.booking_id) {
+        out.push({ on: inv.job_date || inv.issued_on, cents: inv.total_cents, package: invoicePackage(inv, st, names), customer_id: inv.customer_id || null });
+      }
+    }
+    return out;
+  }
+
+  // Rows dated from..to, both days included ("YYYY-MM-DD").
+  function between(rows, from, to) { return rows.filter(r => r.on >= from && r.on <= to); }
+  const sumCents = (rows, key) => rows.reduce((n, r) => n + (r[key || "cents"] || 0), 0);
+  // [name, cents, count] per group, biggest first: by "cents" (money by payment method) or by "count" (jobs by package).
+  function tally(rows, key, by) {
+    const m = new Map();
+    for (const r of rows) { const k = r[key] || "Not recorded", x = m.get(k) || [k, 0, 0]; x[1] += r.cents; x[2]++; m.set(k, x); }
+    const i = by === "count" ? 2 : 1;
+    return [...m.values()].sort((a, b) => b[i] - a[i] || b[3 - i] - a[3 - i] || a[0].localeCompare(b[0]));
+  }
+
+  // Sent invoices that still owe money: late ones first (most days late first), then the rest by due date.
+  // Late means past the due date with money still owed, part paid or not.
+  function owedInvoices(invoices, payments, today) {
+    const paid = new Map();
+    for (const p of payments || []) if (!p.voided_at) paid.set(p.invoice_id, (paid.get(p.invoice_id) || 0) + p.amount_cents);
+    const out = [];
+    for (const inv of invoices || []) {
+      if (inv.kind !== "invoice" || inv.state !== "sent") continue;
+      const got = paid.get(inv.id) || 0, balance = inv.total_cents - got;
+      if (balance <= 0) continue;
+      out.push({ inv, balance, status: invoiceStatus(inv, got, today, false), daysLate: inv.due_on && today > inv.due_on ? daysBetween(inv.due_on, today) : 0 });
+    }
+    return out.sort((a, b) => b.daysLate - a.daysLate || String(a.inv.due_on || "9999").localeCompare(String(b.inv.due_on || "9999")) || a.inv.number - b.inv.number);
+  }
 
   // ===== Invoice settings (owner-only invoice_settings row), checked the same way every time they're loaded =====
   function mergeInvoiceSettings(base, d) {
@@ -179,7 +273,8 @@
   const LGC = {
     phoneKey, vehicleLabel, isEmail, customerMatches,
     fmtCents, toCents, dealFor, priceFor, linesFromBooking,
-    invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, cashAppLink, venmoLink, addDays, mergeInvoiceSettings
+    invoiceTotals, invoiceProblems, invoiceNumber, invoiceStatus, paidCents, balanceDue, paymentProblem, cashAppLink, venmoLink, addDays, mergeInvoiceSettings,
+    moneyIn, completedJobs, invoicePackage, between, sumCents, tally, owedInvoices
   };
   if (typeof module === "object" && module.exports) module.exports = LGC; else root.LGC = LGC;
 })(this);

@@ -670,7 +670,7 @@
     const scr = SCREENS[S.route], active = scr.parent || S.route;
     const reqs = S.bookings.filter(b => b.status === "Requested" && b.date >= today()).length;
     const pendingReviews = S.reviews.filter(r => !r.approved).length;
-    const overdue = S.invoices.filter(i => i.kind === "invoice" && statusOf(i) === "Overdue").length;
+    const overdue = LGC.owedInvoices(S.invoices, S.payments, today()).filter(r => r.daysLate).length;
     $("tabbar").replaceChildren(...TABS.map(([k, label, ic]) => {
       const n = k === "jobs" ? reqs : k === "more" ? pendingReviews : k === "invoices" ? overdue : 0;
       return h("button", { class: "tab", type: "button", "aria-current": k === active ? "page" : null, onclick: () => { haptic(8); go(k); } },
@@ -737,12 +737,12 @@
     // KPIs
     const wkEnd = addDays(t, 6), monthKey = t.slice(0, 7);
     const bookedWeek = active.filter(b => b.status !== "Done" && b.date >= t && b.date <= wkEnd).reduce((n, b) => n + b.total, 0);
-    const doneMonth = S.bookings.filter(b => b.status === "Done" && b.date.slice(0, 7) === monthKey);
+    const md = moneyData(), monthIn = LGC.between(md.ins, monthKey + "-01", t), monthJobs = LGC.between(md.jobs, monthKey + "-01", t);
     let open = 0; for (let i = 0; i < 7; i++) open += freeSlots(addDays(t, i)).length;
     const approved = S.reviews.filter(r => r.approved);
     v.append(h("div", { class: "kpis" },
       kpi("Booked · 7 days", money(bookedWeek), queue.filter(b => b.date <= wkEnd).length + " jobs"),
-      kpi("Earned · " + new Date().toLocaleDateString(undefined, { month: "short" }), money(doneMonth.reduce((n, b) => n + earned(b), 0)), doneMonth.length + " done"),
+      kpi("Earned · " + new Date().toLocaleDateString(undefined, { month: "short" }), short(LGC.sumCents(monthIn)), monthJobs.length + " done"),
       kpi("Open spots · 7 days", String(open), open ? "post them on Social" : "fully booked"),
       kpi("Rating", approved.length ? (approved.reduce((n, r) => n + r.stars, 0) / approved.length).toFixed(1) + " ★" : "–", approved.length + " reviews")));
 
@@ -1119,17 +1119,20 @@
     });
   }
 
-  // ===== Clients: customer records (contact, notes, vehicles) with stats from their bookings =====
+  // ===== Clients: customer records (contact, notes, vehicles) with stats from their bookings and payments =====
   const carsOf = (id) => S.vehicles.filter(v => v.customer_id === id && !v.archived);
   function clientIndex() {
-    const t = today(), jobs = new Map();
+    const t = today(), jobs = new Map(), spent = new Map(), visits = new Map(), md = moneyData();
     for (const b of S.bookings) if (b.customer_id) { const l = jobs.get(b.customer_id); l ? l.push(b) : jobs.set(b.customer_id, [b]); }
+    // Spent is money they've actually paid; visits are finished jobs, booked or invoiced.
+    for (const r of md.ins) if (r.customer_id) spent.set(r.customer_id, (spent.get(r.customer_id) || 0) + r.cents);
+    for (const j of md.jobs) if (j.customer_id) { const l = visits.get(j.customer_id); l ? l.push(j.on) : visits.set(j.customer_id, [j.on]); }
     return S.customers.map(c => {
-      const list = jobs.get(c.id) || [], active = list.filter(b => b.status !== "Cancelled"), done = active.filter(b => b.status === "Done");
-      const last = active.filter(b => b.date <= t).reduce((m, b) => b.date > m ? b.date : m, "");
+      const list = jobs.get(c.id) || [], active = list.filter(b => b.status !== "Cancelled"), done = visits.get(c.id) || [];
+      const last = [...active.filter(b => b.date <= t).map(b => b.date), ...done.filter(d => d <= t)].reduce((m, d) => d > m ? d : m, "");
       const next = active.filter(b => b.date >= t && b.status !== "Done").sort(byWhen)[0] || null;
       const days = last ? Math.round((Date.now() - new Date(last + "T12:00:00")) / 864e5) : null;
-      return { ...c, jobs: list, latest: active.slice().sort(byWhen).pop() || null, cars: carsOf(c.id), visits: done.length, spent: done.reduce((n, b) => n + earned(b), 0),
+      return { ...c, jobs: list, latest: active.slice().sort(byWhen).pop() || null, cars: carsOf(c.id), visits: done.length, spent: spent.get(c.id) || 0,
         last, next, daysSince: days, sources: [...new Set(list.map(b => b.source).filter(Boolean))], due: !next && done.length > 0 && days >= 28 };
     });
   }
@@ -1165,7 +1168,7 @@
       h("div", { class: "avatar" }, initials(c.name)),
       h("div", { class: "main" }, h("b", {}, c.name), h("span", {}, [c.visits ? c.visits + " visit" + (c.visits > 1 ? "s" : "") : "New",
         c.next ? "next " + dayLabel(c.next.date) : c.last ? "last " + fmtDate(c.last, { month: "short", day: "numeric" }) : null, car, c.town].filter(Boolean).join(" · "))),
-      h("div", { class: "end" }, h("b", {}, money(c.spent)), c.archived ? h("span", { class: "pill st-Cancelled" }, "Hidden") : c.due ? h("span", { class: "pill st-Requested" }, "Due") : c.visits >= 2 ? h("span", { class: "pill st-Confirmed" }, "Regular") : null));
+      h("div", { class: "end" }, h("b", {}, short(c.spent)), c.archived ? h("span", { class: "pill st-Cancelled" }, "Hidden") : c.due ? h("span", { class: "pill st-Requested" }, "Due") : c.visits >= 2 ? h("span", { class: "pill st-Confirmed" }, "Regular") : null));
   }
   // Prefill for "Book" from a customer: their details, first car, and what they booked last time.
   function bookingPrefill(c) {
@@ -1188,7 +1191,7 @@
         action("edit", "Edit", { onclick: () => customerSheet(c.id) })));
       if (c.archived) body.append(h("div", { class: "note warn" }, h("b", {}, "Hidden from your client list"), h("span", {}, "Their history is kept. Show them again at the bottom.")));
       body.append(h("div", { class: "kpis" },
-        kpi("Spent", money(c.spent), c.visits + " done"),
+        kpi("Spent", short(c.spent), c.visits + " done"),
         kpi(c.next ? "Next visit" : "Last visit", c.next ? dayLabel(c.next.date) : c.last ? fmtDate(c.last, { month: "short", day: "numeric" }) : "–", c.next ? fmtTime(c.next.time) : c.daysSince != null ? c.daysSince + " days ago" : "")));
       if (c.due && last) body.append(h("div", { class: "note warn" }, h("b", {}, "Due for a detail"), h("span", {}, "It's been " + c.daysSince + " days. Send a rebook text?"),
         h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => messageSheet(last.id, "rebook") }, icon("msg", 18), "Send rebook text")));
@@ -1330,6 +1333,13 @@
   // Cents as a value for a money input: 5000 → "50", 4950 → "49.50", 0 → "".
   const asInput = (c) => c ? (c % 100 ? (c / 100).toFixed(2) : String(c / 100)) : "";
   const SERVICE_NAMES = () => ({ bike: CFG.services.bike.name, house: CFG.services.house.name });
+  // Sent invoices still owed, and the ones past their due date (part paid or not). Invoices and Money both show these.
+  function owedKpis() {
+    const owed = LGC.owedInvoices(S.invoices, S.payments, today()), late = owed.filter(r => r.daysLate);
+    return h("div", { class: "kpis" },
+      kpi("Waiting on", short(LGC.sumCents(owed, "balance")), owed.length + " invoice" + (owed.length === 1 ? "" : "s")),
+      kpi("Overdue", short(LGC.sumCents(late, "balance")), late.length ? late.length + " past due" : "nothing late"));
+  }
 
   function vInvoices(v) {
     if (S.missing.has("invoices")) { v.append(missingNote("Invoices")); return; }
@@ -1338,11 +1348,7 @@
       open: (r) => r.inv.kind === "invoice" && OPEN.has(r.st), quotes: (r) => r.inv.kind === "quote" && r.st !== "Void",
       paid: (r) => r.st === "Paid", void: (r) => r.st === "Void", all: () => true
     };
-    const owed = rows.filter(r => r.inv.kind === "invoice" && r.st !== "Draft" && OPEN.has(r.st)), late = owed.filter(r => r.st === "Overdue");
-    const due = (list) => list.reduce((n, r) => n + r.inv.total_cents - paidOf(r.inv), 0);
-    v.append(h("div", { class: "kpis" },
-      kpi("Waiting on", short(due(owed)), owed.length + " invoice" + (owed.length === 1 ? "" : "s")),
-      kpi("Overdue", short(due(late)), late.length ? late.length + " past due" : "nothing late")));
+    v.append(owedKpis());
     v.append(h("div", { class: "row2" },
       h("button", { class: "btn btn-primary", type: "button", onclick: () => invoiceEditor({ kind: "invoice" }) }, icon("plus", 18), "New invoice"),
       h("button", { class: "btn btn-ghost", type: "button", onclick: () => invoiceEditor({ kind: "quote" }) }, icon("plus", 18), "New quote")));
@@ -1622,7 +1628,8 @@
     const inv = invoiceFor(id);
     if (inv) invoiceSheet(inv.id); else invoiceEditor({ booking: b });
   }
-  // Until the Money screen counts invoice payments (a later stage), a job's invoice keeps its booking's total and tip in step.
+  // A job's invoice keeps its booking in step (Done, total, tip, how they paid) so the job and client history show what
+  // was charged. Money never adds the booking on top: once a job has an invoice, only its payments count (core.js moneyIn).
   async function syncBooking(inv, paidWith) {
     const b = inv.booking_id && inv.kind === "invoice" && inv.state !== "void" && S.bookings.find(x => x.id === inv.booking_id);
     if (!b) return;
@@ -2261,43 +2268,72 @@
       PUSH.supported ? h("span", { class: "switch" + (PUSH.on ? " on" : ""), "aria-hidden": "true" }) : icon("chev", 20));
   }
 
-  // ===== Money =====
+  // ===== Money: what came in, who still owes, and what's left after costs =====
+  // Money in is invoice payments on the day they were paid, plus jobs marked Done before invoices existed (core.js moneyIn).
+  const RANGES = [["week", "This week"], ["month", "This month"], ["year", "This year"], ["all", "All time"]];
+  const rangeStart = (r, t) => r === "week" ? weekStart(t) : r === "month" ? t.slice(0, 8) + "01" : r === "year" ? t.slice(0, 5) + "01-01" : "0000-01-01";
+  const moneyData = () => ({ ins: LGC.moneyIn(S.invoices, S.payments, S.bookings), jobs: LGC.completedJobs(S.bookings, S.invoices, S.settings, SERVICE_NAMES()) });
+  const jobsText = (n) => n + " job" + (n === 1 ? "" : "s");
   function vMoney(v) {
-    const t = today(), r = S.moneyRange;
-    const from = r === "week" ? weekStart(t) : r === "month" ? t.slice(0, 8) + "01" : r === "year" ? t.slice(0, 5) + "01-01" : "0000-01-01";
-    const inRange = (d) => d >= from && d <= t;
-    const done = S.bookings.filter(b => b.status === "Done" && inRange(b.date));
-    const exp = S.expenses.filter(e => inRange(e.spent_on));
-    const sales = done.reduce((n, b) => n + b.total, 0), tips = done.reduce((n, b) => n + b.tip, 0), costs = exp.reduce((n, e) => n + e.amount, 0);
-    const label = { week: "this week", month: "this month", year: "this year", all: "all time" }[r];
-    v.append(seg([["week", "Week"], ["month", "Month"], ["year", "Year"], ["all", "All time"]], r, (k) => { S.moneyRange = k; render(false); }));
+    const t = today(), r = S.moneyRange, all = moneyData();
+    const pick = (k) => ({ ins: LGC.between(all.ins, rangeStart(k, t), t), jobs: LGC.between(all.jobs, rangeStart(k, t), t) });
+    // One tile per stretch of time. Tapping a tile shows its details below.
+    v.append(h("div", { class: "kpis" }, RANGES.map(([k, name]) => {
+      const p = pick(k);
+      return h("button", { class: "kpi pick-kpi", type: "button", "aria-pressed": String(k === r), onclick: () => { haptic(8); S.moneyRange = k; render(false); } },
+        h("small", {}, name), h("b", {}, short(LGC.sumCents(p.ins))), h("span", {}, jobsText(p.jobs.length)));
+    })));
+
+    const { ins, jobs } = pick(r), label = RANGES.find(x => x[0] === r)[1].toLowerCase();
+    const exp = S.expenses.filter(e => e.spent_on >= rangeStart(r, t) && e.spent_on <= t);
+    const earnedC = LGC.sumCents(ins), tips = LGC.sumCents(ins, "tip_cents"), costs = exp.reduce((n, e) => n + Math.round(e.amount * 100), 0), profit = earnedC - costs;
+    const line = (k, val, cls) => h("div", { class: "stat-line" }, h("span", {}, k), h("b", { class: "num" + (cls ? " " + cls : "") }, val));
     v.append(h("div", { class: "card" },
-      h("small", { class: "muted", style: "font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:11px" }, "Earned " + label),
-      h("div", { class: "big-num" }, money(sales + tips)),
+      h("small", { class: "muted", style: "font-weight:800;letter-spacing:1.5px;text-transform:uppercase;font-size:11px" }, "Profit " + label),
+      h("div", { class: "big-num " + (profit >= 0 ? "" : "down") }, (profit < 0 ? "−" : "") + short(Math.abs(profit))),
       h("div", { style: "display:grid;gap:6px" },
-        h("div", { class: "stat-line" }, h("span", {}, "Jobs done"), h("b", { class: "num" }, done.length)),
-        h("div", { class: "stat-line" }, h("span", {}, "Average per job"), h("b", { class: "num" }, done.length ? money((sales + tips) / done.length) : "–")),
-        h("div", { class: "stat-line" }, h("span", {}, "Tips"), h("b", { class: "num" }, money(tips))),
-        h("div", { class: "stat-line" }, h("span", {}, "Expenses"), h("b", { class: "num down" }, "−" + money2(costs))),
-        h("div", { class: "stat-line", style: "border-top:1px solid var(--line);padding-top:8px" }, h("span", { style: "color:var(--fg);font-weight:800" }, "Profit"), h("b", { class: "num " + (sales + tips - costs >= 0 ? "up" : "down") }, money2(sales + tips - costs))))));
+        line("Money in", LGC.fmtCents(earnedC)),
+        line("Tips (included)", LGC.fmtCents(tips)),
+        line("Expenses", costs ? "−" + LGC.fmtCents(costs) : "$0.00", costs ? "down" : ""),
+        h("div", { style: "border-top:1px solid var(--line);margin:2px 0" }),
+        line("Jobs completed", String(jobs.length)),
+        line("Average job", jobs.length ? LGC.fmtCents(Math.round(LGC.sumCents(jobs) / jobs.length)) : "–"))));
+
+    const owed = LGC.owedInvoices(S.invoices, S.payments, t), drafts = S.invoices.filter(i => i.kind === "invoice" && i.state === "draft").length;
+    const toInvoices = () => { S.invFilter = "open"; go("invoices"); };
+    v.append(h("div", { class: "sec-title" }, h("h2", {}, "Who owes you"), h("button", { class: "link", type: "button", onclick: toInvoices }, "All invoices")));
+    v.append(owedKpis());
+    if (owed.length) v.append(h("div", { class: "list" }, owed.slice(0, 6).map(owedItem)));
+    else v.append(h("p", { class: "muted small" }, "Everyone's paid up."));
+    if (owed.length > 6) v.append(h("button", { class: "link", type: "button", onclick: toInvoices }, "See all " + owed.length + " unpaid"));
+    if (drafts) v.append(h("button", { class: "card tap alert-card", type: "button", style: "text-align:left;color:var(--fg)", onclick: toInvoices },
+      h("div", { class: "card-head" }, h("h3", {}, drafts + (drafts === 1 ? " invoice" : " invoices") + " not sent yet"), icon("chev")),
+      h("span", { class: "muted small" }, "Drafts don't count as owed until you send them.")));
 
     const ahead = S.bookings.filter(b => (b.status === "Confirmed" || b.status === "Requested") && b.date >= t);
+    const popular = LGC.tally(jobs, "package", "count");
+    v.append(h("div", { class: "sec-title" }, h("h2", {}, "Jobs")));
     v.append(h("div", { class: "kpis" },
-      kpi("Booked ahead", money(ahead.reduce((n, b) => n + b.total, 0)), ahead.length + " jobs coming"),
-      kpi("Best package", (() => { const m = {}; done.forEach(b => m[b.package] = (m[b.package] || 0) + earned(b)); const top = Object.entries(m).sort((a, b) => b[1] - a[1])[0]; return top ? top[0].replace(/^The /, "") : "–"; })(), "by earnings")));
+      kpi("Booked ahead", money(ahead.reduce((n, b) => n + b.total, 0)), ahead.length + " coming up"),
+      kpi("Most popular", popular[0] ? popular[0][0].replace(/^The /, "") : "–", popular[0] ? jobsText(popular[0][2]) + " " + label : "no jobs " + label)));
 
-    // Last 8 weeks, Monday to Sunday
+    // Last 8 weeks of money in, Monday to Sunday
     const weeks = [];
     for (let i = 7; i >= 0; i--) {
       const ws = addDays(weekStart(t), -7 * i), we = addDays(ws, 6);
-      weeks.push({ label: fmtDate(ws, { month: "numeric", day: "numeric" }), value: S.bookings.filter(b => b.status === "Done" && b.date >= ws && b.date <= we).reduce((n, b) => n + earned(b), 0) });
+      weeks.push({ label: fmtDate(ws, { month: "numeric", day: "numeric" }), value: LGC.sumCents(LGC.between(all.ins, ws, we)) / 100 });
     }
     v.append(h("div", { class: "card" }, h("h3", {}, "Last 8 weeks"), barChart(weeks)));
 
-    const by = (key, list) => { const m = {}; list.forEach(b => { const k = b[key] || "Not recorded"; m[k] = (m[k] || 0) + earned(b); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
-    const barsCard = (title, rows) => { const max = Math.max(1, ...rows.map(r => r[1])); return h("div", { class: "card" }, h("h3", {}, title), rows.length ? h("div", { class: "bars" }, rows.map(([k, n]) => h("div", { class: "bar-row" }, h("span", {}, k), h("span", { class: "trk" }, h("span", { class: "fill", style: `width:${(n / max) * 100}%` })), h("span", { class: "num" }, money(n))))) : h("p", { class: "muted small" }, "No finished jobs " + label + ".")); };
-    v.append(barsCard("By package", by("package", done)));
-    v.append(barsCard("By payment", by("paid_with", done)));
+    // rows are [name, cents, count]; bars measure money or number of jobs.
+    const barsCard = (title, rows, byCount, none) => {
+      const i = byCount ? 2 : 1, max = Math.max(1, ...rows.map(x => x[i]));
+      return h("div", { class: "card" }, h("h3", {}, title), rows.length ? h("div", { class: "bars" }, rows.map(x => h("div", { class: "bar-row" }, h("span", {}, x[0]),
+        h("span", { class: "trk" }, h("span", { class: "fill", style: `width:${(x[i] / max) * 100}%` })), h("span", { class: "num" }, byCount ? String(x[2]) : short(x[1])))))
+        : h("p", { class: "muted small" }, none));
+    };
+    v.append(barsCard("Jobs by package", popular, true, "No finished jobs " + label + "."));
+    v.append(barsCard("How they paid", LGC.tally(ins, "method"), false, "No money in " + label + "."));
 
     const expCard = h("div", { class: "card" }, h("div", { class: "card-head" }, h("h3", {}, "Expenses"), h("button", { class: "btn btn-ghost btn-sm", type: "button", disabled: S.missing.has("expenses"), onclick: () => expenseSheet() }, icon("plus", 18), "Add")));
     if (S.missing.has("expenses")) expCard.append(missingNote("Expense tracking"));
@@ -2305,6 +2341,13 @@
     else expCard.append(h("div", { class: "list", style: "background:var(--panel2)" }, exp.slice(0, 50).map(e => h("button", { class: "item", type: "button", onclick: () => expenseSheet(e) },
       h("div", { class: "avatar" }, icon("receipt", 20)), h("div", { class: "main" }, h("b", {}, e.category), h("span", {}, [fmtDate(e.spent_on), e.note].filter(Boolean).join(" · "))), h("div", { class: "end" }, h("b", {}, money2(e.amount)))))));
     v.append(expCard);
+  }
+  function owedItem(r) {
+    const c = customerOf(r.inv.customer_id), when = r.daysLate ? r.daysLate + (r.daysLate === 1 ? " day" : " days") + " late" : r.inv.due_on ? "due " + fmtDate(r.inv.due_on, { month: "short", day: "numeric" }) : null;
+    return h("button", { class: "item", type: "button", onclick: () => invoiceSheet(r.inv.id) },
+      h("div", { class: "avatar" }, icon("receipt", 20)),
+      h("div", { class: "main" }, h("b", {}, c ? c.name : "Customer"), h("span", {}, [LGC.invoiceNumber(r.inv), when].filter(Boolean).join(" · "))),
+      h("div", { class: "end" }, h("b", {}, LGC.fmtCents(r.balance)), invPill(r.status)));
   }
   function barChart(weeks) {
     const W = 340, H = 160, P = { l: 4, r: 4, t: 20, b: 22 }, max = Math.max(1, ...weeks.map(w => w.value)), bw = (W - P.l - P.r) / weeks.length;
