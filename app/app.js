@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.3.0";
+  const VERSION = "1.4.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -220,7 +220,7 @@
   // ===== State =====
   const S = {
     mode: null, user: null, settings: clone(CFG.defaults), bookings: [], reviews: [], posts: [], stats: [], expenses: [], customers: [], vehicles: [],
-    invoices: [], invoiceSettings: clone(CFG.invoices), invFilter: "open", invQuery: "",
+    invoices: [], payments: [], invoiceSettings: clone(CFG.invoices), invFilter: "open", invQuery: "",
     missing: new Set(), ready: false, loading: false, loadedAt: 0, offline: false,
     route: "today", jobFilter: "upcoming", jobQuery: "", clientFilter: "all", clientQuery: "", moneyRange: "month", dirty: false, installEvt: null
   };
@@ -246,6 +246,7 @@
         customers: () => q(sb.from("customers").select("*").order("name").limit(5000)),
         vehicles: () => q(sb.from("vehicles").select("*").order("created_at").limit(10000)),
         invoices: () => q(sb.from("invoices").select("*").order("created_at", { ascending: false }).limit(10000)),
+        payments: () => q(sb.from("payments").select("*").order("paid_on", { ascending: false }).limit(20000)),
         invoiceSettings: () => q(sb.from("invoice_settings").select("data").eq("id", 1).maybeSingle())
       };
       const single = new Set(["settings", "invoiceSettings"]);
@@ -309,6 +310,12 @@
       needLive();
       const { id, number, created_at, updated_at, ...rest } = inv;
       return id ? q(sb.from("invoices").update(rest).eq("id", id).select().single()) : q(sb.from("invoices").insert(rest).select().single());
+    },
+    // Payments are never deleted: removing one sets voided_at. The database refuses overpaying (payment_rules()).
+    async savePayment(p) {
+      needLive();
+      const { id, created_at, ...rest } = p;
+      return id ? q(sb.from("payments").update(rest).eq("id", id).select().single()) : q(sb.from("payments").insert(rest).select().single());
     },
     async saveInvoiceSettings(data) {
       needLive();
@@ -395,8 +402,12 @@
         items: [{ ref: "svc:house", name: names.house, qty: 1, unit_cents: 30000 }], notes: "Two-story colonial. Includes gutters and the back deck." }));
       invoices.push(mkInv({ state: "draft", customer_id: customers[7].id, vehicle_id: vehicles[7].id, issued_on: t, job_date: t, location: "dropoff", discount_percent: 10,
         items: [{ ref: "pkg:interior", name: "Interior", qty: 1, unit_cents: 3000 }, { ref: "addon:heavy", name: "Extra-dirty interior", qty: 1, unit_cents: 1000 }, { ref: "custom", name: "Pet hair removal", qty: 1, unit_cents: 1500 }] }));
+      // Two finished jobs paid in full, one half paid; the newest and the overdue one still owe everything.
+      const payments = [];
+      const paid = (inv, cents, method) => payments.push({ id: uid(), created_at: inv.created_at, invoice_id: inv.id, paid_on: inv.issued_on, amount_cents: cents, method, note: null, voided_at: null });
+      paid(invoices[2], invoices[2].total_cents, "Cash"); paid(invoices[3], invoices[3].total_cents, "Cash"); paid(invoices[4], 2000, "Cash App");
       return {
-        bookings, customers, vehicles, invoices: invoices.reverse(), counters, invoiceSettings: { email: "andrew@example.com" }, settings: clone(CFG.defaults), missing: [],
+        bookings, customers, vehicles, invoices: invoices.reverse(), payments, counters, invoiceSettings: { email: "andrew@example.com" }, settings: clone(CFG.defaults), missing: [],
         reviews: [
           { id: uid(), created_at: new Date(Date.now() - 2 * 864e5).toISOString(), stars: 5, name: "Chris", text: "Truck looks brand new inside and out. Showed up right on time.", approved: false },
           { id: uid(), created_at: new Date(Date.now() - 9 * 864e5).toISOString(), stars: 5, name: "Devon", text: "Third time using Letts Get Clean. Always spotless and super easy to book.", approved: true },
@@ -471,7 +482,10 @@
         if (inv.id) {
           const x = find("invoices", inv.id);
           if (x.state === "void") refuse("This invoice is void, so it can't be changed. Duplicate it instead.");
-          const { number, kind, prefix, created_at, ...patch } = inv;
+          const { number, kind, prefix, created_at, ...patch } = inv, next = { ...x, ...patch };
+          const paidSoFar = LGC.paidCents(db.payments.filter(p => p.invoice_id === x.id));
+          if (next.state === "void" && paidSoFar > 0) refuse("This invoice has payments. Remove them before voiding it.");
+          if (paidSoFar > next.total_cents) refuse("The new total is less than what's already been paid.");
           Object.assign(x, patch, { updated_at: now });
           x.voided_at = x.state === "void" ? (x.voided_at || now) : null;
           return clone(x);
@@ -479,6 +493,24 @@
         if (inv.state === "void") refuse("A new invoice can't start out void.");
         const x = { vehicle_id: null, booking_id: null, quote_id: null, notes: null, void_reason: null, ...inv, id: uid(), number: ++db.counters[inv.kind], created_at: now, updated_at: now, voided_at: null };
         db.invoices.unshift(x); return clone(x);
+      },
+      // Same rules as payment_rules() in the database: only real, unvoided invoices, never past the total, removed is final.
+      async savePayment(p) {
+        await wait();
+        const refuse = (m) => { throw Object.assign(new Error(m), { code: "P0001" }); };
+        const x = p.id ? find("payments", p.id) : null;
+        if (x && x.voided_at) refuse("This payment was removed, so it can't be changed.");
+        const next = { note: null, voided_at: null, paid_on: today(), ...(x || {}), ...p, invoice_id: x ? x.invoice_id : p.invoice_id };
+        const inv = find("invoices", next.invoice_id);
+        if (!next.voided_at) {
+          if (inv.kind !== "invoice") refuse("A quote can't take payments. Turn it into an invoice first.");
+          if (inv.state === "void") refuse("This invoice is void, so it can't take payments.");
+          const others = LGC.paidCents(db.payments.filter(q => q.invoice_id === inv.id && q.id !== next.id));
+          if (others + next.amount_cents > inv.total_cents) refuse("That's more than the balance due. Add the extra to the invoice as a tip first.");
+        }
+        if (x) { Object.assign(x, next); return clone(x); }
+        const y = { ...next, id: uid(), created_at: new Date().toISOString() };
+        db.payments.unshift(y); return clone(y);
       },
       async saveInvoiceSettings(data) { await wait(); db.invoiceSettings = clone(data); return clone(data); },
       async setReview(id, approved) { await wait(); const r = find("reviews", id); r.approved = approved; return clone(r); },
@@ -508,6 +540,7 @@
     S.customers = d.customers || [];
     S.vehicles = d.vehicles || [];
     S.invoices = (d.invoices || []).map(normInvoice);
+    S.payments = d.payments || [];
     S.invoiceSettings = LGC.mergeInvoiceSettings(CFG.invoices, d.invoiceSettings);
     S.settings = mergeSettings(CFG.defaults, d.settings);
     S.missing = new Set(d.missing || []);
@@ -637,8 +670,9 @@
     const scr = SCREENS[S.route], active = scr.parent || S.route;
     const reqs = S.bookings.filter(b => b.status === "Requested" && b.date >= today()).length;
     const pendingReviews = S.reviews.filter(r => !r.approved).length;
+    const overdue = S.invoices.filter(i => i.kind === "invoice" && statusOf(i) === "Overdue").length;
     $("tabbar").replaceChildren(...TABS.map(([k, label, ic]) => {
-      const n = k === "jobs" ? reqs : k === "more" ? pendingReviews : 0;
+      const n = k === "jobs" ? reqs : k === "more" ? pendingReviews : k === "invoices" ? overdue : 0;
       return h("button", { class: "tab", type: "button", "aria-current": k === active ? "page" : null, onclick: () => { haptic(8); go(k); } },
         icon(ic, 24), label, n ? h("span", { class: "badge", "aria-label": n + " waiting" }, n > 9 ? "9+" : n) : null);
     }));
@@ -1282,8 +1316,8 @@
   }
 
   // ===== Invoices and quotes =====
-  // Payments arrive in the next stage; until then nothing counts as paid.
-  function paidOf(inv) { return 0; }
+  const paymentsOf = (invId) => S.payments.filter(p => p.invoice_id === invId);
+  function paidOf(inv) { return LGC.paidCents(paymentsOf(inv.id)); }
   const customerOf = (id) => S.customers.find(c => c.id === id) || null;
   const vehicleOf = (id) => S.vehicles.find(v => v.id === id) || null;
   const convertedTo = (q) => S.invoices.find(i => i.quote_id === q.id && i.state !== "void") || null;
@@ -1367,19 +1401,100 @@
         ["Job date", inv.job_date ? fmtDate(inv.job_date, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : ""],
         ["Where", inv.location === "dropoff" ? "Drop-off" : c ? [c.address, c.town].filter(Boolean).join(", ") || "At their place" : "At their place"],
         [quote ? "Quoted" : "Issued", fmtDate(inv.issued_on, { month: "short", day: "numeric", year: "numeric" })],
-        !quote && inv.due_on && !isVoid ? ["Overdue after", fmtDate(inv.due_on, { month: "short", day: "numeric" })] : null].filter(r => r && r[1]);
+        !quote && inv.due_on && !isVoid && paidOf(inv) < inv.total_cents ? ["Overdue after", fmtDate(inv.due_on, { month: "short", day: "numeric" })] : null].filter(r => r && r[1]);
       body.append(h("div", { class: "dl" }, rows.map(([k, val]) => h("div", {}, h("span", { class: "k" }, k), h("span", { class: "v" }, val)))));
 
       body.append(h("div", { class: "list" }, inv.items.map(l => h("div", { class: "item", style: "cursor:default" },
         h("div", { class: "main" }, h("b", { style: "white-space:normal" }, l.name), l.qty > 1 ? h("span", {}, l.qty + " × " + LGC.fmtCents(l.unit_cents)) : null),
         h("div", { class: "end" }, h("b", {}, LGC.fmtCents(l.unit_cents * l.qty)))))));
       body.append(totalsCard(t, inv.tax_percent, inv.discount_percent));
+      if (!quote && !isVoid) body.append(paymentsCard(inv));
       if (inv.notes) body.append(h("div", { class: "quote" }, inv.notes));
       if (job) body.append(h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: () => jobSheet(job.id) }, icon("cal", 18), "Job: " + fmtDate(job.date) + " · " + fmtTime(job.time)));
       if (job && job.status === "Done" && !quote) body.append(h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: () => messageSheet(job.id, "thanks") }, icon("star", 18), "Text a review request"));
-      if (!isVoid) body.append(h("p", { class: "muted small" }, "Recording payments and sharing the " + what + " as a PDF or text arrive in the next updates."),
-        sureBtn("btn btn-danger btn-block", "Void this " + what, "Tap again to void it", (b) => setInvoiceState(inv, { state: "void" }, b, "Voided · it stays in your records")));
+      if (!isVoid) body.append(h("p", { class: "muted small" }, "Sharing the " + what + " as a PDF or text arrives in the next update."));
+      // The database won't void an invoice that still has payments, so the button only shows once there are none.
+      if (!isVoid && paidOf(inv) > 0) body.append(h("p", { class: "muted small" }, "To void this invoice, remove its payments first."));
+      else if (!isVoid) body.append(sureBtn("btn btn-danger btn-block", "Void this " + what, "Tap again to void it", (b) => setInvoiceState(inv, { state: "void" }, b, "Voided · it stays in your records")));
     };
+  }
+  // What's been paid, what's left, one-tap "paid in full" by method, and the payments so far.
+  function paymentsCard(inv) {
+    const list = paymentsOf(inv.id).slice().sort((a, b) => b.paid_on.localeCompare(a.paid_on) || String(b.created_at).localeCompare(String(a.created_at)));
+    const counted = list.filter(p => !p.voided_at), paid = LGC.paidCents(counted), due = LGC.balanceDue(inv, counted);
+    const card = h("div", { class: "card", style: "display:grid;gap:12px" },
+      h("div", { class: "card-head" }, h("h3", {}, "Payments"),
+        h("b", { class: "num " + (due ? "" : "up") }, due ? LGC.fmtCents(due) + " left" : "Paid in full")));
+    if (paid && due) card.append(h("div", { class: "trk", style: "height:8px" }, h("span", { class: "fill", style: `width:${Math.round(paid / inv.total_cents * 100)}%` })),
+      h("span", { class: "muted small" }, LGC.fmtCents(paid) + " of " + LGC.fmtCents(inv.total_cents) + " paid"));
+    if (due) card.append(
+      h("span", { class: "lbl", style: "font-weight:700;font-size:14px" }, (paid ? "Rest paid" : "Paid in full") + " with:"),
+      h("div", { class: "pay-grid" }, CFG.payments.methods.map(m => h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: (e) => recordPayment(inv, due, m, today(), null, e.currentTarget) }, m))),
+      h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => paymentSheet(inv.id) }, icon("plus", 18), "Part payment, other amount or date"));
+    if (list.length) card.append(h("div", { class: "list", style: "background:var(--panel2)" }, list.map(p => h("div", { class: "item", style: "cursor:default" + (p.voided_at ? ";opacity:.55" : "") },
+      h("div", { class: "avatar" }, icon("money", 20)),
+      h("div", { class: "main" }, h("b", {}, p.method),
+        h("span", {}, [fmtDate(p.paid_on, { month: "short", day: "numeric", year: "numeric" }), p.note, p.voided_at ? "removed" : null].filter(Boolean).join(" · "))),
+      h("div", { class: "end" }, h("b", { style: p.voided_at ? "text-decoration:line-through" : "" }, LGC.fmtCents(p.amount_cents)),
+        p.voided_at ? null : sureBtn("link", "Remove", "Tap again", (b) => removePayment(p, b)))))));
+    return card;
+  }
+  async function recordPayment(inv, cents, method, paidOn, note, btn) {
+    const problem = LGC.paymentProblem(inv, paymentsOf(inv.id), cents);
+    if (problem) { toast(problem); haptic([20, 40, 20]); return false; }
+    const ok = await run(btn, async () => {
+      S.payments.unshift(await api.savePayment({ invoice_id: inv.id, amount_cents: cents, method, paid_on: paidOn, note: note || null }));
+      // Getting paid means the customer has it: a draft becomes sent.
+      if (inv.state === "draft") replaceIn(S.invoices, normInvoice(await api.saveInvoice({ id: inv.id, state: "sent" })));
+      await syncBooking(S.invoices.find(x => x.id === inv.id), method);
+    });
+    if (ok) { toast(LGC.fmtCents(cents) + " · " + method + (LGC.balanceDue(inv, paymentsOf(inv.id)) ? " recorded" : " · paid in full")); haptic([15, 30, 15]); softRender(); drawSheet(false); }
+    return ok;
+  }
+  async function removePayment(p, btn) {
+    const ok = await run(btn, async () => { replaceIn(S.payments, await api.savePayment({ id: p.id, voided_at: new Date().toISOString() })); });
+    if (ok) { toast("Payment removed · it stays in the history"); softRender(); drawSheet(false); }
+  }
+  // Any amount, method and date. If they hand over more than is owed, the extra can go on the invoice as a tip.
+  function paymentSheet(invId) {
+    openSheet("Record a payment", (body) => {
+      const inv = S.invoices.find(x => x.id === invId); if (!inv) return;
+      const due = LGC.balanceDue(inv, paymentsOf(inv.id));
+      const amount = h("input", { type: "text", inputmode: "decimal", value: asInput(due), autocomplete: "off", "aria-label": "Amount" });
+      const method = chipPicker(CFG.payments.methods.map(m => [m, m]), "Cash", false);
+      const day = h("input", { type: "date", value: today(), max: today() });
+      const note = h("input", { maxlength: "200", autocomplete: "off", placeholder: "e.g. Rest due Friday" });
+      const err = h("div", { class: "err", role: "alert", hidden: true });
+      const tipBox = h("div", { class: "note warn", hidden: true });
+      const save = h("button", { class: "btn btn-ok btn-block", type: "submit" }, icon("check", 18), "Save payment");
+      const form = h("form", { class: "form" },
+        h("p", { class: "muted" }, LGC.invoiceNumber(inv) + " · " + LGC.fmtCents(due) + " still owed"),
+        field("Amount", h("div", { class: "money-in" }, amount)), h("div", { class: "field" }, h("span", { class: "lbl" }, "Paid with"), method),
+        h("div", { class: "row2" }, field("Date", day), field("Note", note, "optional")), tipBox, err, save);
+      amount.addEventListener("input", () => { tipBox.hidden = true; err.hidden = true; });
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault(); err.hidden = true; tipBox.hidden = true;
+        const cents = LGC.toCents(amount.value);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day.value) || day.value > today()) { err.textContent = "Pick the day they paid (today or earlier)."; err.hidden = false; return; }
+        if (cents > due && due > 0) {
+          const extra = cents - due;
+          tipBox.replaceChildren(h("b", {}, "That's " + LGC.fmtCents(extra) + " more than they owe."),
+            h("span", {}, "If they meant it as a tip, add it to the invoice and save the whole " + LGC.fmtCents(cents) + "."),
+            h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: async (ev) => {
+              const btn = ev.currentTarget;
+              const ok = await run(btn, async () => { replaceIn(S.invoices, normInvoice(await api.saveInvoice({ id: inv.id, tip_cents: inv.tip_cents + extra, total_cents: inv.total_cents + extra }))); });
+              if (!ok) return;
+              const fresh = S.invoices.find(x => x.id === inv.id);
+              if (await recordPayment(fresh, cents, method.value(), day.value, note.value.trim(), btn)) closeSheet();
+            } }, icon("plus", 18), "Add " + LGC.fmtCents(extra) + " as a tip"));
+          tipBox.hidden = false; haptic([20, 40, 20]); return;
+        }
+        const problem = LGC.paymentProblem(inv, paymentsOf(inv.id), cents);
+        if (problem) { err.textContent = problem; err.hidden = false; haptic([20, 40, 20]); return; }
+        if (await recordPayment(inv, cents, method.value(), day.value, note.value.trim(), save)) closeSheet();
+      });
+      body.append(form);
+    });
   }
   function totalsCard(t, taxPct, discPct) {
     const line = (k, val, cls) => h("div", { class: "stat-line" + (cls ? " " + cls : "") }, h("span", {}, k), h("b", { class: "num" }, val));
@@ -1550,8 +1665,10 @@
       tip.addEventListener("input", () => { st.tip = tip.value; drawTotals(); });
       const notes = h("textarea", { maxlength: "1000", placeholder: kind === "quote" ? "What's included, how long it takes…" : "Anything the customer should see on the invoice" }, st.notes);
       notes.addEventListener("input", () => { st.notes = notes.value; });
-      const paid = b ? h("div", { class: "field" }, h("span", { class: "lbl" }, "Paid with ", h("small", {}, "optional")),
-        chipPicker(CFG.payments.methods.map(m => [m, m]), st.paidWith, false, (k) => { st.paidWith = k; })) : null;
+      // Paid on the spot: saving records the whole total as one payment. Part payments go on the invoice afterwards.
+      const paid = !base && kind === "invoice" ? h("div", { class: "field" }, h("span", { class: "lbl" }, "Paid now?"),
+        chipPicker([["", "Not yet"], ...CFG.payments.methods.map(m => [m, m])], st.paidWith, false, (k) => { st.paidWith = k; })) : null;
+      const alreadyPaid = base ? paidOf(base) : 0;
 
       const form = h("form", { class: "form" },
         h("div", { class: "field" }, h("span", { class: "lbl" }, "Customer"), custBox), carBox,
@@ -1559,7 +1676,8 @@
         h("div", { class: "sec-title" }, h("h2", {}, "Services")), chipsBox, itemsBox,
         h("div", { class: "field" }, h("span", { class: "lbl" }, "Discount"), discMode), discWrap,
         field("Tip", h("div", { class: "money-in" }, tip), "optional"),
-        totalsBox, field("Notes", notes, "optional"), paid, err, save);
+        totalsBox, alreadyPaid ? h("p", { class: "muted small" }, LGC.fmtCents(alreadyPaid) + " is already paid, so the total can't go below that.") : null,
+        field("Notes", notes, "optional"), paid, err, save);
       form.addEventListener("submit", async (e) => {
         e.preventDefault(); err.hidden = true;
         const row = buildRow(), problems = [];
@@ -1570,8 +1688,8 @@
         if (problems.length) { err.textContent = problems.join(" "); err.hidden = false; haptic([20, 40, 20]); err.scrollIntoView({ block: "nearest" }); return; }
         if (!base) {
           row.prefix = kind === "quote" ? IS.quotePrefix : IS.invoicePrefix;
-          // A finished job's invoice is already in the customer's hands, so it starts out sent.
-          row.state = kind === "invoice" && (b || o.quote) ? "sent" : "draft";
+          // A finished job's invoice, or one paid on the spot, is already in the customer's hands, so it starts out sent.
+          row.state = kind === "invoice" && (b || o.quote || st.paidWith) ? "sent" : "draft";
           row.due_on = kind === "invoice" ? LGC.addDays(row.issued_on, IS.overdueDays) : null;
           if (b) row.booking_id = b.id;
           if (o.quote) row.quote_id = o.quote.id;
@@ -1580,10 +1698,18 @@
         const ok = await run(save, async () => {
           saved = normInvoice(await api.saveInvoice(base ? { id: base.id, ...row } : row));
           replaceIn(S.invoices, saved);
-          await syncBooking(saved, b ? st.paidWith : null);
         });
         if (!ok) return;
-        toast(base ? "Saved" : (kind === "quote" ? "Quote " : "Invoice ") + LGC.invoiceNumber(saved) + " saved"); haptic(15); softRender();
+        // The invoice is saved from here on, so nothing below may send the owner back to Save (that would make a second one).
+        const method = !base && kind === "invoice" ? st.paidWith : "";
+        let warned = false;
+        if (method) {
+          try { S.payments.unshift(await api.savePayment({ invoice_id: saved.id, amount_cents: saved.total_cents, method, paid_on: today(), note: null })); }
+          catch (x) { warned = true; toast("Invoice saved, but the payment wasn't: " + niceError(x) + " Record it on the invoice."); }
+        }
+        try { await syncBooking(saved, method || null); } catch (x) { /* the job's total catches up the next time its invoice is saved */ }
+        if (!warned) toast(base ? "Saved" : (kind === "quote" ? "Quote " : "Invoice ") + LGC.invoiceNumber(saved) + (method ? " saved · paid " + LGC.fmtCents(saved.total_cents) + " " + method : " saved"));
+        haptic(15); softRender();
         if (base) closeSheet(); else replaceSheet(LGC.invoiceNumber(saved), invoiceBuilder(saved.id));
       });
       drawCustomer(); drawVehicle(); drawChips(); drawItems(); drawTotals();
