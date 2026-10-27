@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.1.0";
+  const VERSION = "1.2.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -215,7 +215,7 @@
 
   // ===== State =====
   const S = {
-    mode: null, user: null, settings: clone(CFG.defaults), bookings: [], reviews: [], posts: [], stats: [], expenses: [],
+    mode: null, user: null, settings: clone(CFG.defaults), bookings: [], reviews: [], posts: [], stats: [], expenses: [], customers: [], vehicles: [],
     missing: new Set(), ready: false, loading: false, loadedAt: 0, offline: false,
     route: "today", jobFilter: "upcoming", jobQuery: "", clientFilter: "all", clientQuery: "", moneyRange: "month", dirty: false, installEvt: null
   };
@@ -237,7 +237,9 @@
         settings: () => q(sb.from("site_settings").select("data").eq("id", 1).maybeSingle()),
         posts: () => q(sb.from("social_posts").select("*").order("post_date", { ascending: true, nullsFirst: false }).limit(500)),
         stats: () => q(sb.from("social_stats").select("*").order("day").limit(500)),
-        expenses: () => q(sb.from("expenses").select("*").order("spent_on", { ascending: false }).limit(3000))
+        expenses: () => q(sb.from("expenses").select("*").order("spent_on", { ascending: false }).limit(3000)),
+        customers: () => q(sb.from("customers").select("*").order("name").limit(5000)),
+        vehicles: () => q(sb.from("vehicles").select("*").order("created_at").limit(10000))
       };
       const keys = Object.keys(tasks);
       const res = await Promise.allSettled(keys.map(k => tasks[k]()));
@@ -282,7 +284,18 @@
     async addExpense(e) { needLive(); return q(sb.from("expenses").insert(e).select().single()); },
     async deleteExpense(id) { needLive(); await q(sb.from("expenses").delete().eq("id", id)); },
     async savePushSub(row) { needLive(); await q(sb.from("push_subscriptions").upsert(row, { onConflict: "endpoint" })); },
-    async deletePushSub(endpoint) { needLive(); await q(sb.from("push_subscriptions").delete().eq("endpoint", endpoint)); }
+    async deletePushSub(endpoint) { needLive(); await q(sb.from("push_subscriptions").delete().eq("endpoint", endpoint)); },
+    // Customers and vehicles are never deleted, only archived. phone_key is worked out by the database.
+    async saveCustomer(c) {
+      needLive();
+      const { id, phone_key, created_at, ...rest } = c;
+      return id ? q(sb.from("customers").update(rest).eq("id", id).select().single()) : q(sb.from("customers").insert(rest).select().single());
+    },
+    async saveVehicle(v) {
+      needLive();
+      const { id, created_at, ...rest } = v;
+      return id ? q(sb.from("vehicles").update(rest).eq("id", id).select().single()) : q(sb.from("vehicles").insert(rest).select().single());
+    }
   };
 
   // ===== Data: demo (in memory, so anyone can try every screen without an account) =====
@@ -301,6 +314,15 @@
         ["Tony Bianchi", "(845) 555-0107", "91 Pine St", "Monroe", "Chevy Tahoe"],
         ["Sam Wilson", "(845) 555-0108", "40 Grand St", "Newburgh", "Subaru Outback"]
       ];
+      // Each person's car as [year, color, make, model], in the same order as people.
+      const cars = [[2019, "Silver", "Honda", "CR-V"], [2017, "White", "Toyota", "Camry"], [2020, "Black", "Ford", "F-150"], [2018, "Gray", "Jeep", "Grand Cherokee"],
+        [2016, "Blue", "Honda", "Odyssey"], [2021, "Red", "Nissan", "Altima"], [2019, "Black", "Chevy", "Tahoe"], [2015, "Green", "Subaru", "Outback"]];
+      const stamp = (daysAgo) => new Date(Date.now() - daysAgo * 864e5).toISOString();
+      const customers = people.map(([name, phone, address, town], i) => ({ id: uid(), created_at: stamp(60 - i), name, phone, phone_key: LGC.phoneKey(phone),
+        email: i % 3 === 0 ? firstName(name).toLowerCase() + "@example.com" : null, address: address || null, town: town || null, archived: false,
+        notes: i === 0 ? "Gate code 4410. Hose is behind the garage, outlet by the side door." : i === 4 ? "Two car seats in the back. Kids' snacks everywhere." : null }));
+      const vehicles = cars.map(([year, color, make, model], i) => ({ id: uid(), created_at: stamp(60 - i), customer_id: customers[i].id, year, color, make, model, notes: null, archived: false }));
+      vehicles.push({ id: uid(), created_at: stamp(7), customer_id: customers[1].id, year: null, color: "Black", make: "Rad Power", model: "RadCity", notes: "E-bike", archived: false });
       // [day offset, time, person, package, size, status, source, tip, paid]
       const rows = [
         [-45, "17:00", 7, "exterior", "suv", "Done", "Flyer", 5, "Cash"],
@@ -327,14 +349,14 @@
         return { id: uid(), created_at: new Date(Date.now() - (40 - i) * 864e5).toISOString(), status, date, time, name, phone,
           location: drop ? "dropoff" : "mobile", address: address || null, town: town || null, car, package: p.name, size: z.label,
           addons: i % 4 === 0 ? "Air freshener" : null, total: p.deal + z.price + (i % 4 === 0 ? 2 : 0), source, notes: i === 12 ? "Dog hair in the back seat. Gate code 4410." : null,
-          deal: true, tip, paid_with: paid, service: "car" };
+          deal: true, tip, paid_with: paid, service: "car", customer_id: customers[who].id, vehicle_id: vehicles[who].id };
       });
-      const extra = (o) => ({ id: uid(), created_at: new Date(Date.now() - 3 * 864e5).toISOString(), location: "mobile", addons: null, notes: null, deal: false, tip: 0, paid_with: null, ...o });
+      const extra = (o) => ({ id: uid(), created_at: new Date(Date.now() - 3 * 864e5).toISOString(), location: "mobile", addons: null, notes: null, deal: false, tip: 0, paid_with: null, vehicle_id: null, ...o });
       bookings.push(
-        extra({ service: "bike", status: "Done", date: addDays(t, -6), time: "15:00", name: "Devon Thomas", phone: "(845) 555-0102", address: "220 Union Ave", town: "New Windsor", car: "Rad Power RadCity", package: "Bike detail", size: "E-bike", total: 20, source: "Flyer", tip: 5, paid_with: "Cash" }),
-        extra({ service: "house", status: "Confirmed", date: addDays(t, 4), time: slotsFor(addDays(t, 4))[0], name: "Mike Dawson", phone: "(845) 555-0105", address: "3 Lake Dr", town: "Warwick", car: null, package: "Full house pressure wash", size: "House", total: 300, source: "Google", notes: "Two-story colonial, vinyl siding. Spigot is by the back door." }));
+        extra({ service: "bike", status: "Done", date: addDays(t, -6), time: "15:00", name: "Devon Thomas", phone: "(845) 555-0102", address: "220 Union Ave", town: "New Windsor", car: "Rad Power RadCity", package: "Bike detail", size: "E-bike", total: 20, source: "Flyer", tip: 5, paid_with: "Cash", customer_id: customers[1].id, vehicle_id: vehicles[8].id }),
+        extra({ service: "house", status: "Confirmed", date: addDays(t, 4), time: slotsFor(addDays(t, 4))[0], name: "Mike Dawson", phone: "(845) 555-0105", address: "3 Lake Dr", town: "Warwick", car: null, package: "Full house pressure wash", size: "House", total: 300, source: "Google", notes: "Two-story colonial, vinyl siding. Spigot is by the back door.", customer_id: customers[4].id }));
       return {
-        bookings, settings: clone(CFG.defaults), missing: [],
+        bookings, customers, vehicles, settings: clone(CFG.defaults), missing: [],
         reviews: [
           { id: uid(), created_at: new Date(Date.now() - 2 * 864e5).toISOString(), stars: 5, name: "Chris", text: "Truck looks brand new inside and out. Showed up right on time.", approved: false },
           { id: uid(), created_at: new Date(Date.now() - 9 * 864e5).toISOString(), stars: 5, name: "Devon", text: "Third time using Letts Get Clean. Always spotless and super easy to book.", approved: true },
@@ -360,6 +382,23 @@
     // Same rules as the database: one booking per time, and a house wash keeps its day to itself.
     const clash = (b) => b.status !== "Cancelled" && db.bookings.some(o => o.id !== b.id && o.status !== "Cancelled" && o.date === b.date &&
       (o.time === b.time || o.service === "house" || b.service === "house"));
+    // Same as the database's link_booking_customer(): file a new booking under its customer (by phone) and their car.
+    function link(b) {
+      const key = LGC.phoneKey(b.phone), now = new Date().toISOString();
+      if (!b.customer_id && key) {
+        let c = db.customers.find(x => x.phone_key === key && !x.archived);
+        if (!c) { c = { id: uid(), created_at: now, name: String(b.name || "").trim() || "Customer", phone: b.phone, phone_key: key, email: null, address: b.address || null, town: b.town || null, notes: null, archived: false }; db.customers.push(c); }
+        b.customer_id = c.id;
+      }
+      const car = String(b.car || "").trim();
+      if (!b.vehicle_id && b.customer_id && car && b.service !== "house") {
+        const same = (x) => [x.model, [x.make, x.model], [x.year, x.make, x.model], [x.year, x.color, x.make, x.model]]
+          .some(parts => [].concat(parts).filter(p => p != null && p !== "").join(" ").toLowerCase() === car.toLowerCase());
+        let v = db.vehicles.find(x => x.customer_id === b.customer_id && !x.archived && same(x));
+        if (!v) { v = { id: uid(), created_at: now, customer_id: b.customer_id, year: null, make: null, model: car, color: null, notes: null, archived: false }; db.vehicles.push(v); }
+        b.vehicle_id = v.id;
+      }
+    }
     return {
       async loadAll() { if (!db) db = seed(); await wait(); return clone(db); },
       async updateBooking(id, patch) {
@@ -370,7 +409,20 @@
       async addBooking(row) {
         await wait();
         if (clash({ service: "car", ...row })) throw Object.assign(new Error("dup"), { code: "23505" });
-        const b = { id: uid(), created_at: new Date().toISOString(), tip: 0, paid_with: null, ...row }; db.bookings.push(b); return clone(b);
+        const b = { id: uid(), created_at: new Date().toISOString(), tip: 0, paid_with: null, customer_id: null, vehicle_id: null, ...row };
+        link(b); db.bookings.push(b); return clone(b);
+      },
+      async saveCustomer(c) {
+        await wait();
+        if (c.id) { const x = find("customers", c.id); Object.assign(x, c); x.phone_key = LGC.phoneKey(x.phone); return clone(x); }
+        const x = { email: null, address: null, town: null, notes: null, archived: false, ...c, id: uid(), created_at: new Date().toISOString(), phone_key: LGC.phoneKey(c.phone) };
+        db.customers.push(x); return clone(x);
+      },
+      async saveVehicle(v) {
+        await wait();
+        if (v.id) { const x = find("vehicles", v.id); Object.assign(x, v); return clone(x); }
+        const x = { year: null, make: null, model: null, color: null, notes: null, archived: false, ...v, id: uid(), created_at: new Date().toISOString() };
+        db.vehicles.push(x); return clone(x);
       },
       async setReview(id, approved) { await wait(); const r = find("reviews", id); r.approved = approved; return clone(r); },
       async deleteReview(id) { await wait(); db.reviews = db.reviews.filter(r => r.id !== id); },
@@ -396,6 +448,8 @@
     S.posts = d.posts || [];
     S.stats = d.stats || [];
     S.expenses = (d.expenses || []).map(e => ({ ...e, amount: Number(e.amount) || 0 }));
+    S.customers = d.customers || [];
+    S.vehicles = d.vehicles || [];
     S.settings = mergeSettings(CFG.defaults, d.settings);
     S.missing = new Set(d.missing || []);
   }
@@ -403,6 +457,8 @@
   function niceError(e) {
     const c = e && e.code, m = String((e && e.message) || "");
     if (m === "offline" || isNetwork(e)) return "No connection. Try again when you have signal.";
+    // The database's own rules (invoice-rules, payment-rules) are already written as plain sentences.
+    if (c === "P0001" && m) return m;
     if (c === "23505") return "That day and time is already booked. Pick another time.";
     if (c === "23514") return "One of those values isn't allowed. Check the numbers and try again.";
     if (MISSING.has(c) || c === "PGRST204") return "This part needs the app's one-time database update first.";
@@ -484,17 +540,18 @@
     return h("button", { ...attrs, type: "button", disabled: o.disabled }, icon(iconName), label);
   }
   function missingNote(what) {
-    return h("div", { class: "note warn" }, h("b", {}, what + " needs a one-time database update."), h("span", {}, "Ask Claude to apply the Letts owner_app migration. Everything else works meanwhile."));
+    return h("div", { class: "note warn" }, h("b", {}, what + " needs a one-time database update."), h("span", {}, "Ask Claude to apply the latest Letts database update (supabase/migrations). Everything else works meanwhile."));
   }
 
   // ===== Routing =====
-  const TABS = [["today", "Today", "home"], ["jobs", "Jobs", "cal"], ["clients", "Clients", "users"], ["social", "Social", "megaphone"], ["more", "More", "menu"]];
+  const TABS = [["today", "Today", "home"], ["jobs", "Jobs", "cal"], ["clients", "Clients", "users"], ["invoices", "Invoices", "receipt"], ["more", "More", "menu"]];
   const SCREENS = {
     today: { title: () => fmtDate(today(), { weekday: "short", month: "short", day: "numeric" }), kicker: greeting, draw: vToday, fab: ["plus", "Add a booking", () => addBookingSheet()] },
     jobs: { title: () => "Jobs", draw: vJobs, fab: ["plus", "Add a booking", () => addBookingSheet()] },
-    clients: { title: () => "Clients", draw: vClients, fab: ["plus", "Add a booking", () => addBookingSheet()] },
-    social: { title: () => "Social", kicker: () => "Post · plan · grow", draw: vSocial, fab: ["plus", "New post", () => composeSheet(null)] },
+    clients: { title: () => "Clients", draw: vClients, fab: ["plus", "Add a customer", () => customerSheet()] },
+    invoices: { title: () => "Invoices", draw: vInvoices },
     more: { title: () => "More", draw: vMore },
+    social: { title: () => "Social", kicker: () => "Post · plan · grow", parent: "more", draw: vSocial, fab: ["plus", "New post", () => composeSheet(null)] },
     money: { title: () => "Money", parent: "more", draw: vMoney, fab: ["plus", "Add an expense", () => expenseSheet()] },
     reviews: { title: () => "Reviews", parent: "more", draw: vReviews },
     settings: { title: () => "Settings", kicker: () => "Updates the website live", parent: "more", draw: vSettings }
@@ -505,7 +562,7 @@
     if (route === S.route) { $("view").scrollTo({ top: 0, behavior: "smooth" }); return; }
     if (S.route === "settings" && S.dirty && !confirm("Leave without saving your settings changes?")) return;
     S.dirty = false;
-    // Sub-pages (Money, Reviews, Settings) get their own history entry so Back returns to More; tabs replace.
+    // Sub-pages (Social, Money, Reviews, Settings) get their own history entry so Back returns to More; tabs replace.
     if (push) history.pushState({ sub: true }, "", "#/" + route); else history.replaceState(null, "", "#/" + route);
     S.route = route; render(true);
   }
@@ -554,7 +611,7 @@
     // Not-done jobs that haven't started yet, or started within the last 3 hours (still in progress).
     const queue = active.filter(b => b.status !== "Done" && whenMs(b) > now - 3 * 3600e3).sort(byWhen);
     const next = queue[0];
-    if (S.missing.size) v.append(missingNote("Social, expenses and payment tracking"));
+    if (S.missing.size) v.append(missingNote("Part of the app"));
 
     v.append(next ? nextCard(next) : noJobsCard());
 
@@ -722,8 +779,11 @@
       ].filter(r => r && r[1]);
       body.append(h("div", { class: "dl" }, rows.map(([k, val]) => h("div", {}, h("span", { class: "k" }, k), h("span", { class: "v" }, val)))));
       if (b.notes) body.append(h("div", { class: "quote" }, b.notes));
-      const foot = h("div", { class: "row2" }, h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => editJobSheet(b.id) }, icon("edit", 18), "Edit"));
-      if (b.status === "Requested" || b.status === "Confirmed") foot.append(sureBtn("btn btn-danger btn-sm", "Cancel job", "Tap to cancel", (btn) => setStatus(b.id, "Cancelled", btn, "Cancelled · the time is open again on the website")));
+      const cancel = b.status === "Requested" || b.status === "Confirmed";
+      const customer = b.customer_id && S.customers.some(c => c.id === b.customer_id);
+      const foot = h("div", { class: customer && cancel ? "row3" : "row2" }, h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => editJobSheet(b.id) }, icon("edit", 18), "Edit"));
+      if (customer) foot.append(h("button", { class: "btn btn-ghost btn-sm", type: "button", onclick: () => clientSheet(b.customer_id) }, icon("users", 18), "Customer"));
+      if (cancel) foot.append(sureBtn("btn btn-danger btn-sm", "Cancel job", "Tap to cancel", (btn) => setStatus(b.id, "Cancelled", btn, "Cancelled · the time is open again on the website")));
       body.append(foot);
     });
   }
@@ -882,7 +942,7 @@
         if (!house) { const f = freeSlots(dateIn.value)[0]; if (f) timeIn.value = f; }
         recalc(); drawSlots();
       }
-      const towns = h("datalist", { id: "townList" }, ["Newburgh", "New Windsor", "Middletown", "Goshen", "Warwick", "Monroe", "Cornwall", "Montgomery", "Walden"].map(t => h("option", { value: t })));
+      const towns = townList();
       const form = h("form", { class: "form" },
         h("div", { class: "field" }, h("span", { class: "lbl" }, "What"), service),
         h("div", { class: "row2" }, field("Day", dateIn), timeField), slotHint, dayNote,
@@ -908,6 +968,11 @@
           total: Math.max(0, Math.min(1000, Math.round(Number(total.value) || 0))), source: "Phone/text", notes: notes.value.trim().slice(0, 500) || null,
           deal: svc === "car" && dealOn(), status: status.value()
         };
+        // Booked from a customer's page: keep it on that customer (and car) unless the phone or car was changed.
+        if (p0.customer_id && LGC.phoneKey(row.phone) === LGC.phoneKey(p0.phone)) {
+          row.customer_id = p0.customer_id;
+          if (p0.vehicle_id && row.car === p0.car) row.vehicle_id = p0.vehicle_id;
+        }
         const problems = [];
         if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) problems.push("pick a day");
         if (!/^\d{2}:\d{2}$/.test(row.time)) problems.push("pick a time");
@@ -917,10 +982,13 @@
         if (house && dayJobs(row.date).length) problems.push("pick a day with nothing else booked");
         if (!house && dayJobs(row.date).some(isHouse)) problems.push("pick another day (a house wash has this one)");
         if (problems.length) { err.textContent = "Almost there: " + problems.join(", ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
-        const ok = await run(save, async () => { S.bookings.push(await api.addBooking(row)); });
+        let added = null;
+        const ok = await run(save, async () => { added = await api.addBooking(row); S.bookings.push(added); });
         if (!ok) return;
         toast("Booked · " + dayLabel(row.date) + (house ? " is blocked all day" : " " + fmtTime(row.time) + " is blocked") + " on the website"); haptic(20);
         softRender(); closeSheet();
+        // The database files each booking under a customer and car, making new ones as needed: pull those in.
+        if ((added.customer_id && !S.customers.some(c => c.id === added.customer_id)) || (added.vehicle_id && !S.vehicles.some(v => v.id === added.vehicle_id))) refresh();
       });
       body.append(form);
     });
@@ -980,78 +1048,198 @@
     });
   }
 
-  // ===== Clients =====
+  // ===== Clients: customer records (contact, notes, vehicles) with stats from their bookings =====
+  const carsOf = (id) => S.vehicles.filter(v => v.customer_id === id && !v.archived);
   function clientIndex() {
-    const map = new Map(), t = today();
-    for (const b of S.bookings) {
-      const key = digits10(b.phone) || String(b.name || "").toLowerCase();
-      const c = map.get(key) || { key, name: b.name, phone: b.phone, jobs: [], visits: 0, spent: 0, last: "", next: null, sources: new Set() };
-      c.jobs.push(b);
-      if (b.source) c.sources.add(b.source);
-      if (b.status !== "Cancelled") {
-        c.visits += b.status === "Done" ? 1 : 0;
-        if (b.status === "Done") c.spent += earned(b);
-        if (b.date <= t && b.date > c.last) c.last = b.date;
-        if (b.date >= t && b.status !== "Done" && (!c.next || byWhen(b, c.next) < 0)) c.next = b;
-        // The newest booking has the freshest name, address and car.
-        if (!c.latest || byWhen(b, c.latest) > 0) c.latest = b;
-      }
-      map.set(key, c);
-    }
-    return [...map.values()].map(c => {
-      const l = c.latest || c.jobs[0];
-      const days = c.last ? Math.round((Date.now() - new Date(c.last + "T12:00:00")) / 864e5) : null;
-      return { ...c, name: l.name, phone: l.phone, address: l.address, town: l.town, car: l.car, location: l.location, package: l.package, size: l.size, service: l.service, daysSince: days, due: !c.next && c.visits > 0 && days >= 28 };
+    const t = today(), jobs = new Map();
+    for (const b of S.bookings) if (b.customer_id) { const l = jobs.get(b.customer_id); l ? l.push(b) : jobs.set(b.customer_id, [b]); }
+    return S.customers.map(c => {
+      const list = jobs.get(c.id) || [], active = list.filter(b => b.status !== "Cancelled"), done = active.filter(b => b.status === "Done");
+      const last = active.filter(b => b.date <= t).reduce((m, b) => b.date > m ? b.date : m, "");
+      const next = active.filter(b => b.date >= t && b.status !== "Done").sort(byWhen)[0] || null;
+      const days = last ? Math.round((Date.now() - new Date(last + "T12:00:00")) / 864e5) : null;
+      return { ...c, jobs: list, latest: active.slice().sort(byWhen).pop() || null, cars: carsOf(c.id), visits: done.length, spent: done.reduce((n, b) => n + earned(b), 0),
+        last, next, daysSince: days, sources: [...new Set(list.map(b => b.source).filter(Boolean))], due: !next && done.length > 0 && days >= 28 };
     });
   }
   function vClients(v) {
-    const all = clientIndex();
-    const F = { all: () => true, due: (c) => c.due, repeat: (c) => c.visits >= 2, upcoming: (c) => !!c.next };
-    const input = h("input", { type: "search", placeholder: "Search clients", value: S.clientQuery, "aria-label": "Search clients", autocomplete: "off" });
+    if (S.missing.has("customers")) { v.append(missingNote("Customer records")); return; }
+    const all = clientIndex(), shown = all.filter(c => !c.archived), hidden = all.filter(c => c.archived);
+    const F = { all: () => true, due: (c) => c.due, repeat: (c) => c.visits >= 2, upcoming: (c) => !!c.next, hidden: () => true };
+    if (S.clientFilter === "hidden" && !hidden.length) S.clientFilter = "all";
+    const input = h("input", { type: "search", placeholder: "Search name, phone, car, town", value: S.clientQuery, "aria-label": "Search clients", autocomplete: "off" });
     const box = h("div");
     const draw = () => {
-      const qy = S.clientQuery.trim().toLowerCase(), qd = qy.replace(/\D/g, "");
-      let list = all.filter(F[S.clientFilter]);
-      if (qy) list = list.filter(c => [c.name, c.car, c.town].some(x => String(x || "").toLowerCase().includes(qy)) || (qd.length >= 3 && digits10(c.phone).includes(qd)));
-      list.sort((a, b) => (b.due - a.due) || ((b.next ? 1 : 0) - (a.next ? 1 : 0)) || (b.last || "").localeCompare(a.last || ""));
-      box.replaceChildren(list.length ? h("div", { class: "list" }, list.map(c => h("button", { class: "item", type: "button", onclick: () => clientSheet(c.key) },
-        h("div", { class: "avatar" }, initials(c.name)),
-        h("div", { class: "main" }, h("b", {}, c.name), h("span", {}, [c.visits ? c.visits + " visit" + (c.visits > 1 ? "s" : "") : "New", c.next ? "next " + dayLabel(c.next.date) : c.last ? "last " + fmtDate(c.last, { month: "short", day: "numeric" }) : null, c.town].filter(Boolean).join(" · "))),
-        h("div", { class: "end" }, h("b", {}, money(c.spent)), c.due ? h("span", { class: "pill st-Requested" }, "Due") : c.visits >= 2 ? h("span", { class: "pill st-Confirmed" }, "Regular") : null))))
-        : empty(qy ? "No matches" : "No clients here", qy ? "Try a different name or number." : "Customers show up after their first booking, grouped by phone number."));
+      const list = (S.clientFilter === "hidden" ? hidden : shown).filter(F[S.clientFilter]).filter(c => LGC.customerMatches(c, c.cars, S.clientQuery));
+      list.sort((a, b) => (b.due - a.due) || ((b.next ? 1 : 0) - (a.next ? 1 : 0)) || (b.last || "").localeCompare(a.last || "") || a.name.localeCompare(b.name));
+      box.replaceChildren(list.length ? h("div", { class: "list" }, list.map(clientItem))
+        : S.clientQuery.trim() ? empty("No matches", "Try a different name, number or car.")
+        : empty("No clients here", "Add one with +, or they show up by themselves after their first booking.",
+          h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => customerSheet() }, icon("plus", 18), "Add a customer")));
     };
     input.addEventListener("input", () => { S.clientQuery = input.value; draw(); });
-    const dueN = all.filter(F.due).length;
+    const dueN = shown.filter(F.due).length;
     if (dueN && S.clientFilter === "all") v.append(h("button", { class: "card tap alert-card", type: "button", style: "text-align:left;color:var(--fg)", onclick: () => { S.clientFilter = "due"; render(false); } },
       h("div", { class: "card-head" }, h("h3", {}, dueN + " due for a detail"), icon("chev")), h("span", { class: "muted small" }, "4+ weeks since their last visit and nothing booked. A quick text brings them back.")));
     v.append(h("div", { class: "search field" }, icon("search", 20), input));
-    v.append(seg([["all", "All", all.length], ["due", "Due", dueN], ["repeat", "Regulars", all.filter(F.repeat).length], ["upcoming", "Booked", all.filter(F.upcoming).length]], S.clientFilter, (k) => { S.clientFilter = k; render(false); }));
+    const tabs = [["all", "All", shown.length], ["due", "Due", dueN], ["repeat", "Regulars", shown.filter(F.repeat).length], ["upcoming", "Booked", shown.filter(F.upcoming).length]];
+    if (hidden.length) tabs.push(["hidden", "Hidden", hidden.length]);
+    v.append(seg(tabs, S.clientFilter, (k) => { S.clientFilter = k; render(false); }));
     v.append(box);
     draw();
   }
-  function clientSheet(key) {
-    openSheet("Client", (body, setTitle) => {
-      const c = clientIndex().find(x => x.key === key);
-      if (!c) { body.append(empty("Client not found")); return; }
+  function clientItem(c) {
+    const car = c.cars[0] ? LGC.vehicleLabel(c.cars[0]) + (c.cars.length > 1 ? " +" + (c.cars.length - 1) : "") : null;
+    return h("button", { class: "item", type: "button", onclick: () => clientSheet(c.id) },
+      h("div", { class: "avatar" }, initials(c.name)),
+      h("div", { class: "main" }, h("b", {}, c.name), h("span", {}, [c.visits ? c.visits + " visit" + (c.visits > 1 ? "s" : "") : "New",
+        c.next ? "next " + dayLabel(c.next.date) : c.last ? "last " + fmtDate(c.last, { month: "short", day: "numeric" }) : null, car, c.town].filter(Boolean).join(" · "))),
+      h("div", { class: "end" }, h("b", {}, money(c.spent)), c.archived ? h("span", { class: "pill st-Cancelled" }, "Hidden") : c.due ? h("span", { class: "pill st-Requested" }, "Due") : c.visits >= 2 ? h("span", { class: "pill st-Confirmed" }, "Regular") : null));
+  }
+  // Prefill for "Book" from a customer: their details, first car, and what they booked last time.
+  function bookingPrefill(c) {
+    const l = c.latest || {}, car = c.cars.find(v => v.id === l.vehicle_id) || c.cars[0];
+    return { customer_id: c.id, vehicle_id: car ? car.id : null, name: c.name, phone: c.phone, address: c.address, town: c.town,
+      car: car ? LGC.vehicleLabel(car) : "", location: l.location, package: l.package, size: l.size, service: l.service };
+  }
+  function clientSheet(id) { openSheet("Client", clientBuilder(id)); }
+  function clientBuilder(id) {
+    return (body, setTitle) => {
+      const c = clientIndex().find(x => x.id === id);
+      if (!c) { body.append(empty("Customer not found", "They may have been changed on another device. Pull down to refresh.")); return; }
       setTitle(c.name);
       const last = c.jobs.slice().sort((a, b) => byWhen(b, a))[0];
+      const text = last ? { onclick: () => messageSheet(last.id, c.due ? "rebook" : c.next ? "onMyWay" : "thanks") } : c.phone ? { href: smsHref(c.phone, "") } : { disabled: true };
       body.append(h("div", { class: "actions4" },
-        action("phone", "Call", { href: telHref(c.phone) }),
-        action("msg", "Text", { onclick: () => messageSheet(last.id, c.due ? "rebook" : c.next ? "onMyWay" : "thanks") }),
-        action("plus", "Book again", { hot: true, onclick: () => addBookingSheet(c) }),
-        action("star", "Review", { onclick: () => messageSheet(last.id, "thanks") })));
+        action("phone", "Call", c.phone ? { href: telHref(c.phone) } : { disabled: true }),
+        action("msg", "Text", text),
+        action("plus", "Book", { hot: true, onclick: () => addBookingSheet(bookingPrefill(c)) }),
+        action("edit", "Edit", { onclick: () => customerSheet(c.id) })));
+      if (c.archived) body.append(h("div", { class: "note warn" }, h("b", {}, "Hidden from your client list"), h("span", {}, "Their history is kept. Show them again at the bottom.")));
       body.append(h("div", { class: "kpis" },
         kpi("Spent", money(c.spent), c.visits + " done"),
         kpi(c.next ? "Next visit" : "Last visit", c.next ? dayLabel(c.next.date) : c.last ? fmtDate(c.last, { month: "short", day: "numeric" }) : "–", c.next ? fmtTime(c.next.time) : c.daysSince != null ? c.daysSince + " days ago" : "")));
-      if (c.due) body.append(h("div", { class: "note warn" }, h("b", {}, "Due for a detail"), h("span", {}, "It's been " + c.daysSince + " days. Send a rebook text?"),
+      if (c.due && last) body.append(h("div", { class: "note warn" }, h("b", {}, "Due for a detail"), h("span", {}, "It's been " + c.daysSince + " days. Send a rebook text?"),
         h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => messageSheet(last.id, "rebook") }, icon("msg", 18), "Send rebook text")));
-      body.append(h("div", { class: "dl" }, [["Phone", fmtPhone(c.phone)], ["Car", c.car], ["Where", c.location === "dropoff" ? "Drop-off" : [c.address, c.town].filter(Boolean).join(", ")], ["Found you on", [...c.sources].join(", ")]]
-        .filter(r => r[1]).map(([k, val]) => h("div", {}, h("span", { class: "k" }, k), h("span", { class: "v" }, val)))));
-      body.append(h("h3", { style: "font-size:20px" }, "History"));
-      body.append(h("div", { class: "list" }, c.jobs.slice().sort((a, b) => byWhen(b, a)).map(b => h("button", { class: "item", type: "button", onclick: () => jobSheet(b.id) },
+      const rows = [["Phone", c.phone ? fmtPhone(c.phone) : ""], ["Email", c.email], ["Address", [c.address, c.town].filter(Boolean).join(", ")], ["Found you on", c.sources.join(", ")]].filter(r => r[1]);
+      if (rows.length) body.append(h("div", { class: "dl" }, rows.map(([k, val]) => h("div", {}, h("span", { class: "k" }, k), h("span", { class: "v" }, val)))));
+      if (c.notes) body.append(h("div", { class: "quote" }, c.notes));
+
+      body.append(h("div", { class: "sec-title" }, h("h2", {}, "Vehicles"), h("button", { class: "link", type: "button", onclick: () => vehicleSheet(null, c.id) }, "+ Add")));
+      body.append(c.cars.length ? h("div", { class: "list" }, c.cars.map(v => h("button", { class: "item", type: "button", onclick: () => vehicleSheet(v.id, c.id) },
+        h("div", { class: "avatar" }, icon("car", 22)), h("div", { class: "main" }, h("b", {}, LGC.vehicleLabel(v)), v.notes ? h("span", {}, v.notes) : null), icon("chev", 20))))
+        : h("p", { class: "muted small" }, "No vehicles yet. Add one so it's ready for the invoice."));
+
+      body.append(h("div", { class: "sec-title" }, h("h2", {}, "History")));
+      body.append(c.jobs.length ? h("div", { class: "list" }, c.jobs.slice().sort((a, b) => byWhen(b, a)).map(b => h("button", { class: "item", type: "button", onclick: () => jobSheet(b.id) },
         h("div", { class: "main" }, h("b", {}, fmtDate(b.date) + " · " + fmtTime(b.time)), h("span", {}, [b.package, b.car].filter(Boolean).join(" · "))),
-        h("div", { class: "end" }, h("b", {}, money(earned(b))), statusPill(b.status))))));
+        h("div", { class: "end" }, h("b", {}, money(earned(b))), statusPill(b.status)))))
+        : h("p", { class: "muted small" }, "No jobs yet."));
+
+      body.append(c.archived
+        ? h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: (e) => archiveCustomer(c, false, e.currentTarget) }, icon("refresh", 18), "Show in client list again")
+        : sureBtn("btn btn-ghost btn-block", "Hide this customer", "Tap again to hide", (b) => archiveCustomer(c, true, b)));
+    };
+  }
+  async function archiveCustomer(c, archived, btn) {
+    const ok = await run(btn, async () => { replaceIn(S.customers, await api.saveCustomer({ id: c.id, archived })); });
+    if (ok) { toast(archived ? "Hidden · their history is kept" : "Back in your client list"); softRender(); drawSheet(false); }
+  }
+
+  const TOWNS = ["Newburgh", "New Windsor", "Middletown", "Goshen", "Warwick", "Monroe", "Cornwall", "Montgomery", "Walden"];
+  const townList = () => h("datalist", { id: "townList" }, TOWNS.map(t => h("option", { value: t })));
+  // Make, model, year and color inputs, used for a new customer's first car and for the vehicle form.
+  function vehicleFields(v) {
+    const year = h("input", { type: "number", inputmode: "numeric", min: "1950", max: "2100", placeholder: "2019", value: v.year ? String(v.year) : "" });
+    const make = h("input", { autocomplete: "off", maxlength: "40", placeholder: "Honda", value: v.make || "" });
+    const model = h("input", { autocomplete: "off", maxlength: "80", placeholder: "CR-V", value: v.model || "" });
+    const color = h("input", { autocomplete: "off", maxlength: "30", placeholder: "Black", value: v.color || "" });
+    return {
+      el: h("div", { class: "form", style: "gap:10px" }, h("div", { class: "row2" }, field("Make", make), field("Model", model)), h("div", { class: "row2" }, field("Year", year), field("Color", color))),
+      value: () => ({ year: year.value ? Math.round(Number(year.value)) : null, make: make.value.trim() || null, model: model.value.trim() || null, color: color.value.trim() || null }),
+      problems(val) {
+        const out = [], maxYear = new Date().getFullYear() + 2;
+        if (val.year != null && !(val.year >= 1950 && val.year <= maxYear)) out.push("use a year from 1950 to " + maxYear);
+        if (!val.make && !val.model && (val.year || val.color)) out.push("add the vehicle's make or model");
+        return out;
+      }
+    };
+  }
+  // Add or edit a customer. A new customer can get their first car on the same screen, so a walk-up is one form.
+  function customerSheet(id) {
+    const c0 = id ? S.customers.find(x => x.id === id) : null;
+    openSheet(c0 ? "Edit customer" : "New customer", (body) => {
+      const inp = (val, attrs) => h("input", { value: val == null ? "" : String(val), autocomplete: "off", ...(attrs || {}) });
+      const name = inp(c0 && c0.name, { maxlength: "80" }), phone = inp(c0 && c0.phone, { type: "tel", inputmode: "tel" });
+      const email = inp(c0 && c0.email, { type: "email", inputmode: "email", maxlength: "120" });
+      const address = inp(c0 && c0.address, { maxlength: "150" }), town = inp(c0 && c0.town, { maxlength: "60", list: "townList" });
+      const notes = h("textarea", { maxlength: "1000", placeholder: "Gate code, where the hose and outlet are, pets…" }, (c0 && c0.notes) || "");
+      const car = c0 ? null : vehicleFields({});
+      const err = h("div", { class: "err", role: "alert", hidden: true });
+      const save = h("button", { class: "btn btn-primary btn-block", type: "submit" }, icon("check", 18), c0 ? "Save changes" : "Save customer");
+      const form = h("form", { class: "form" },
+        field("Name", name), h("div", { class: "row2" }, field("Phone", phone), field("Email", email, "optional")),
+        h("div", { class: "row2" }, field("Street address", address), field("Town", town)), townList(),
+        field("Notes", notes, "optional"),
+        car ? h("div", { class: "field" }, h("span", { class: "lbl" }, "Vehicle ", h("small", {}, "optional")), car.el) : null,
+        err, save);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault(); err.hidden = true;
+        const row = {
+          name: name.value.trim().slice(0, 80), phone: phone.value.trim() ? fmtPhone(phone.value).slice(0, 30) : null, email: email.value.trim().toLowerCase() || null,
+          address: address.value.trim() || null, town: town.value.trim() || null, notes: notes.value.trim() || null
+        };
+        const carVal = car && car.value(), key = LGC.phoneKey(row.phone);
+        const twin = key && S.customers.find(x => x.phone_key === key && !x.archived && (!c0 || x.id !== c0.id));
+        const problems = [];
+        if (!row.name) problems.push("add their name");
+        if (row.phone && digits10(row.phone).length !== 10) problems.push("use a 10-digit phone");
+        if (row.email && !LGC.isEmail(row.email)) problems.push("check the email address");
+        if (twin) problems.push(fmtPhone(row.phone) + " already belongs to " + twin.name);
+        if (car) problems.push(...car.problems(carVal));
+        if (problems.length) { err.textContent = "Almost there: " + problems.join(", ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
+        let saved = null;
+        const ok = await run(save, async () => {
+          saved = await api.saveCustomer(c0 ? { id: c0.id, ...row } : row);
+          replaceIn(S.customers, saved);
+          if (carVal && (carVal.make || carVal.model)) S.vehicles.push(await api.saveVehicle({ customer_id: saved.id, ...carVal }));
+        });
+        if (!ok) return;
+        toast(c0 ? "Saved" : saved.name + " added"); haptic(15); softRender();
+        if (c0) closeSheet(); else replaceSheet(saved.name, clientBuilder(saved.id));
+      });
+      body.append(form);
     });
+  }
+  function vehicleSheet(id, customerId) {
+    const v0 = id ? S.vehicles.find(x => x.id === id) : null;
+    openSheet(v0 ? "Edit vehicle" : "Add vehicle", (body) => {
+      const vf = vehicleFields(v0 || {});
+      const notes = h("input", { autocomplete: "off", maxlength: "200", placeholder: "Ceramic coated, roof rack…", value: (v0 && v0.notes) || "" });
+      const err = h("div", { class: "err", role: "alert", hidden: true });
+      const save = h("button", { class: "btn btn-primary btn-block", type: "submit" }, icon("check", 18), v0 ? "Save changes" : "Add vehicle");
+      const form = h("form", { class: "form" }, vf.el, field("Notes", notes, "optional"), err, save);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault(); err.hidden = true;
+        const val = { ...vf.value(), notes: notes.value.trim() || null };
+        const problems = vf.problems(val);
+        if (!val.make && !val.model) problems.push("add the vehicle's make or model");
+        if (problems.length) { err.textContent = "Almost there: " + [...new Set(problems)].join(", ") + "."; err.hidden = false; haptic([20, 40, 20]); return; }
+        const ok = await run(save, async () => { replaceIn(S.vehicles, await api.saveVehicle(v0 ? { id: v0.id, ...val } : { customer_id: customerId, ...val })); });
+        if (ok) { toast(v0 ? "Saved" : "Vehicle added"); softRender(); closeSheet(); }
+      });
+      body.append(form);
+      if (v0) body.append(sureBtn("btn btn-ghost btn-block", "Remove this vehicle", "Tap again to remove", async (b) => {
+        const ok = await run(b, async () => { replaceIn(S.vehicles, await api.saveVehicle({ id: v0.id, archived: true })); });
+        if (ok) { toast("Removed · past jobs still show it"); softRender(); closeSheet(); }
+      }));
+    });
+  }
+
+  // ===== Invoices (built in the next stage) =====
+  function vInvoices(v) {
+    v.append(empty("Invoices are coming next", "Your customers and their cars are ready in Clients. Making, sending and tracking invoices arrives in the next update.",
+      h("button", { class: "btn btn-primary btn-sm", type: "button", onclick: () => go("clients") }, icon("users", 18), "Open clients")));
   }
 
   // ===== Social =====
@@ -1269,6 +1457,7 @@
     const link = (ic, label, sub, href) => h("a", { class: "item", href, target: "_blank", rel: "noopener" }, h("div", { class: "avatar" }, icon(ic, 22)), h("div", { class: "main" }, h("b", {}, label), h("span", {}, sub)), icon("chev", 20));
     v.append(h("div", { class: "list" },
       item("money", "Money", "Earnings, tips, expenses, profit", () => go("money", true)),
+      item("megaphone", "Social", "Post templates, planner, followers", () => go("social", true)),
       item("star", "Reviews", pending ? pending + " waiting for approval" : "Approve and share reviews", () => go("reviews", true), pending ? h("span", { class: "pill st-Requested" }, pending + " new") : null),
       item("gear", "Settings", "Prices, hours, days off, social links", () => go("settings", true))));
     v.append(h("div", { class: "list" }, alertsItem()));
@@ -1639,7 +1828,7 @@
     const a = $("auth"); a.hidden = false; a.replaceChildren();
     const words = CFG.brand.name.split(" "), lastWord = words.pop();
     a.append(h("div", { class: "auth-brand" }, h("span", { class: "tile big" }, h("span", { html: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="${CFG.brand.colors.accentInk}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS.car}</svg>` })),
-      h("h1", {}, words.join(" ") + " ", h("span", {}, lastWord)), h("p", { class: "muted" }, "Owner app · jobs, clients, social, money")));
+      h("h1", {}, words.join(" ") + " ", h("span", {}, lastWord)), h("p", { class: "muted" }, "Owner app · jobs, clients, invoices, money")));
     const card = h("div", { class: "auth-card" });
     const msg = (text, kind) => text ? h("div", { class: "note" + (kind ? " " + kind : "") }, text) : null;
     const email = h("input", { type: "email", autocomplete: "username", inputmode: "email", required: true, value: i.email || "" });

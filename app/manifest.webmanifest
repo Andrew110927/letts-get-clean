@@ -1,7 +1,7 @@
 {
   "name": "LGC Pro · Letts Get Clean",
   "short_name": "LGC Pro",
-  "description": "Owner app for Letts Get Clean: jobs, clients, social media, money, reviews and website settings.",
+  "description": "Owner app for Letts Get Clean: jobs, clients, invoices, money, social media, reviews and website settings.",
   "id": "./",
   "start_url": "./#/today",
   "scope": "./",
@@ -17,7 +17,7 @@
   ],
   "shortcuts": [
     { "name": "Jobs", "url": "./#/jobs", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Social", "url": "./#/social", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Invoices", "url": "./#/invoices", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Money", "url": "./#/money", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

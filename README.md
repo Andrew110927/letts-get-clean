@@ -25,6 +25,13 @@ washing in Orange County, NY.
   (and the older "Letts Get Clean" Claude artifact) edits. If that can't load, the site uses the defaults in the
   `DEFAULTS` block near the top of the script.
 - **Reviews** are posted to the `reviews` table and only appear after they're approved in the owner app.
+- **Customers** live in `customers` (name, phone, email, address, notes) with their `vehicles`. Every new booking,
+  from the website or the app, is filed under its customer by phone number (last 10 digits) and its car under that
+  customer's vehicles; someone new becomes a customer automatically (`link_booking_customer()` trigger). If that ever
+  fails, the booking still saves. Customers and vehicles are hidden (archived), never deleted.
+- **Invoices, quotes and payments** (`invoices`, `payments`, `invoice_settings`) are owner-only and can't be deleted,
+  only voided. Money is in whole cents. The database numbers invoices and quotes, refuses $0 or mismatched totals,
+  and won't let payments add up past an invoice's total. The screens for them are being built in stages.
 
 `supabase/migrations/` has the SQL for every table and policy. `supabase/functions/` has the Edge Functions.
 
@@ -37,9 +44,9 @@ No build step: plain HTML, CSS and JavaScript, with supabase-js from a CDN.
 | --- | --- |
 | Today | Next job with navigate / call / text / done, requests to confirm, week stats, quick actions |
 | Jobs | All bookings by day; confirm, text, mark done with tip and payment, edit, cancel, add phone bookings |
-| Clients | Customers grouped by phone: visits, spend, history, "due for a detail" rebook nudges |
-| Social | Post templates built from live data (open spots, prices, before/after, reviews, tips), a post planner, share-to-app posting, follower log, where bookings come from |
-| More | Money (earnings, tips, expenses, profit), Reviews (approve, hide, ask), Settings (updates the website live), Booking alerts (phone buzzes for new bookings) |
+| Clients | Customer records: phone, email, address, notes (gate codes, where the hose is), one or more vehicles, quick search (name, phone, car, town), visits, spend, full history, "due for a detail" rebook nudges, add / edit / hide |
+| Invoices | Coming in the next stages: invoices and quotes, payments, PDFs |
+| More | Money (earnings, tips, expenses, profit), Social (post templates from live data, planner, share-to-app posting, follower log, where bookings come from), Reviews (approve, hide, ask), Settings (updates the website live), Booking alerts (phone buzzes for new bookings) |
 
 - **Sign-in**: Supabase Auth, email + password. Only emails listed in `owner_emails` (with a confirmed address) can
   read or change anything; any other account sees nothing. Add an owner in the Supabase SQL editor:
@@ -88,10 +95,17 @@ node -e "crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign
 When reusing the app for another business, also change the function URL in the migration and the contact URL in
 `supabase/functions/booking-push/index.ts`.
 
-Tests for the encryption and alert text (Node 24+, checked against the `http_ece` reference decoder):
+## Tests
+
+Node 24+. One install, then the app logic and database rules (`tests/`, run against an in-memory Postgres with the
+same migrations, never the live data) and the push encryption (checked against the `http_ece` reference decoder):
 
 ```bash
-npm install --no-save --no-package-lock http_ece@1.2.0 && node supabase/functions/booking-push/push.test.mjs
+npm install --no-save --no-package-lock @electric-sql/pglite@0.5.8 http_ece@1.2.0
+```
+
+```bash
+node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
 ```
 
 ## Changing things
