@@ -841,8 +841,10 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     }
     for (const key of ["sizes", "addons"]) {
       if (Array.isArray(d[key]) && d[key].length) {
-        const list = d[key].map(a => a && text(a.id, 30) && text(a.label, 40) && num(a.price) ? { id: a.id, label: a.label, price: Number(a.price) } : fallback(key, a)).filter(Boolean);
-        if (list.length) out[key] = clone(list);
+        // Extras the owner marked "Invoices only" (web: false) aren't offered here.
+        const shown = key === "addons" ? d[key].filter(a => !(a && a.web === false)) : d[key];
+        const list = shown.map(a => a && text(a.id, 30) && text(a.label, 40) && num(a.price) ? { id: a.id, label: a.label, price: Number(a.price) } : fallback(key, a)).filter(Boolean);
+        if (list.length || shown.length < d[key].length) out[key] = clone(list);
       }
     }
     if (d.socials && typeof d.socials === "object") {
@@ -899,10 +901,10 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       g.append(card);
     });
     const sizes = st.sizes.filter(s => s.price).map(s => s.label + " +" + money(s.price)).join(" · ");
-    $("pkExtras").replaceChildren(
+    $("pkExtras").replaceChildren(...[
       sizes ? h("span", {}, icon(ICON.plus, "#29C8FF", 16), sizes) : null,
-      h("span", {}, icon(ICON.spark, "#29C8FF", 16), "Extras from " + money(Math.min(...st.addons.map(a => a.price)))),
-      h("span", {}, icon(ICON.cash, "#29C8FF", 16), "No deposit, pay after"));
+      st.addons.length ? h("span", {}, icon(ICON.spark, "#29C8FF", 16), "Extras from " + money(Math.min(...st.addons.map(a => a.price)))) : null,
+      h("span", {}, icon(ICON.cash, "#29C8FF", 16), "No deposit, pay after")].filter(Boolean));
     observeReveals();
   }
 

@@ -1,7 +1,7 @@
 // Keeps the app opening with weak or no signal. Supabase (customer data) is never cached here:
 // those calls always go to the network, and the app keeps its own last-loaded copy for offline viewing.
 // Bump VERSION when shipping changes so phones drop the old files.
-const VERSION = "lgcpro-v5";
+const VERSION = "lgcpro-v6";
 const SHELL = ["./", "index.html", "app.css", "core.js", "discounts.js", "app.js", "config.js", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
 const LIBS = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 
