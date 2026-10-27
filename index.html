@@ -36,7 +36,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap">
 <style>
 /* Layout: one long mobile-first page.
-   header → hero → caution-tape ticker → how it works → packages → house washing → before/after sliders → two reels → booking → reviews → about → FAQ → area → footer.
+   header → hero → caution-tape ticker → how it works → packages → house washing → before/after sliders → three reels → booking → reviews → about → FAQ → area → footer.
    Phones get a sticky bottom bar with the live price. */
 :root{
   color-scheme:dark;
@@ -208,19 +208,20 @@ nav.links a:hover{color:var(--fg);background:var(--panel)}
 .ba-cap{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:0 6px 4px;font-weight:700}
 .ba-cap small{color:var(--dim);font-weight:600}
 
-/* reels: two phone-framed videos side by side; on phones a swipeable row with the next one peeking in */
-.watch{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:48px;align-items:center}
-.watch h2{font-size:clamp(38px,4.4vw,64px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36;margin-top:12px}
-@media (max-width:860px){.watch h2{font-size:clamp(40px,11vw,64px)}}
-@media (max-width:860px){.watch{grid-template-columns:minmax(0,1fr);justify-items:center;gap:36px}}
-.reels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;width:100%;max-width:640px}
+/* reels: three phone-framed videos in a row (text beside them on wide screens, below them under 1080px);
+   on phones a swipeable row with the next one peeking in */
+.watch{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:40px;align-items:center}
+.watch h2{font-size:clamp(38px,3.8vw,54px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36;margin-top:12px}
+@media (max-width:1080px){.watch h2{font-size:clamp(40px,11vw,64px)}}
+@media (max-width:1080px){.watch{grid-template-columns:minmax(0,1fr);justify-items:center;gap:36px}}
+.reels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:100%;max-width:780px}
 .reel-item{margin:0;display:grid;gap:12px;min-width:0}
 .reel-item figcaption{display:grid;gap:2px;padding:0 8px;font-weight:800;font-size:15px}
 .reel-item figcaption span{color:var(--dim);font-weight:600;font-size:13px}
-@media (max-width:620px){
+@media (max-width:700px){
   .reels{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;max-width:none;width:calc(100% + 32px);margin:0 -16px;padding:0 16px 8px;scrollbar-width:none}
   .reels::-webkit-scrollbar{display:none}
-  .reel-item{flex:0 0 80%;scroll-snap-align:center}
+  .reel-item{flex:0 0 min(80%,320px);scroll-snap-align:center}
 }
 .phone{position:relative;width:100%;aspect-ratio:9/16;border-radius:34px;padding:10px;background:linear-gradient(145deg,#1d222b,#0b0d11);box-shadow:0 30px 80px rgba(41,200,255,.18),0 0 0 2px #262c36}
 .phone video{width:100%;height:100%;object-fit:cover;border-radius:26px;background:#000}
@@ -526,9 +527,13 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
           <div class="phone"><video id="reel2" src="media/reel2_web.mp4" poster="media/reel2_poster.jpg" controls playsinline preload="none" aria-label="Subaru Outback before and after video, inside and out"></video></div>
           <figcaption><b>Subaru Outback</b><span>Inside &amp; out · 0:43</span></figcaption>
         </figure>
+        <figure class="reel-item">
+          <div class="phone"><video id="reel3" src="media/reel3_web.mp4" poster="media/reel3_poster.jpg" controls playsinline preload="none" aria-label="Chevy Silverado before and after video, interior and wheels"></video></div>
+          <figcaption><b>Chevy Silverado</b><span>Interior &amp; wheels · 0:26</span></figcaption>
+        </figure>
       </div>
       <div class="reveal">
-        <p class="eyebrow">Two real details · sound on</p>
+        <p class="eyebrow">Three real details</p>
         <h2>Watch the<br><span style="color:var(--accent)">transformation</span></h2>
         <ul>
           <li><span class="ic" style="color:var(--accent)">✦</span>Foam bath to lift dirt before anything touches the paint</li>
