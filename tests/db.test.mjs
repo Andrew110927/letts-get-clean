@@ -230,13 +230,13 @@ test("the house wash rule still holds with customers attached", async () => {
 
 test("visitors can book trash can cleaning, and only the known services are accepted", async () => {
   await as("anon", () => db.query(`insert into public.bookings (service, date, "time", name, phone, address, town, package, size, total)
-    values ('trash', $1, '15:00', 'Pat', '(845) 555-0170', '5 Elm St', 'Newburgh', 'Trash can cleaning', '3 cans', 45)`, [future(60)]));
-  const b = await one("select service, size, total, vehicle_id from public.bookings where date = $1", [future(60)]);
+    values ('trash', $1, '15:00', 'Pat', '(845) 555-0180', '5 Elm St', 'Newburgh', 'Trash can cleaning', '3 cans', 45)`, [future(70)]));
+  const b = await one("select service, size, total, vehicle_id from public.bookings where date = $1", [future(70)]);
   assert.deepEqual(b, { service: "trash", size: "3 cans", total: 45, vehicle_id: null }, "no car, so no vehicle is made");
   // It takes its time slot like any other booking, and doesn't hold the whole day.
-  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Lee', '(845) 555-0171')`, [future(60)])), /duplicate key|unique/);
-  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'Lee', '(845) 555-0171')`, [future(60)]));
-  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (service, date, "time", name, phone) values ('boat', $1, '13:30', 'Sal', '(845) 555-0172')`, [future(60)])), /bookings_service_check/);
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Lee', '(845) 555-0181')`, [future(70)])), /duplicate key|unique/);
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'Lee', '(845) 555-0181')`, [future(70)]));
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (service, date, "time", name, phone) values ('boat', $1, '13:30', 'Sal', '(845) 555-0182')`, [future(70)])), /bookings_service_check/);
 });
 
 // Last, and on dates no other test uses, because it adds customers the earlier tests count.
@@ -250,4 +250,23 @@ test("a website booking can say which discount it got; without one it's $0 off",
     { name: "Vet", total: 63, discount: "Military / first responder (10% off)", discount_amount: 7 }]);
   await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, discount_amount) values ($1, '15:00', 'X', '(845) 555-0162', -5)`, [future(51)])));
   await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, discount) values ($1, '15:00', 'X', '(845) 555-0162', $2)`, [future(51), "x".repeat(81)])));
+});
+
+// The website sends a two-car visit as one request with both rows, which the API runs as a single insert.
+const twoCars = (date) => as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, car, package, total, discount, discount_amount, notes) values
+  ($1, '15:00', 'Pat Two', '(845) 555-0170', 'Hyundai Sonata', 'The Full Detail', 50, null, 0, 'Car 1 of 2 (second car at 5 PM).'),
+  ($1, '17:00', 'Pat Two', '(845) 555-0170', 'Honda CR-V', 'Exterior', 30, 'Two-car deal ($5 off the second car)', 5, 'Car 2 of 2 (first car at 3 PM).')`, [date]));
+
+test("two cars booked together are filed under one customer, each car its own vehicle", async () => {
+  await twoCars(future(60));
+  const got = await rows(`select b."time", c.name, v.model, b.discount_amount from public.bookings b join public.customers c on c.id = b.customer_id
+    join public.vehicles v on v.id = b.vehicle_id where b.date = $1 order by b."time"`, [future(60)]);
+  assert.deepEqual(got.map(r => [r.time, r.name, r.model, r.discount_amount]), [["15:00", "Pat Two", "Hyundai Sonata", 0], ["17:00", "Pat Two", "Honda CR-V", 5]]);
+  assert.equal((await one("select count(*)::int as n from public.customers where phone_key = '8455550170'")).n, 1);
+});
+
+test("two cars are saved together or not at all: if one slot is taken, neither is booked", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'Someone Else', '(845) 555-0171')`, [future(61)]));
+  await assert.rejects(twoCars(future(61)), /bookings_slot_unique/);
+  assert.equal((await one(`select count(*)::int as n from public.bookings where date = $1 and "time" = '15:00'`, [future(61)])).n, 0);
 });
