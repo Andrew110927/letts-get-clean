@@ -6,7 +6,7 @@
 (function (root) {
   "use strict";
 
-  const SERVICES = ["car", "bike", "house"];
+  const SERVICES = ["car", "bike", "house", "trash"];
 
   // Every promotion has its own on/off switch. Holiday promos ship switched off with example dates.
   const DEFAULT_DISCOUNTS = {
@@ -71,7 +71,7 @@
   function percentOff(dollars, percent) { return Math.min(dollars, Math.floor((dollars * percent + 50) / 100)); }
 
   // The discount this booking gets, or null.
-  //   input.service   "car" | "bike" | "house"
+  //   input.service   "car" | "bike" | "house" | "trash"
   //   input.subtotal  whole dollars before any discount (both cars, when there are two)
   //   input.secondCar whole dollars for the second car alone, when booking two (0 or missing otherwise)
   //   input.military  the customer ticked the military / first-responder box

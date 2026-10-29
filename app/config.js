@@ -114,11 +114,14 @@ window.APP_CONFIG = {
     // Single-price services. A house wash takes the whole day (the database enforces it).
     bike: { price: 20 },
     house: { price: 300 },
+    // Trash can cleaning, per can.
+    trash: { price: 15 },
     socials: { instagram: "https://www.instagram.com/lettsgetclean", tiktok: "https://www.tiktok.com/@lettsgetclean", facebook: "", google: "" }
   },
   services: {
     car: { label: "Car" },
     bike: { label: "Bike", name: "Bike detail", types: ["Regular bike", "E-bike"] },
-    house: { label: "House", name: "Full house pressure wash" }
+    house: { label: "House", name: "Full house pressure wash" },
+    trash: { label: "Trash cans", name: "Trash can cleaning", cans: [1, 2, 3, 4, 5, 6] }
   }
 };

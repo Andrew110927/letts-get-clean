@@ -67,6 +67,7 @@ before(async () => {
     ('Cancelled', '2026-11-03', '15:00', 'TEST booking', '(845) 555-0000', null, null, 'Test car', 'car', '2026-10-25');`);
   await db.exec(await sql("20261026_invoices"));
   await db.exec(await sql("20261026_booking_discounts"));
+  await db.exec(await sql("20261029_trash_cans"));
 });
 
 test("existing bookings become one customer per phone, skipping cancelled-only people", async () => {
@@ -225,6 +226,17 @@ test("the house wash rule still holds with customers attached", async () => {
   });
   // The refused booking didn't leave a half-made customer behind.
   assert.equal((await one("select count(*)::int as n from public.customers")).n, 6);
+});
+
+test("visitors can book trash can cleaning, and only the known services are accepted", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (service, date, "time", name, phone, address, town, package, size, total)
+    values ('trash', $1, '15:00', 'Pat', '(845) 555-0170', '5 Elm St', 'Newburgh', 'Trash can cleaning', '3 cans', 45)`, [future(60)]));
+  const b = await one("select service, size, total, vehicle_id from public.bookings where date = $1", [future(60)]);
+  assert.deepEqual(b, { service: "trash", size: "3 cans", total: 45, vehicle_id: null }, "no car, so no vehicle is made");
+  // It takes its time slot like any other booking, and doesn't hold the whole day.
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Lee', '(845) 555-0171')`, [future(60)])), /duplicate key|unique/);
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'Lee', '(845) 555-0171')`, [future(60)]));
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (service, date, "time", name, phone) values ('boat', $1, '13:30', 'Sal', '(845) 555-0172')`, [future(60)])), /bookings_service_check/);
 });
 
 // Last, and on dates no other test uses, because it adds customers the earlier tests count.

@@ -15,7 +15,9 @@ washing in Orange County, NY.
   but can't read anyone's details. A unique index stops two bookings on the same day and time.
   After booking, the customer is asked to text Andrew the details so he sees it right away.
 - **Services**: each booking has a `service`: `car` (packages, sizes and extras), `bike` ($20, regular bike or
-  e-bike) or `house` (full house pressure wash, $300). Bike and house prices live in `site_settings` too.
+  e-bike), `house` (full house pressure wash, $300) or `trash` (trash can cleaning, $15 a can, 1–6 cans; the number of
+  cans is in `size`, like "3 cans", and it takes a normal time slot at the customer's house). Bike, house and trash can
+  prices live in `site_settings` too.
 - **A house wash takes the whole day.** The `bookings_whole_day` trigger refuses a house wash on a day that already
   has a booking, and any booking on a day a house wash holds. It locks per day, so two people booking at the same
   moment can't both get it. The website and app only offer free days, and both read the refusal as "that day's taken".
@@ -118,7 +120,7 @@ node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
 
 ## Changing things
 
-- Prices (car packages, bike detail, house wash), hours, days off, social links: owner app → More → Settings
+- Prices (car packages, bike detail, house wash, trash cans), hours, days off, social links: owner app → More → Settings
   (updates the live site right away).
 - Extras (add pet hair removal, engine bay…): More → Settings → Extras & add-on services. New ones start as
   "Invoices only"; flip the switch to offer one on the website too (stored as `web: false` in `site_settings.addons`).

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Letts Get Clean · Mobile Car Detailing in Orange County, NY</title>
-<meta name="description" content="Mobile car detailing in Orange County, NY. Exterior, interior and full details in your driveway or drop-off in Newburgh, $20 bike and e-bike details, and full house pressure washing. See your price and book online in a minute. Call or text (845) 282-9387.">
+<meta name="description" content="Mobile car detailing in Orange County, NY. Exterior, interior and full details in your driveway or drop-off in Newburgh, $20 bike and e-bike details, trash can cleaning ($15 a can), and full house pressure washing. See your price and book online in a minute. Call or text (845) 282-9387.">
 <link rel="canonical" href="https://andrew110927.github.io/letts-get-clean/">
 <meta property="og:title" content="Letts Get Clean · Mobile Car Detailing">
 <meta property="og:description" content="Dirty car? Not for long. Hand wash and deep interior cleaning in your driveway. Book online in Orange County, NY.">
@@ -23,7 +23,7 @@
   "@context": "https://schema.org",
   "@type": "AutoWash",
   "name": "Letts Get Clean",
-  "description": "Mobile car detailing in Orange County, NY: exterior, interior and full details at your home or drop-off in Newburgh, bike and e-bike details, and full house pressure washing.",
+  "description": "Mobile car detailing in Orange County, NY: exterior, interior and full details at your home or drop-off in Newburgh, bike and e-bike details, trash can cleaning, and full house pressure washing.",
   "url": "https://andrew110927.github.io/letts-get-clean/",
   "image": "https://andrew110927.github.io/letts-get-clean/media/hero_poster.jpg",
   "logo": "https://andrew110927.github.io/letts-get-clean/media/mascot.webp",
@@ -182,13 +182,15 @@ nav.links a:hover{color:var(--fg);background:var(--panel)}
 .stamp{position:absolute;top:-28px;right:-12px;width:96px;height:96px;transform:rotate(12deg)}
 .pk-note{margin-top:28px;display:flex;gap:10px 22px;flex-wrap:wrap;color:var(--dim);font-size:14px;font-weight:600}
 .pk-note span{display:flex;gap:8px;align-items:center}
-.bike-card{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.extra-cards{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px}
+.bike-card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .bike-card .ib{width:56px;height:56px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;flex-shrink:0}
 .bike-card .txt{flex:1;min-width:220px;display:grid;gap:4px}
 .bike-card h3{font-size:30px}
 .bike-card .buy{display:flex;align-items:center;gap:16px}
 .bike-card .now{font-family:var(--display);font-size:56px;line-height:.9}
 .bike-card .now sup{font-size:24px;vertical-align:top;position:relative;top:4px}
+.bike-card .now small{font-family:var(--body);font-weight:700;font-size:14px;color:var(--dim);margin-left:4px}
 
 /* house washing */
 #house{background:var(--panel)}
@@ -472,7 +474,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     <div class="wrap">
       <div class="sec-head reveal"><p class="eyebrow">Simple as 1, 2, 3</p><h2>How it works</h2></div>
       <div class="steps">
-        <div class="stepc reveal"><span class="num">1</span><h3>Pick what we clean</h3><p>A car package, a bike or e-bike detail, or a full house wash. See your exact price before you book, no surprises.</p></div>
+        <div class="stepc reveal"><span class="num">1</span><h3>Pick what we clean</h3><p>A car package, a bike or e-bike detail, trash cans, or a full house wash. See your exact price before you book, no surprises.</p></div>
         <div class="stepc reveal"><span class="num">2</span><h3>Choose a time</h3><p>Tap an open day and time. Andrew texts you to confirm your spot.</p></div>
         <div class="stepc reveal"><span class="num">3</span><h3>We come to you</h3><p>Have an outdoor outlet and a hose ready. Pay when it's done: cash, Cash App or Venmo.</p></div>
       </div>
@@ -484,10 +486,17 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       <div class="sec-head reveal"><p class="eyebrow">Three packages</p><h2>Pick your package</h2><p class="muted" id="pkgNote"></p></div>
       <div class="pk-grid" id="pkGrid"></div>
       <div class="pk-note reveal" id="pkExtras"></div>
-      <div class="bike-card reveal">
-        <span class="ib" aria-hidden="true" id="bikeIcon"></span>
-        <div class="txt"><p class="eyebrow">Bikes too</p><h3>Bike or e-bike detail</h3><p class="muted">Regular bikes and e-bikes, cleaned by hand. We come to you, or drop it off in Newburgh.</p></div>
-        <div class="buy"><span class="now"><sup>$</sup><span id="bikePrice">20</span></span><a class="btn btn-primary btn-sm" href="#book" data-service="bike">Book a bike</a></div>
+      <div class="extra-cards">
+        <div class="bike-card reveal">
+          <span class="ib" aria-hidden="true" id="bikeIcon"></span>
+          <div class="txt"><p class="eyebrow">Bikes too</p><h3>Bike or e-bike detail</h3><p class="muted">Regular bikes and e-bikes, cleaned by hand. We come to you, or drop it off in Newburgh.</p></div>
+          <div class="buy"><span class="now"><sup>$</sup><span id="bikePrice">20</span></span><a class="btn btn-primary btn-sm" href="#book" data-service="bike">Book a bike</a></div>
+        </div>
+        <div class="bike-card reveal">
+          <span class="ib" aria-hidden="true" id="trashIcon"></span>
+          <div class="txt"><p class="eyebrow">Trash cans too</p><h3>Trash can cleaning</h3><p class="muted">Trash and recycling cans cleaned right at your house. Pick how many when you book.</p></div>
+          <div class="buy"><span class="now"><sup>$</sup><span id="trashPrice">15</span><small>a can</small></span><a class="btn btn-primary btn-sm" href="#book" data-service="trash">Book trash cans</a></div>
+        </div>
       </div>
     </div>
   </section>
@@ -720,13 +729,16 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     ],
     bike: { price: 20 },
     house: { price: 300 },
+    trash: { price: 15 }, // per can
     socials: { instagram: "https://www.instagram.com/lettsgetclean", tiktok: "https://www.tiktok.com/@lettsgetclean", facebook: "", google: "" },
     // Holiday promos, military and two-car deals, each with an on/off switch (edited in LGC Pro → Settings).
     discounts: LGD ? LGD.DEFAULT_DISCOUNTS : null
   };
-  // Bikes and houses have one price each; cars have packages, sizes and extras.
-  const SERVICE_NAMES = { bike: "Bike detail", house: "Full house pressure wash" };
+  // Bikes and houses have one price each, trash cans a price per can; cars have packages, sizes and extras.
+  const SERVICE_NAMES = { bike: "Bike detail", house: "Full house pressure wash", trash: "Trash can cleaning" };
   const BIKE_TYPES = ["Regular bike", "E-bike"];
+  const CAN_COUNTS = [1, 2, 3, 4, 5, 6];
+  const cansLabel = (n) => n + (n === 1 ? " can" : " cans");
   const GALLERY = [
     { before: "media/ext_before.jpg", after: "media/ext_after.jpg", title: "Exterior", caption: "White Hyundai Sonata" },
     { before: "media/int_before.jpg", after: "media/int_after.jpg", title: "Interior", caption: "White Hyundai Sonata" }
@@ -753,12 +765,13 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     pin: '<path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
-    bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l2 7h-6M14 6h2"/>'
+    bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l2 7h-6M14 6h2"/>',
+    trash: '<path d="M4 7h16M10 3h4M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'
   };
 
   // busy: "date_time" keys that are taken; busyDays: days a house wash holds; bookedDays: days with any booking.
   const S = { settings: clone(DEFAULTS), busy: new Set(), busyDays: new Set(), bookedDays: new Set(), reviews: [], reviewsOn: null, busyLoaded: false };
-  const sel = { service: "car", pkg: "full", size: "car", bike: BIKE_TYPES[0], addons: new Set(), date: null, time: null, loc: "mobile" };
+  const sel = { service: "car", pkg: "full", size: "car", bike: BIKE_TYPES[0], cans: 1, addons: new Set(), date: null, time: null, loc: "mobile" };
   const $ = (id) => document.getElementById(id);
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const touch = matchMedia("(pointer: coarse)").matches;
@@ -860,7 +873,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     if (d.socials && typeof d.socials === "object") {
       for (const s of SOC) { const v = d.socials[s.k]; out.socials[s.k] = typeof v === "string" && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : ""; }
     }
-    for (const k of ["bike", "house"]) if (d[k] && num(d[k].price)) out[k] = { price: Number(d[k].price) };
+    for (const k of ["bike", "house", "trash"]) if (d[k] && num(d[k].price)) out[k] = { price: Number(d[k].price) };
     if (LGD) out.discounts = LGD.mergeDiscounts(base.discounts, d.discounts);
     return out;
   }
@@ -886,7 +899,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     $("trust").replaceChildren(...trust.map(([d, t]) => h("li", {}, icon(d, "#29C8FF", 18), t)));
 
     const items = [deal ? "Launch deal · ends " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) : "Book online in a minute", "We come to you", "Pay after the job", "Orange County, NY", "Call or text " + st.phone,
-      ...st.packages.map(p => p.name + " $" + priceOf(p)), "Bike detail $" + st.bike.price, "House wash $" + st.house.price];
+      ...st.packages.map(p => p.name + " $" + priceOf(p)), "Bike detail $" + st.bike.price, "Trash cans $" + st.trash.price + " a can", "House wash $" + st.house.price];
     const run = $("tickerRun"); run.replaceChildren();
     for (let r = 0; r < 2; r++) for (const t of items) { run.append(h("span", {}, t)); run.append(h("i", {}, "✦")); }
 
@@ -919,10 +932,12 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
   }
 
   function minPrice() { const st = S.settings; return Math.min(...st.packages.map(priceOf), st.bike.price); }
-  // The bike card and the house washing section; their prices come from the live settings.
+  // The bike and trash can cards and the house washing section; their prices come from the live settings.
   function renderServices() {
     const st = S.settings;
     $("bikePrice").textContent = st.bike.price;
+    $("trashPrice").textContent = st.trash.price;
+    $("trashIcon").replaceChildren(icon(ICON.trash, "#29C8FF", 30, 2));
     $("housePrice").textContent = st.house.price;
     $("bikeIcon").replaceChildren(icon(ICON.bike, "#29C8FF", 30, 2));
     document.querySelectorAll("#house [data-icon]").forEach(el => el.replaceChildren(icon(ICON[el.dataset.icon], "#29C8FF", 20, 2.4)));
@@ -986,7 +1001,9 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
   }
   function setService(s) {
     sel.service = s;
-    if (s === "house") { sel.loc = "mobile"; sel.time = null; }
+    // A house wash and trash cans happen at the customer's house; a house wash also picks its own start time.
+    if (s === "house" || s === "trash") sel.loc = "mobile";
+    if (s === "house") sel.time = null;
     renderChoices(); renderDays(); renderSummary();
   }
   function renderChoices() {
@@ -996,25 +1013,27 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     $("svcChoices").replaceChildren(
       choice("svc", "car", car, "Car, SUV or truck", "From " + money(Math.min(...st.packages.map(priceOf))), () => setService("car")),
       choice("svc", "bike", svc === "bike", "Bike or e-bike", money(st.bike.price), () => setService("bike")),
+      choice("svc", "trash", svc === "trash", "Trash cans", money(st.trash.price) + " a can", () => setService("trash")),
       choice("svc", "house", svc === "house", "House pressure wash", money(st.house.price) + " · whole day", () => setService("house")));
     $("pkHead").hidden = svc === "house";
-    $("pkHead").textContent = car ? "Package" : "Type of bike";
+    $("pkHead").textContent = car ? "Package" : svc === "trash" ? "How many cans?" : "Type of bike";
     $("houseNote").hidden = svc !== "house";
     if (car) $("pkChoices").replaceChildren(...st.packages.map(p => choice("pkg", p.id, sel.pkg === p.id, p.name, money(priceOf(p)) + (dealOn() && p.regular > p.deal ? "  (reg. $" + p.regular + ")" : ""), () => { sel.pkg = p.id; renderSummary(); })));
     else if (svc === "bike") $("pkChoices").replaceChildren(...BIKE_TYPES.map(b => choice("bike", b.replace(/\W/g, ""), sel.bike === b, b, money(st.bike.price), () => { sel.bike = b; renderSummary(); })));
+    else if (svc === "trash") $("pkChoices").replaceChildren(...CAN_COUNTS.map(n => choice("cans", String(n), sel.cans === n, cansLabel(n), money(st.trash.price * n), () => { sel.cans = n; renderSummary(); })));
     else $("pkChoices").replaceChildren();
     $("st2").hidden = !car;
     $("sizeChoices").replaceChildren(...st.sizes.map(s => choice("size", s.id, sel.size === s.id, s.label, s.price ? "+" + money(s.price) : "Included", () => { sel.size = s.id; renderSummary(); })));
     $("addonChoices").replaceChildren(...st.addons.map(a => choice("addon", a.id, sel.addons.has(a.id), a.label, "+" + money(a.price), (e) => { e.target.checked ? sel.addons.add(a.id) : sel.addons.delete(a.id); renderSummary(); }, "checkbox")));
-    const thing = car ? "car" : svc === "bike" ? "bike" : "house";
+    const atHome = svc === "house" || svc === "trash";
     $("locChoices").replaceChildren(...[
-      choice("loc", "mobile", sel.loc === "mobile", svc === "house" ? "At my house" : "Come to me", "At your home · need outlet + hose", () => { sel.loc = "mobile"; applyLoc(); renderSummary(); }),
-      svc === "house" ? null : choice("loc", "dropoff", sel.loc === "dropoff", "I'll drop it off", "At Andrew's in Newburgh · address by text", () => { sel.loc = "dropoff"; applyLoc(); renderSummary(); })].filter(Boolean));
-    $("carField").hidden = svc === "house";
+      choice("loc", "mobile", sel.loc === "mobile", atHome ? "At my house" : "Come to me", "At your home · need outlet + hose", () => { sel.loc = "mobile"; applyLoc(); renderSummary(); }),
+      atHome ? null : choice("loc", "dropoff", sel.loc === "dropoff", "I'll drop it off", "At Andrew's in Newburgh · address by text", () => { sel.loc = "dropoff"; applyLoc(); renderSummary(); })].filter(Boolean));
+    $("carField").hidden = atHome;
     $("fCarLbl").replaceChildren(car ? "Car " : "Bike ", h("small", {}, car ? "(make & model)" : "(brand & model)"));
     $("fCar").placeholder = car ? "e.g. Hyundai Sonata" : "e.g. Trek FX 2, Rad Power RadCity";
-    $("fNotes").placeholder = thing === "house" ? "Stories, siding, where the spigot is, pets…" : "Stains, pet hair, gate code, where to park…";
-    // Numbers follow the visible steps, so a bike or house booking reads 1, 2, 3.
+    $("fNotes").placeholder = svc === "house" ? "Stories, siding, where the spigot is, pets…" : svc === "trash" ? "Where the cans are, gate code, pets…" : "Stains, pet hair, gate code, where to park…";
+    // Numbers follow the visible steps, so a bike, trash can or house booking reads 1, 2, 3.
     let n = 0; ["st1", "st2", "st3", "st4"].forEach(id => { if (!$(id).hidden) $(id).querySelector(".n").textContent = ++n; });
     applyLoc();
   }
@@ -1095,6 +1114,10 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     let q;
     if (svc === "bike") q = { svc, name: SERVICE_NAMES.bike, label: sel.bike, adds: [], subtotal: st.bike.price, deal: false, lines: [[SERVICE_NAMES.bike + " · " + sel.bike, money(st.bike.price)]] };
     else if (svc === "house") q = { svc, name: SERVICE_NAMES.house, label: "House", adds: [], subtotal: st.house.price, deal: false, lines: [[SERVICE_NAMES.house + " · whole day", money(st.house.price)]] };
+    else if (svc === "trash") {
+      const n = sel.cans, sub = st.trash.price * n;
+      q = { svc, name: SERVICE_NAMES.trash, label: cansLabel(n), adds: [], subtotal: sub, deal: false, lines: [[SERVICE_NAMES.trash + " · " + cansLabel(n) + (n > 1 ? " × " + money(st.trash.price) : ""), money(sub)]] };
+    }
     else {
       const p = pkg(sel.pkg);
       const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
@@ -1124,13 +1147,13 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     $("sumLines").replaceChildren(...q.lines.map(([a, b]) => h("div", { class: "line" + (b.startsWith("−") ? " save" : "") }, h("span", {}, a), h("span", {}, b))));
     $("sumTotal").textContent = money(q.total);
     $("sumWhen").textContent = (sel.date && sel.time ? whenText(sel.date, sel.time) : sel.date ? fmtDate(sel.date) + " · pick a time" : sel.service === "house" ? "Pick a free day" : "Pick a day and time") + (sel.loc === "dropoff" ? " · Drop-off" : " · We come to you");
-    // Bikes and houses skip the vehicle step, so they have 3 steps instead of 4.
+    // Bikes, trash cans and houses skip the vehicle step, so they have 3 steps instead of 4.
     const all = [["st1", true, "pick what we clean"], ["st2", true, "pick your vehicle"], ["st3", !!(sel.date && sel.time), sel.service === "house" ? "pick a free day" : "pick a day and time"], ["st4", detailsOk(), "add your details"]];
     all.forEach(([id, ok]) => $(id).classList.toggle("done", ok));
     const steps = all.filter(([id]) => !$(id).hidden), done = steps.filter(s => s[1]).length, nextIdx = steps.findIndex(s => !s[1]);
     $("progBar").style.width = (done / steps.length * 100) + "%";
     $("progText").textContent = nextIdx === -1 ? "Ready to book" : "Step " + (nextIdx + 1) + " of " + steps.length + ": " + steps[nextIdx][2];
-    $("bookBtn").textContent = q.svc === "house" ? "Book the house wash" : q.svc === "bike" ? "Book the bike detail" : "Book this detail";
+    $("bookBtn").textContent = q.svc === "house" ? "Book the house wash" : q.svc === "bike" ? "Book the bike detail" : q.svc === "trash" ? "Book the trash cans" : "Book this detail";
     if ($("mbar").dataset.inBook === "1") $("mbarPrice").textContent = "Total " + money(q.total);
   }
 
@@ -1163,7 +1186,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     const q = quote();
     const booking = {
       service: q.svc, date: sel.date, time: sel.time, name: v("fName").slice(0, 80), phone: fmtPhone(v("fPhone")).slice(0, 30), location: drop ? "dropoff" : "mobile",
-      address: drop ? null : v("fAddr").slice(0, 150), town: drop ? null : v("fTown").slice(0, 60), car: house ? null : v("fCar").slice(0, 80) || null,
+      address: drop ? null : v("fAddr").slice(0, 150), town: drop ? null : v("fTown").slice(0, 60), car: house || q.svc === "trash" ? null : v("fCar").slice(0, 80) || null,
       package: q.name.slice(0, 40), size: q.label.slice(0, 40), addons: q.adds.map(a => a.label).join(", ").slice(0, 150) || null, total: q.total,
       source: v("fSource").slice(0, 30) || null, notes: v("fNotes").slice(0, 500) || null, deal: q.deal
     };
@@ -1341,6 +1364,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       ["Do SUVs and trucks cost more?", sizes.length ? "A little: " + sizes.map(s => s.label + " +" + money(s.price)).join(", ") + ". Your quote updates as you pick, so you'll see the exact total before you book." : "No, every vehicle is the same price."],
       ["Can I drop my car off instead?", "Yes. Pick \"I'll drop it off\" when you book and Andrew will text you the address in Newburgh."],
       ["Do you clean bikes and e-bikes?", "Yes. A bike or e-bike detail is " + money(st.bike.price) + ". Pick \"Bike or e-bike\" when you book. We can come to you, or you can drop it off in Newburgh."],
+      ["Do you clean trash cans?", "Yes, " + money(st.trash.price) + " a can. Pick \"Trash cans\" when you book and choose how many. We clean them at your house."],
       ["Do you pressure wash houses?", "Yes. A full house pressure wash is " + money(st.house.price) + ". It takes the whole day, so when you book one, that day is yours and nothing else gets booked. Have an outdoor hose spigot and outlet ready."],
       ["What if it rains?", "If rain or freezing temps are in the forecast for an outside detail, Andrew will text you to pick a new time."],
       ["How do I change or cancel?", "Call or text Andrew at " + st.phone + ". The sooner the better, so someone else can take the spot."],
