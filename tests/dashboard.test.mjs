@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import LGC from "../app/core.js";
 
 const ST = { packages: [{ id: "exterior", name: "Exterior" }, { id: "interior", name: "Interior" }, { id: "full", name: "The Full Detail" }] };
-const NAMES = { bike: "Bike detail", house: "Full house pressure wash" };
+const NAMES = { bike: "Bike detail", house: "Full house pressure wash", trash: "Trash can cleaning" };
 const inv = (o) => ({ id: "i" + Math.random().toString(36).slice(2), kind: "invoice", state: "sent", number: 1, customer_id: "c1", booking_id: null, total_cents: 5000, tip_cents: 0,
   issued_on: "2026-10-20", job_date: "2026-10-20", due_on: "2026-10-27", items: [{ ref: "pkg:full", name: "The Full Detail", qty: 1, unit_cents: 5000 }], ...o });
 const pay = (invoice, cents, on, o) => ({ id: "p" + Math.random().toString(36).slice(2), invoice_id: invoice.id, amount_cents: cents, paid_on: on, method: "Cash", voided_at: null, created_at: on + "T18:00:00Z", ...o });
@@ -73,13 +73,15 @@ test("finished jobs: Done bookings plus sent invoices for work that was never bo
   assert.equal(LGC.completedJobs([booking({ total: 50, tip: 5 })], [], ST, NAMES)[0].cents, 5500, "no invoice: the booking's total and tip");
 });
 
-test("each job is named by its package, or as a bike or house job", () => {
+test("each job is named by its package, or as a bike, house or trash can job", () => {
   assert.equal(LGC.completedJobs([booking({ service: "bike", package: "Bike detail" })], [], ST, NAMES)[0].package, "Bike detail");
+  assert.equal(LGC.completedJobs([booking({ service: "trash", package: "Trash can cleaning", size: "2 cans" })], [], ST, NAMES)[0].package, "Trash can cleaning");
   assert.equal(LGC.completedJobs([booking({ service: "house", package: null })], [], ST, NAMES)[0].package, "Full house pressure wash");
   const named = (items) => LGC.invoicePackage({ items }, ST, NAMES);
   assert.equal(named([{ ref: "size:suv", name: "SUV size" }, { ref: "pkg:exterior", name: "Old name" }]), "Exterior", "the current package name wins");
   assert.equal(named([{ ref: "pkg:gone", name: "Winter Special" }]), "Winter Special", "a package since removed keeps the invoice's name");
   assert.equal(named([{ ref: "svc:house", name: "House" }]), "Full house pressure wash");
+  assert.equal(named([{ ref: "svc:trash", name: "Trash can cleaning" }]), "Trash can cleaning");
   assert.equal(named([{ ref: "custom", name: "Headlight restore" }]), "Other");
 });
 
