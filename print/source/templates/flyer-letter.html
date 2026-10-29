@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean flyer</title>
+<style>
+/* 8.5 x 11 in. Regular prices only (build.py fills them in from DEFAULTS in index.html); the launch deal ends Nov 16. */
+.tape.t{top:0;height:calc(var(--bleed) + .3in)}
+.tape.b{bottom:0;height:calc(var(--bleed) + .3in)}
+.safe{top:calc(var(--bleed) + .46in);bottom:calc(var(--bleed) + .46in);display:flex;flex-direction:column}
+.hero{display:flex;align-items:center;gap:.3in}
+.htxt{flex:1}
+.hero .eyebrow{font-size:9pt}
+.hero .brand{font-size:56pt;margin:.08in 0 0 .06in;--sh:3pt}
+.hero .brand .slab{font-size:43pt;padding:.01in .13in .04in;margin-top:.05in}
+.lede{font-weight:700;font-size:12.5pt;line-height:1.35;color:var(--dim);margin-top:.16in}
+.mwrap{width:2.1in;display:flex;flex-direction:column;align-items:center}
+.mwrap .mascot{width:1.85in;height:1.85in}
+.approved{position:relative;margin-top:-.2in;display:flex;align-items:center;gap:.06in;background:var(--fg);color:var(--bg);font-family:var(--display);font-size:10.5pt;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;padding:.03in .12in;border-radius:99px;transform:rotate(-4deg);box-shadow:0 0 0 2.5pt var(--accent)}
+
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:.13in;margin-top:.2in}
+.facts div{background:var(--panel);border:.8pt solid var(--line2);border-radius:.1in;padding:.1in .13in .12in}
+.facts b{display:block;font-family:var(--display);font-weight:400;font-size:14pt;text-transform:uppercase;letter-spacing:.02em;color:var(--accent)}
+.facts span{display:block;font-weight:600;font-size:8.6pt;line-height:1.35;color:var(--dim);margin-top:.03in}
+
+h2{font-family:var(--display);font-weight:400;font-size:19pt;text-transform:uppercase;letter-spacing:.02em;margin:.15in 0 .08in}
+.pkgs{display:grid;grid-template-columns:repeat(3,1fr);gap:.13in}
+.pkg{background:var(--panel);border:.8pt solid var(--line2);border-radius:.12in;padding:.12in .14in .14in}
+.pkg.full{border:1.6pt solid var(--accent);background:var(--panel2)}
+.pkg h3{font-family:var(--display);font-weight:400;font-size:16pt;text-transform:uppercase;letter-spacing:.02em}
+.price{font-family:var(--display);color:var(--accent);font-size:34pt;line-height:1;margin:.02in 0 .05in}
+.price sup{font-size:.5em;vertical-align:.7em;margin-right:.02em}
+.price small{font-family:var(--body);font-weight:800;font-size:9pt;color:var(--dim);margin-left:.04in}
+.pkg li{display:flex;gap:.05in;font-weight:600;font-size:8.3pt;line-height:1.3;margin-top:.04in}
+.pkg li .ico{margin-top:.01in}
+.note{font-weight:600;font-size:8pt;line-height:1.4;color:var(--dim);margin-top:.09in}
+.note b{color:var(--fg)}
+.more{display:grid;grid-template-columns:repeat(3,1fr);gap:.13in;margin-bottom:.18in}
+.more div{background:var(--panel);border:.8pt solid var(--line2);border-radius:.12in;padding:.1in .14in .12in}
+.more b{display:block;font-family:var(--display);font-weight:400;font-size:13pt;text-transform:uppercase;letter-spacing:.02em}
+.more .price{font-size:26pt;margin:.02in 0 .03in}
+.more span{display:block;font-weight:600;font-size:8pt;line-height:1.35;color:var(--dim)}
+
+.cta{margin-top:auto;display:flex;align-items:center;gap:.25in;background:var(--panel2);border:1.6pt solid var(--accent);border-radius:.14in;padding:.14in .2in}
+.ctxt{flex:1}
+.cta .eyebrow{font-size:9pt}
+.phone{display:block;font-family:var(--display);font-weight:400;font-size:40pt;line-height:1;letter-spacing:.015em;margin-top:.03in}
+.cta p.go{font-weight:700;font-size:10pt;margin-top:.08in}
+.url{font-weight:800;font-size:9pt;color:var(--accent);margin-top:.03in}
+.towns{font-weight:600;font-size:7.8pt;color:var(--dim);margin-top:.08in}
+.qrw{width:1.5in;text-align:center}
+.cap{font-family:var(--display);text-transform:uppercase;color:var(--accent);font-size:13pt;letter-spacing:.06em;margin-top:.06in;line-height:1}
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="tape t">{{tape 8.75 0.425 0.09}}</div>
+  <div class="safe">
+    <header class="hero">
+      <div class="htxt">
+        <p class="eyebrow">Mobile car detailing · Orange County, NY</p>
+        <div class="brand"><span class="l1">Letts</span><span class="slab">Get Clean</span></div>
+        <p class="lede">Hand wash and deep interior cleaning, right in your driveway.</p>
+      </div>
+      <div class="mwrap">
+        <img class="mascot" src="{{mascot}}" alt="">
+        <span class="approved">{{star}} Mama Letts approved {{star}}</span>
+      </div>
+    </header>
+
+    <div class="facts">
+      <div><b>We come to you</b><span>Most appointments are right at your home.</span></div>
+      <div><b>Have water + power</b><span>We hook up to your outdoor hose spigot and outlet.</span></div>
+      <div><b>Pay after the job</b><span>Cash, Cash App or Venmo. No deposit.</span></div>
+    </div>
+
+    <h2>Car details</h2>
+    <div class="pkgs">
+      <div class="pkg"><h3>Exterior</h3><p class="price"><sup>$</sup>{{price exterior}}</p>
+        <ul><li>{{check}}Hand wash &amp; dry</li><li>{{check}}Wheels cleaned &amp; tires shined</li><li>{{check}}Bug &amp; road grime removed</li><li>{{check}}Windows &amp; mirrors streak-free</li></ul></div>
+      <div class="pkg"><h3>Interior</h3><p class="price"><sup>$</sup>{{price interior}}</p>
+        <ul><li>{{check}}Vacuum seats, carpets &amp; trunk</li><li>{{check}}Dash, console &amp; door panels wiped</li><li>{{check}}Floor mats cleaned</li><li>{{check}}Cupholders &amp; air vents detailed</li></ul></div>
+      <div class="pkg full"><h3>The Full Detail</h3><p class="price"><sup>$</sup>{{price full}}</p>
+        <ul><li>{{check}}Everything in Exterior + Interior</li><li>{{check}}Inside and out, one visit</li><li>{{check}}Biggest savings</li></ul></div>
+    </div>
+    <p class="note">Prices are for a car or sedan. <b>SUV / truck +${{price suv}}</b> · <b>Minivan / 3-row +${{price van}}</b>. Extras: wax coat +${{price wax}} · extra-dirty interior +${{price heavy}} · air freshener +${{price freshener}}</p>
+
+    <h2>More we clean</h2>
+    <div class="more">
+      <div><b>Bike or e-bike detail</b><p class="price"><sup>$</sup>{{price bike}}</p><span>Regular bikes and e-bikes, cleaned by hand.</span></div>
+      <div><b>Trash can cleaning</b><p class="price"><sup>$</sup>{{price trash}}<small>a can</small></p><span>Trash and recycling cans, cleaned right at your house.</span></div>
+      <div><b>House pressure wash</b><p class="price"><sup>$</sup>{{price house}}</p><span>The whole outside of your house. It gets the whole day.</span></div>
+    </div>
+
+    <div class="cta">
+      <div class="ctxt">
+        <p class="eyebrow">Call or text Andrew</p>
+        <b class="phone">{{phone}}</b>
+        <p class="go">Or scan to see your price and book online in a minute.</p>
+        <p class="url">{{site}}</p>
+        <p class="towns">Newburgh · New Windsor · Middletown · Goshen · Warwick · Monroe + nearby towns</p>
+      </div>
+      <div class="qrw"><div class="qr">{{qr flyer}}</div><p class="cap">Scan to book</p></div>
+    </div>
+  </div>
+  <div class="tape b">{{tape 8.75 0.425 0.09}}</div>
+</section>
+</body>
+</html>

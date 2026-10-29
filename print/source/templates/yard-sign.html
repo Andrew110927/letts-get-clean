@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean yard sign</title>
+<style>
+/* 24 x 18 in landscape, for the customer's lawn while a detail is going on. Caution tape top and bottom. */
+.tape.t{top:0;height:calc(var(--bleed) + 1.5in)}
+.tape.b{bottom:0;height:calc(var(--bleed) + 1.5in)}
+.safe{top:calc(var(--bleed) + 1.95in);bottom:calc(var(--bleed) + 1.95in);display:flex;flex-direction:column;justify-content:space-evenly}
+h1{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:205pt;line-height:.9;letter-spacing:.01em;white-space:nowrap;text-align:center}
+.row{display:flex;align-items:flex-end;gap:.7in}
+.left{flex:1;display:flex;flex-direction:column;gap:.32in}
+.by{display:flex;align-items:center;gap:.3in}
+.by small{font-family:var(--display);font-size:72pt;color:var(--dim);text-transform:uppercase}
+.by .mascot{width:4.5in;height:4.5in}
+.brand{font-size:124pt;--sh:7pt}
+.brand .slab{font-size:92pt;padding:.02in .28in .09in;margin-top:.16in}
+.what{font-weight:800;font-size:36pt;color:var(--dim)}
+.call b{display:block;font-family:var(--display);font-weight:400;font-size:156pt;line-height:.95;letter-spacing:.015em}
+.call .eyebrow{font-size:26pt;margin-bottom:.06in}
+.right{width:6.8in;text-align:center}
+.cap{font-family:var(--display);text-transform:uppercase;color:var(--accent);font-size:54pt;letter-spacing:.05em;margin-top:.2in;line-height:1}
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="tape t">{{tape 24.25 1.625 0.34}}</div>
+  <div class="safe">
+    <h1>Detail in progress</h1>
+    <div class="row">
+      <div class="left">
+        <div class="by">
+          <small>by</small>
+          <img class="mascot" src="{{mascot}}" alt="">
+          <div class="brand"><span class="l1">Letts</span><span class="slab">Get Clean</span></div>
+        </div>
+        <p class="what">Mobile car detailing · We come to you</p>
+        <div class="call"><p class="eyebrow">Call or text</p><b>{{phone}}</b></div>
+      </div>
+      <div class="right">
+        <div class="qr">{{qr yardsign}}</div>
+        <p class="cap">Scan to book yours</p>
+      </div>
+    </div>
+  </div>
+  <div class="tape b">{{tape 24.25 1.625 0.34}}</div>
+</section>
+</body>
+</html>

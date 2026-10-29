@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean loyalty card: 6th detail {{reward}}</title>
+<style>
+/* 3.5 x 2 in, two sides, like the business card. {{reward}} is FREE or HALF OFF (build.py makes both). */
+.front .safe{display:flex;align-items:center;gap:.14in}
+.front .left{flex:1;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;align-items:center;gap:.09in}
+.top .mascot{width:.8in;height:.8in}
+.brand{font-size:22pt;--sh:1.3pt}
+.brand .slab{font-size:16pt;padding:.005in .06in .02in;margin-top:.035in}
+.pill{display:inline-block;font-weight:900;font-size:6pt;letter-spacing:.16em;text-transform:uppercase;background:var(--fg);color:var(--bg);border-radius:99px;padding:.025in .08in;box-shadow:1.2pt 1.2pt 0 var(--accent)}
+.reward{font-family:var(--display);text-transform:uppercase;font-size:17pt;line-height:1;margin-top:.06in;letter-spacing:.01em}
+.right{width:1.1in;text-align:center}
+.cap{font-family:var(--display);text-transform:uppercase;color:var(--accent);font-size:8pt;letter-spacing:.08em;margin-top:.05in}
+
+.back .safe{display:flex;flex-direction:column;justify-content:space-between}
+.back .eyebrow{font-size:5.9pt}
+.spots{display:flex;justify-content:space-between;margin-top:.07in}
+.spot{width:.44in;height:.44in;border-radius:50%;border:1.2pt dashed var(--line2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13pt;color:var(--dim)}
+.spot.win{border:none;background:var(--accent);color:var(--ink);font-size:8pt;line-height:.95;text-align:center;text-transform:uppercase;box-shadow:1.3pt 1.3pt 0 var(--fg)}
+.line{font-weight:700;font-size:7pt;color:var(--dim);margin-top:.05in}
+.name{display:flex;align-items:flex-end;gap:.06in;font-weight:800;font-size:6.6pt;text-transform:uppercase;letter-spacing:.12em;color:var(--dim)}
+.name i{flex:1;border-bottom:.8pt solid var(--line2);height:.16in}
+.foot{display:flex;justify-content:space-between;align-items:baseline}
+.foot b{font-family:var(--display);font-weight:400;font-size:12pt;letter-spacing:.02em}
+.foot span{font-weight:700;font-size:6.4pt;color:var(--dim)}
+</style>
+</head>
+<body>
+<section class="page front">
+  <div class="safe">
+    <div class="left">
+      <div class="top">
+        <img class="mascot" src="{{mascot}}" alt="">
+        <div class="brand"><span class="l1">Letts</span><span class="slab">Get Clean</span></div>
+      </div>
+      <div>
+        <span class="pill">Loyalty card</span>
+        <p class="reward">6th detail <span class="blue">{{reward}}</span></p>
+      </div>
+    </div>
+    <div class="right">
+      <div class="qr">{{qr card}}</div>
+      <p class="cap">Scan to book</p>
+    </div>
+  </div>
+</section>
+<section class="page back">
+  <div class="safe">
+    <div>
+      <p class="eyebrow">One punch for each detail</p>
+      <div class="spots">
+        <span class="spot">1</span><span class="spot">2</span><span class="spot">3</span>
+        <span class="spot">4</span><span class="spot">5</span><span class="spot win">{{spot}}</span>
+      </div>
+      <p class="line">{{line}}</p>
+    </div>
+    <p class="name">Name <i></i></p>
+    <p class="foot"><b>{{phone}}</b><span>Call or text to book</span></p>
+  </div>
+</section>
+</body>
+</html>

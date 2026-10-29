@@ -1,0 +1,31 @@
+/* Shared look for every print piece. Colors and fonts are the website's (index.html :root).
+   build.py adds the @font-face rules, the @page size and --pw/--ph/--bleed/--safe for each piece. */
+:root{
+  --bg:#07080B; --panel:#12151B; --panel2:#181C24; --line:#262C36; --line2:#323a46;
+  --fg:#F4F5F7; --dim:#A7AEB8; --accent:#29C8FF; --ink:#04131A;
+  --display:"Anton",sans-serif; --body:"Inter",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:var(--body);color:var(--fg);background:var(--bg)}
+ul{list-style:none}
+.page{position:relative;width:var(--pw);height:var(--ph);overflow:hidden;background:var(--bg);break-after:page}
+.page:last-child{break-after:auto}
+/* The trim line minus a margin. Anything that matters stays inside, so a slightly-off cut never clips it. */
+.safe{position:absolute;inset:calc(var(--bleed) + var(--safe))}
+
+.display,.brand{font-family:var(--display);font-weight:400;text-transform:uppercase}
+/* The wordmark: LETTS in white over GET CLEAN on a tilted blue slab with a white offset shadow (the site's hero). */
+.brand{line-height:.92;letter-spacing:.01em;white-space:nowrap}
+.brand .l1{display:block;transform:skewX(-8deg)}
+.slab{display:inline-block;background:var(--accent);color:var(--ink);transform:rotate(-2deg);box-shadow:var(--sh,2pt) var(--sh,2pt) 0 var(--fg);white-space:nowrap}
+.eyebrow{font-weight:900;text-transform:uppercase;color:var(--accent);letter-spacing:.16em}
+.blue{color:var(--accent)}
+
+/* QR codes are dark on white with the quiet zone inside the svg: inverted codes trip up some phone cameras. */
+.qr{background:#fff;line-height:0;border-radius:2.5%}
+.qr svg{display:block;width:100%;height:auto}
+.tape{position:absolute;left:0;right:0;line-height:0}
+.tape svg{display:block;width:100%;height:100%}
+.mascot{display:block}
+.ico{display:inline-block;width:1em;height:1em;flex:none;fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.star{display:inline-block;width:.75em;height:.75em;fill:currentColor}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean half-page flyer</title>
+<style>
+/* 5.5 x 8.5 in (half a letter sheet). Regular prices from DEFAULTS in index.html. */
+.tape.t{top:0;height:calc(var(--bleed) + .22in)}
+.tape.b{bottom:0;height:calc(var(--bleed) + .22in)}
+.safe{top:calc(var(--bleed) + .36in);bottom:calc(var(--bleed) + .36in);display:flex;flex-direction:column}
+.hero{display:flex;align-items:center;gap:.18in}
+.hero .mascot{width:1.35in;height:1.35in}
+.hero .eyebrow{font-size:6.6pt}
+.hero .brand{font-size:44pt;margin-top:.06in;--sh:2pt}
+.hero .brand .slab{font-size:33pt;padding:.005in .1in .03in;margin-top:.04in}
+.lede{font-weight:700;font-size:10pt;line-height:1.35;color:var(--dim);margin-top:.12in}
+.come{display:flex;justify-content:space-between;margin-top:.12in;background:var(--accent);color:var(--ink);border-radius:.08in;padding:.06in .14in;font-family:var(--display);font-size:13pt;text-transform:uppercase;letter-spacing:.03em}
+
+.list{margin-top:.12in;background:var(--panel);border:.8pt solid var(--line2);border-radius:.12in;padding:.06in .16in .1in}
+.row{display:flex;align-items:baseline;gap:.08in;padding:.06in 0;border-bottom:.6pt solid var(--line)}
+.row:last-child{border-bottom:none}
+.row b{font-family:var(--display);font-weight:400;font-size:13.5pt;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.row i{flex:1}
+.row .p{font-family:var(--display);color:var(--accent);font-size:19pt;line-height:1;white-space:nowrap}
+.row .p small{font-family:var(--body);font-weight:800;font-size:7.5pt;color:var(--dim);margin-left:.03in}
+.row.sizes{display:block;font-weight:600;font-size:7.4pt;color:var(--dim);padding:.02in 0 .07in}
+.row.sizes strong{color:var(--fg)}
+.pay{font-weight:700;font-size:8.2pt;color:var(--dim);margin:.1in 0 .12in;line-height:1.4}
+.pay strong{color:var(--fg)}
+
+.cta{margin-top:auto;display:flex;align-items:center;gap:.18in;background:var(--panel2);border:1.4pt solid var(--accent);border-radius:.12in;padding:.12in .16in}
+.ctxt{flex:1}
+.cta .eyebrow{font-size:6.8pt}
+.phone{display:block;font-family:var(--display);font-weight:400;font-size:29pt;line-height:1;letter-spacing:.015em;margin-top:.03in}
+.cta p.go{font-weight:700;font-size:7.6pt;margin-top:.06in;line-height:1.35}
+.qrw{width:1.25in;text-align:center}
+.cap{font-family:var(--display);text-transform:uppercase;color:var(--accent);font-size:10pt;letter-spacing:.06em;margin-top:.05in;line-height:1}
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="tape t">{{tape 5.75 0.345 0.07}}</div>
+  <div class="safe">
+    <header class="hero">
+      <img class="mascot" src="{{mascot}}" alt="">
+      <div>
+        <p class="eyebrow">Mobile car detailing · Orange County, NY</p>
+        <div class="brand"><span class="l1">Letts</span><span class="slab">Get Clean</span></div>
+      </div>
+    </header>
+    <p class="lede">Hand wash and deep interior cleaning, right in your driveway.</p>
+    <p class="come"><span>We come to you</span><span>Pay after the job</span></p>
+
+    <div class="list">
+      <p class="row"><b>Exterior</b><i></i><span class="p">${{price exterior}}</span></p>
+      <p class="row"><b>Interior</b><i></i><span class="p">${{price interior}}</span></p>
+      <p class="row"><b>The Full Detail</b><i></i><span class="p">${{price full}}</span></p>
+      <p class="row sizes">Car or sedan price. <strong>SUV / truck +${{price suv}}</strong> · <strong>Minivan / 3-row +${{price van}}</strong></p>
+      <p class="row"><b>Bike or e-bike detail</b><i></i><span class="p">${{price bike}}</span></p>
+      <p class="row"><b>Trash can cleaning</b><i></i><span class="p">${{price trash}}<small>a can</small></span></p>
+      <p class="row"><b>House pressure wash</b><i></i><span class="p">${{price house}}</span></p>
+    </div>
+    <p class="pay">Have an outdoor outlet and hose ready. <strong>Pay after the job</strong> with cash, Cash App or Venmo. No deposit.</p>
+
+    <div class="cta">
+      <div class="ctxt">
+        <p class="eyebrow">Call or text Andrew</p>
+        <b class="phone">{{phone}}</b>
+        <p class="go">Or scan to see your price and book online in a minute.</p>
+      </div>
+      <div class="qrw"><div class="qr">{{qr flyer}}</div><p class="cap">Scan to book</p></div>
+    </div>
+  </div>
+  <div class="tape b">{{tape 5.75 0.345 0.07}}</div>
+</section>
+</body>
+</html>

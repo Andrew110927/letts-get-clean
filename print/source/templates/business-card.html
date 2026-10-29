@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean business card</title>
+<style>
+/* 3.5 x 2 in, two sides. Safe area 3.25 x 1.75 in. */
+.front .safe{display:flex;align-items:center;gap:.14in}
+.front .left{flex:1;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;align-items:center;gap:.09in}
+.top .mascot{width:.8in;height:.8in}
+.brand{font-size:22pt;--sh:1.3pt}
+.brand .slab{font-size:16pt;padding:.005in .06in .02in;margin-top:.035in}
+.tag{font-weight:700;font-size:6.7pt;color:var(--dim);line-height:1.3}
+.call .eyebrow{font-size:5.8pt;margin-bottom:.015in}
+.call b{display:block;font-family:var(--display);font-weight:400;font-size:19pt;line-height:1;letter-spacing:.02em}
+.right{width:1.1in;text-align:center}
+.cap{font-family:var(--display);text-transform:uppercase;color:var(--accent);font-size:8.5pt;letter-spacing:.08em;margin-top:.05in}
+
+.back .tape{top:0;height:calc(var(--bleed) + .15in)}
+.back .safe{top:calc(var(--bleed) + .27in);display:flex;flex-direction:column;justify-content:space-between}
+.back .eyebrow{font-size:5.8pt}
+.svc{display:grid;grid-template-columns:1fr 1fr;gap:.035in .1in;margin-top:.05in}
+.svc li{display:flex;align-items:center;gap:.04in;font-weight:700;font-size:7.4pt;white-space:nowrap}
+.pay{background:var(--panel2);border:.6pt solid var(--line2);border-radius:.06in;padding:.06in .08in .07in}
+.chips{display:flex;gap:.05in;margin-top:.045in}
+.chips span{font-weight:800;font-size:6.6pt;background:var(--bg);border:.6pt solid var(--line2);border-radius:99px;padding:.02in .06in;white-space:nowrap}
+.chips b{color:var(--accent);font-weight:800}
+.foot{display:flex;justify-content:space-between;font-weight:700;font-size:6.3pt;color:var(--dim)}
+</style>
+</head>
+<body>
+<section class="page front">
+  <div class="safe">
+    <div class="left">
+      <div class="top">
+        <img class="mascot" src="{{mascot}}" alt="">
+        <div class="brand"><span class="l1">Letts</span><span class="slab">Get Clean</span></div>
+      </div>
+      <p class="tag">Mobile car detailing · We come to you</p>
+      <div class="call"><p class="eyebrow">Call or text</p><b>{{phone}}</b></div>
+    </div>
+    <div class="right">
+      <div class="qr">{{qr card}}</div>
+      <p class="cap">Scan to book</p>
+    </div>
+  </div>
+</section>
+<section class="page back">
+  <div class="tape">{{tape 3.75 0.275 0.055}}</div>
+  <div class="safe">
+    <div>
+      <p class="eyebrow">What we clean</p>
+      <ul class="svc">
+        <li>{{check}}Exterior detail</li><li>{{check}}Bike or e-bike detail</li>
+        <li>{{check}}Interior detail</li><li>{{check}}Trash can cleaning</li>
+        <li>{{check}}The Full Detail</li><li>{{check}}House pressure wash</li>
+      </ul>
+    </div>
+    <div class="pay">
+      <p class="eyebrow">Pay after the job · No deposit</p>
+      <div class="chips"><span>Cash</span><span>Cash App <b>$AndrewLetta</b></span><span>Venmo <b>@Andrew-Letts-9</b></span></div>
+    </div>
+    <p class="foot"><span>@lettsgetclean on Instagram &amp; TikTok</span><span>Orange County, NY</span></p>
+  </div>
+</section>
+</body>
+</html>

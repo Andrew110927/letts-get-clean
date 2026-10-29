@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean car magnet</title>
+<style>
+/* 12 in tall, 18 (w18) or 24 (w24) in wide. Big type so the name and number read from across a parking lot. */
+.safe{display:flex;align-items:center;gap:.6in}
+.left{flex:1;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;align-items:center;gap:.35in}
+.brand{--sh:8pt}
+.brand .slab{padding:.02in .3in .1in;margin-top:.18in}
+.what{font-family:var(--display);text-transform:uppercase;color:var(--accent);letter-spacing:.02em;line-height:1}
+.call .eyebrow{margin-bottom:.06in}
+.call b{display:block;font-family:var(--display);font-weight:400;line-height:.95;letter-spacing:.015em}
+.right{text-align:center}
+.cap{font-family:var(--display);text-transform:uppercase;color:var(--accent);letter-spacing:.06em;margin-top:.2in;line-height:1}
+.sub{font-weight:800;color:var(--dim);margin-top:.1in}
+
+.w18 .top .mascot{width:4.3in;height:4.3in}
+.w18 .brand{font-size:132pt}
+.w18 .brand .slab{font-size:96pt}
+.w18 .what{font-size:76pt}
+.w18 .call .eyebrow{font-size:22pt}
+.w18 .call b{font-size:122pt}
+.w18 .right{width:5.4in}
+.w18 .cap{font-size:44pt}
+.w18 .sub{font-size:19pt}
+
+.w24 .top .mascot{width:4.8in;height:4.8in}
+.w24 .brand{font-size:168pt}
+.w24 .brand .slab{font-size:122pt}
+.w24 .what{font-size:100pt}
+.w24 .call .eyebrow{font-size:28pt}
+.w24 .call b{font-size:172pt}
+.w24 .right{width:6.6in}
+.w24 .cap{font-size:54pt}
+.w24 .sub{font-size:23pt}
+</style>
+</head>
+<body class="{{variant}}">
+<section class="page">
+  <div class="safe">
+    <div class="left">
+      <div class="top">
+        <img class="mascot" src="{{mascot}}" alt="">
+        <div class="brand"><span class="l1">Letts</span><span class="slab">Get Clean</span></div>
+      </div>
+      <p class="what">Mobile Car Detailing</p>
+      <div class="call"><p class="eyebrow">Call or text</p><b>{{phone}}</b></div>
+    </div>
+    <div class="right">
+      <div class="qr">{{qr magnet}}</div>
+      <p class="cap">Scan to book</p>
+      <p class="sub">We come to you · Orange County, NY</p>
+    </div>
+  </div>
+</section>
+</body>
+</html>
