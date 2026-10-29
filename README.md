@@ -19,7 +19,9 @@ for whoever works on the code.
   but can't read anyone's details. A unique index stops two bookings on the same day and time.
   After booking, the customer is asked to text Andrew the details so he sees it right away.
 - **Services**: each booking has a `service`: `car` (packages, sizes and extras), `bike` ($20, regular bike or
-  e-bike) or `house` (full house pressure wash, $300). Bike and house prices live in `site_settings` too.
+  e-bike), `house` (full house pressure wash, $300) or `trash` (trash can cleaning, $15 a can, 1–6 cans; the number of
+  cans is in `size`, like "3 cans", and it takes a normal time slot at the customer's house). Bike, house and trash can
+  prices live in `site_settings` too.
 - **A house wash takes the whole day.** The `bookings_whole_day` trigger refuses a house wash on a day that already
   has a booking, and any booking on a day a house wash holds. It locks per day, so two people booking at the same
   moment can't both get it. The website and app only offer free days, and both read the refusal as "that day's taken".
@@ -44,6 +46,19 @@ for whoever works on the code.
   (CSV) of invoices and of money in for any dates, and a yearly summary by month for an accountant (money in,
   services, tips, sales tax, expenses, profit). The backup reads every business table fresh from the database, a
   page at a time, into one JSON file. Restoring it is a developer job: the file has every row and column.
+
+- **Discounts on the website**: one per booking, the biggest the customer qualifies for (`app/discounts.js`, shared
+  with the app). The booking form has a military / first-responder box (shown only for services that discount
+  covers) and an "Add a second car" option. A holiday promo that's switched on shows a bar under the header, and a
+  line in the ticker, only between its start and end dates.
+- **Two cars** book two back-to-back slots on the same day (the chosen time and the next one), so only start times
+  with a free slot after them can be picked. They're saved as two bookings in one request, so both save or neither
+  does, and each is its own job in the app (notes say "Car 1 of 2" / "Car 2 of 2"). The two-car deal comes off the
+  second car; a percent discount comes off each car.
+- **Fully booked**: when no online time is left, the hero chip turns into "Fully booked · join the waitlist", which
+  opens a pre-filled text to Andrew.
+- **Search engines**: the `<head>` has the business details (no street address). The FAQ and price list are added
+  as structured data from the same live settings the page shows, so they stay current when prices change.
 
 `supabase/migrations/` has the SQL for every table and policy. `supabase/functions/` has the Edge Functions.
 
@@ -124,7 +139,7 @@ node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
 
 ## Changing things
 
-- Prices (car packages, bike detail, house wash), hours, days off, social links: owner app → More → Settings
+- Prices (car packages, bike detail, house wash, trash cans), hours, days off, social links: owner app → More → Settings
   (updates the live site right away).
 - Extras (add pet hair removal, engine bay…): More → Settings → Extras & add-on services. New ones start as
   "Invoices only"; flip the switch to offer one on the website too (stored as `web: false` in `site_settings.addons`).
@@ -134,7 +149,14 @@ node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
   first time with integrity hashes (pinned in `PDF_LIBS` in `app/app.js`). The home address is never printed.
 - Text for invoice, receipt and quote messages: `messages.invoice`, `messages.receipt`, `messages.quote` in `app/config.js`.
 - Text message wording: `messages` in `app/config.js`.
-- Before/after photos: add the files to `media/` and an entry to `GALLERY` in `index.html`.
+- Military %, two-car amount and holiday promos (name, message, discount, dates, on/off): owner app → Settings →
+  Discounts & promos. Black Friday, December and Valentine's promos are loaded and switched off; switch one on and
+  the website bar, ticker and quotes pick it up on its start date.
+- QR codes and links on printed things: add `?src=` so "How did you hear about us?" fills itself in and the app's
+  sources card counts it. Business card `?src=card`, car magnet `?src=magnet`, yard sign `?src=yardsign`, flyer
+  `?src=flyer`, pop-up / car show `?src=popup` (also `instagram`, `tiktok`, `facebook`, `google`, `nextdoor`).
+  Example: https://andrew110927.github.io/letts-get-clean/?src=card
+- Before/after photos: add the files to `media/` (WebP, about 900×1125) and an entry to `GALLERY` in `index.html`.
 - Logo (the mascot): `media/mascot.webp` (the round badge, cut out, in the hero), `mascot-160.webp` (header and
   footer), `mascot-lockup.webp` (the full "Mama Letts approved" logo in About), `og-card.jpg` (the picture shown when
   the link is shared), `favicon-64.png` (browser tab) and `icon-180.png` (iPhone home screen). The owner app uses the

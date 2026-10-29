@@ -51,6 +51,13 @@
   function linesFromBooking(b, st, names) {
     const dollars = (n) => Math.round(Number(n) * 100);
     const agreed = dollars((Number(b.total) || 0) + (Number(b.discount_amount) || 0));
+    if (b.service === "trash") {
+      // One line per can at the booked price. A total that was changed to something that doesn't split
+      // evenly over the cans becomes a single line for the whole job instead.
+      const cans = Math.max(1, parseInt(b.size, 10) || 1), unit = agreed ? agreed / cans : dollars(st.trash ? st.trash.price : 0);
+      return Number.isInteger(unit) ? [{ ref: "svc:trash", name: names.trash, qty: cans, unit_cents: unit }]
+        : [{ ref: "svc:trash", name: names.trash + " · " + b.size, qty: 1, unit_cents: agreed }];
+    }
     if (b.service === "bike" || b.service === "house") {
       const unit = agreed || dollars(b.service === "bike" ? st.bike.price : st.house.price);
       return [{ ref: "svc:" + b.service, name: (b.service === "bike" ? names.bike : names.house) + (b.size && b.service === "bike" ? " · " + b.size : ""), qty: 1, unit_cents: unit }];
@@ -198,13 +205,14 @@
     return out;
   }
 
-  // What kind of job it was, for "most popular": the package name, or the bike or house service.
-  function bookingPackage(b, names) { return b.service === "bike" ? names.bike : b.service === "house" ? names.house : b.package || "Other"; }
+  // What kind of job it was, for "most popular": the package name, or the bike, house or trash can service.
+  function bookingPackage(b, names) { return b.service === "bike" ? names.bike : b.service === "house" ? names.house : b.service === "trash" ? names.trash : b.package || "Other"; }
   function invoicePackage(inv, st, names) {
     for (const l of inv.items || []) {
       const ref = String(l.ref || "");
       if (ref === "svc:bike") return names.bike;
       if (ref === "svc:house") return names.house;
+      if (ref === "svc:trash") return names.trash;
       if (ref.startsWith("pkg:")) { const p = ((st && st.packages) || []).find(x => "pkg:" + x.id === ref); return p ? p.name : l.name; }
     }
     return "Other";

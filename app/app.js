@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.6.1";
+  const VERSION = "1.7.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1", BACKUP_KEY = "lgcpro.lastBackup.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -179,7 +179,7 @@
     if (d.socials && typeof d.socials === "object") {
       for (const s of SOC) { const v = d.socials[s.k]; out.socials[s.k] = typeof v === "string" && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : ""; }
     }
-    for (const k of ["bike", "house"]) if (d[k] && num(d[k].price)) out[k] = { price: Number(d[k].price) };
+    for (const k of ["bike", "house", "trash"]) if (d[k] && num(d[k].price)) out[k] = { price: Number(d[k].price) };
     return out;
   }
   function dealOn() { const e = S.settings.dealEnds; return !!e && new Date() <= new Date(e + "T23:59:59"); }
@@ -404,10 +404,11 @@
       const extra = (o) => ({ id: uid(), created_at: new Date(Date.now() - 3 * 864e5).toISOString(), location: "mobile", addons: null, notes: null, deal: false, tip: 0, paid_with: null, vehicle_id: null, ...o });
       bookings.push(
         extra({ service: "bike", status: "Done", date: addDays(t, -6), time: "15:00", name: "Devon Thomas", phone: "(845) 555-0102", address: "220 Union Ave", town: "New Windsor", car: "Rad Power RadCity", package: "Bike detail", size: "E-bike", total: 20, source: "Flyer", tip: 5, paid_with: "Cash", customer_id: customers[1].id, vehicle_id: vehicles[8].id }),
-        extra({ service: "house", status: "Confirmed", date: addDays(t, 4), time: slotsFor(addDays(t, 4))[0], name: "Mike Dawson", phone: "(845) 555-0105", address: "3 Lake Dr", town: "Warwick", car: null, package: "Full house pressure wash", size: "House", total: 300, source: "Google", notes: "Two-story colonial, vinyl siding. Spigot is by the back door.", customer_id: customers[4].id }));
+        extra({ service: "house", status: "Confirmed", date: addDays(t, 4), time: slotsFor(addDays(t, 4))[0], name: "Mike Dawson", phone: "(845) 555-0105", address: "3 Lake Dr", town: "Warwick", car: null, package: "Full house pressure wash", size: "House", total: 300, source: "Google", notes: "Two-story colonial, vinyl siding. Spigot is by the back door.", customer_id: customers[4].id }),
+        extra({ service: "trash", status: "Requested", date: addDays(t, 6), time: slotsFor(addDays(t, 6))[0], name: people[2][0], phone: people[2][1], address: people[2][2], town: people[2][3], car: null, package: "Trash can cleaning", size: "3 cans", total: 45, source: "Flyer", notes: "Cans are by the side gate.", customer_id: customers[2].id }));
 
       // Invoices: an overdue one, one voided by mistake, the last four finished jobs, a walk-up draft, and a house-wash quote.
-      const counters = { invoice: 0, quote: 0 }, names = { bike: CFG.services.bike.name, house: CFG.services.house.name };
+      const counters = { invoice: 0, quote: 0 }, names = { bike: CFG.services.bike.name, house: CFG.services.house.name, trash: CFG.services.trash.name };
       const mkInv = (o) => {
         const kind = o.kind || "invoice", tt = LGC.invoiceTotals(o), at = new Date(o.issued_on + "T18:00:00").toISOString();
         return { id: uid(), created_at: at, updated_at: at, kind, number: ++counters[kind], prefix: kind === "quote" ? "Q-" : "LGC-", state: "sent",
@@ -901,8 +902,8 @@
 
       const rows = [
         ["When", fmtDate(b.date, { weekday: "long", month: "long", day: "numeric" }) + " · " + (isHouse(b) ? "all day, starts " + fmtTime(b.time) : fmtTime(b.time))],
-        [{ bike: "Service", house: "Job" }[b.service] || "Package", b.package],
-        [b.service === "bike" ? "Bike type" : "Vehicle", isHouse(b) ? null : b.size], ["Extras", b.addons], [b.service === "bike" ? "Bike" : "Car", b.car],
+        [{ bike: "Service", house: "Job", trash: "Service" }[b.service] || "Package", b.package],
+        [{ bike: "Bike type", trash: "Cans" }[b.service] || "Vehicle", isHouse(b) ? null : b.size], ["Extras", b.addons], [b.service === "bike" ? "Bike" : "Car", b.car],
         ["Where", drop ? "Drop-off at your place" : [b.address, b.town].filter(Boolean).join(", ")],
         ["Phone", fmtPhone(b.phone)], ["Heard about us", b.source],
         b.discount ? ["Discount", b.discount + " · −" + money(b.discount_amount)] : null,
@@ -944,20 +945,25 @@
         total: inp("total", b.total, { type: "number", inputmode: "numeric", min: "0", max: "1000" })
       };
       const notes = h("textarea", { name: "notes", maxlength: "500" }, b.notes || "");
+      // Trash cans: changing the count updates the total at today's per-can price (the total can still be typed).
+      const trash = b.service === "trash";
+      const cans = trash ? chipPicker(CFG.services.trash.cans.map(n => [String(n), n + (n === 1 ? " can" : " cans")]), String(parseInt(b.size, 10) || 1), false, (k) => { f.total.value = S.settings.trash.price * Number(k); }) : null;
       const err = h("div", { class: "err", hidden: true });
       const save = h("button", { class: "btn btn-primary btn-block", type: "submit" }, "Save changes");
       const form = h("form", { class: "form" },
         h("div", { class: "row2" }, field("Day", f.date), field("Time", f.time)),
         h("div", { class: "row2" }, field("Name", f.name), field("Phone", f.phone)),
         b.location === "dropoff" ? null : h("div", { class: "row2" }, field("Street address", f.address), field("Town", f.town)),
-        h("div", { class: "row2" }, field("Car", f.car), field("Total ($)", f.total)),
+        trash ? h("div", { class: "field" }, h("span", { class: "lbl" }, "How many cans"), cans) : null,
+        trash ? field("Total ($)", f.total) : h("div", { class: "row2" }, field("Car", f.car), field("Total ($)", f.total)),
         field("Notes", notes), err, save);
       form.addEventListener("submit", async (e) => {
         e.preventDefault(); err.hidden = true;
         const patch = {
           date: f.date.value, time: f.time.value.slice(0, 5), name: f.name.value.trim().slice(0, 80), phone: fmtPhone(f.phone.value).slice(0, 30),
-          car: f.car.value.trim().slice(0, 80) || null, total: Math.max(0, Math.min(1000, Math.round(Number(f.total.value) || 0))), notes: notes.value.trim().slice(0, 500) || null
+          car: trash ? null : f.car.value.trim().slice(0, 80) || null, total: Math.max(0, Math.min(1000, Math.round(Number(f.total.value) || 0))), notes: notes.value.trim().slice(0, 500) || null
         };
+        if (trash) { const n = Number(cans.value()); patch.size = n + (n === 1 ? " can" : " cans"); }
         if (b.location !== "dropoff") { patch.address = f.address.value.trim().slice(0, 150) || null; patch.town = f.town.value.trim().slice(0, 60) || null; }
         const problems = [];
         if (!/^\d{4}-\d{2}-\d{2}$/.test(patch.date)) problems.push("pick a day");
@@ -1020,7 +1026,9 @@
         h("div", { class: "field" }, h("span", { class: "lbl" }, "Extras"), addons));
       const bikeType = chipPicker(SV.bike.types.map(t => [t, t]), SV.bike.types.includes(p0.size) ? p0.size : SV.bike.types[0], false);
       const bikeBox = h("div", { class: "field" }, h("span", { class: "lbl" }, "Type of bike"), bikeType);
-      const service = chipPicker([["car", "Car"], ["bike", "Bike · " + money(st.bike.price)], ["house", "House wash · " + money(st.house.price)]], svc, false, (k) => { svc = k; applyService(); });
+      const canCount = chipPicker(SV.trash.cans.map(n => [String(n), n + (n === 1 ? " can" : " cans")]), String(parseInt(p0.size, 10) || 1), false, () => recalc());
+      const trashBox = h("div", { class: "field" }, h("span", { class: "lbl" }, "How many cans"), canCount);
+      const service = chipPicker([["car", "Car"], ["bike", "Bike · " + money(st.bike.price)], ["house", "House wash · " + money(st.house.price)], ["trash", "Trash cans · " + money(st.trash.price) + " each"]], svc, false, (k) => { svc = k; applyService(); });
       const total = h("input", { type: "number", inputmode: "numeric", min: "0", max: "1000" });
       const status = chipPicker([["Confirmed", "Confirmed"], ["Requested", "Needs OK"], ["Done", "Already done"]], "Confirmed", false);
       const notes = h("textarea", { maxlength: "500", placeholder: "Gate code, pet hair, where to park…" });
@@ -1029,17 +1037,18 @@
       function recalc() {
         if (svc === "bike") { total.value = st.bike.price; return; }
         if (svc === "house") { total.value = st.house.price; return; }
+        if (svc === "trash") { total.value = st.trash.price * Number(canCount.value()); return; }
         const p = st.packages.find(x => x.id === pkg.value()) || st.packages[0], s = st.sizes.find(x => x.id === size.value()) || st.sizes[0];
         total.value = priceOf(p) + (s.price || 0) + st.addons.filter(a => addons.value().includes(a.id)).reduce((n, a) => n + a.price, 0);
       }
       function applyService() {
-        const house = svc === "house";
-        carBox.hidden = svc !== "car"; bikeBox.hidden = svc !== "bike";
-        carField.hidden = house; locField.hidden = house;
+        const house = svc === "house", trash = svc === "trash";
+        carBox.hidden = svc !== "car"; bikeBox.hidden = svc !== "bike"; trashBox.hidden = !trash;
+        carField.hidden = house || trash; locField.hidden = house || trash;
         carField.querySelector("label").textContent = svc === "bike" ? "Bike" : "Car";
         car.placeholder = svc === "bike" ? "e.g. Trek FX 2" : "e.g. Honda CR-V";
-        // A house wash always happens at their house.
-        addrRow.hidden = !house && loc.value() === "dropoff";
+        // A house wash and trash cans always happen at their house.
+        addrRow.hidden = !house && !trash && loc.value() === "dropoff";
         if (house && dayJobs(dateIn.value).length) dateIn.value = firstDay(true);
         if (!house) { const f = freeSlots(dateIn.value)[0]; if (f) timeIn.value = f; }
         recalc(); drawSlots();
@@ -1050,22 +1059,23 @@
         h("div", { class: "row2" }, field("Day", dateIn), timeField), slotHint, dayNote,
         h("div", { class: "row2" }, field("Name", name), field("Phone", phone)),
         locField, addrRow, towns,
-        carField, carBox, bikeBox,
+        carField, carBox, bikeBox, trashBox,
         h("div", { class: "row2" }, field("Total", h("div", { class: "money-in" }, total)), h("div", { class: "field" }, h("span", { class: "lbl" }, "Status"), status)),
         field("Notes", notes, "optional"), err, save);
       total.setAttribute("aria-label", "Total");
       applyService();
       form.addEventListener("submit", async (e) => {
         e.preventDefault(); err.hidden = true;
-        const house = svc === "house", bike = svc === "bike";
+        const house = svc === "house", bike = svc === "bike", trash = svc === "trash";
         const p = st.packages.find(x => x.id === pkg.value()) || st.packages[0], s = st.sizes.find(x => x.id === size.value()) || st.sizes[0];
-        const drop = !house && loc.value() === "dropoff";
+        const drop = !house && !trash && loc.value() === "dropoff", cans = Number(canCount.value());
         const row = {
           service: svc, date: dateIn.value, time: (house ? slotsFor(dateIn.value)[0] || "09:00" : timeIn.value || "").slice(0, 5),
           name: name.value.trim().slice(0, 80), phone: fmtPhone(phone.value).slice(0, 30),
           location: drop ? "dropoff" : "mobile", address: drop ? null : address.value.trim().slice(0, 150) || null, town: drop ? null : town.value.trim().slice(0, 60) || null,
-          car: house ? null : car.value.trim().slice(0, 80) || null,
-          package: (house ? SV.house.name : bike ? SV.bike.name : p.name).slice(0, 40), size: (house ? "House" : bike ? bikeType.value() : s.label).slice(0, 40),
+          car: house || trash ? null : car.value.trim().slice(0, 80) || null,
+          package: (house ? SV.house.name : bike ? SV.bike.name : trash ? SV.trash.name : p.name).slice(0, 40),
+          size: (house ? "House" : bike ? bikeType.value() : trash ? cans + (cans === 1 ? " can" : " cans") : s.label).slice(0, 40),
           addons: svc === "car" ? st.addons.filter(a => addons.value().includes(a.id)).map(a => a.label).join(", ").slice(0, 150) || null : null,
           total: Math.max(0, Math.min(1000, Math.round(Number(total.value) || 0))), source: "Phone/text", notes: notes.value.trim().slice(0, 500) || null,
           deal: svc === "car" && dealOn(), status: status.value()
@@ -1363,7 +1373,7 @@
   const short = (c) => c % 100 ? LGC.fmtCents(c) : "$" + (c / 100).toLocaleString("en-US");
   // Cents as a value for a money input: 5000 → "50", 4950 → "49.50", 0 → "".
   const asInput = (c) => c ? (c % 100 ? (c / 100).toFixed(2) : String(c / 100)) : "";
-  const SERVICE_NAMES = () => ({ bike: CFG.services.bike.name, house: CFG.services.house.name });
+  const SERVICE_NAMES = () => ({ bike: CFG.services.bike.name, house: CFG.services.house.name, trash: CFG.services.trash.name });
   // Sent invoices still owed, and the ones past their due date (part paid or not). Invoices and Money both show these.
   function owedKpis() {
     const owed = LGC.owedInvoices(S.invoices, S.payments, today()), late = owed.filter(r => r.daysLate);
@@ -1752,6 +1762,7 @@
             h("div", { class: "chips" },
               chip(CFG.services.bike.name + " " + short(cents(sx.bike.price)), () => addLine({ ref: "svc:bike", name: CFG.services.bike.name, qty: 1, unit_cents: cents(sx.bike.price) })),
               chip("House wash " + short(cents(sx.house.price)), () => addLine({ ref: "svc:house", name: CFG.services.house.name, qty: 1, unit_cents: cents(sx.house.price) })),
+              chip("Trash can " + short(cents(sx.trash.price)), () => addLine({ ref: "svc:trash", name: CFG.services.trash.name, qty: 1, unit_cents: cents(sx.trash.price) })),
               chip("+ Custom item", () => { addLine({ ref: "custom", name: "", qty: 1, unit_cents: 0 }); const last = itemsBox.lastChild && itemsBox.lastChild.querySelector("input"); if (last) last.focus(); }))));
       }
       function drawItems() {
@@ -1978,6 +1989,7 @@
       const list = P.map(p => p.name + " " + money(priceOf(p)) + (dealOn() ? " (reg. " + money(p.regular) + ")" : "")).join("\n");
       return { caption: (dealOn() ? "🚗✨ Launch deal ends " + fmtDate(S.settings.dealEnds, { month: "long", day: "numeric" }) + "!\n" : "🚗✨ Dirty car? Not for long.\n") + list +
         "\n🚲 Bike or e-bike detail " + money(S.settings.bike.price) + "\n🏠 Full house pressure wash " + money(S.settings.house.price) +
+        "\n🗑️ Trash can cleaning " + money(S.settings.trash.price) + " a can" +
         "\n\n" + full.name + " = inside and out, in your driveway. Book online (link in bio) or text " + S.settings.phone + ".", visual: "Reel clip of the foam bath" };
     } },
     showcase: { label: "Before & after", sub: "Show off a recent job", icon: "image", kind: "Showcase", make: () => {
@@ -2599,7 +2611,7 @@
       return b;
     };
     const plain = (val, label, on) => { const i = h("input", { type: "number", inputmode: "numeric", min: "1", max: "500", value: String(val), "aria-label": label }); i.addEventListener("input", () => { on(Number(i.value)); dirty(); }); return i; };
-    const SVC_LABEL = { car: "Car details", bike: "Bike details", house: "House washes" };
+    const SVC_LABEL = { car: "Car details", bike: "Bike details", house: "House washes", trash: "Trash cans" };
     const svcChecks = (p) => h("div", { class: "chips" }, ...LGD.SERVICES.map(s => {
       const c = h("input", { type: "checkbox", checked: p.services.includes(s) });
       c.addEventListener("change", () => { p.services = c.checked ? [...new Set([...p.services, s])] : p.services.filter(x => x !== s); dirty(); });
@@ -2676,9 +2688,10 @@
         h("div", { class: "row2" }, h("div", { class: "field" }, h("small", {}, "Deal price"), num(p.deal, p.name + " deal price", (x) => p.deal = x)), h("div", { class: "field" }, h("small", {}, "Regular price"), num(p.regular, p.name + " regular price", (x) => p.regular = x)))))),
       section("Vehicle sizes", h("p", { class: "muted small" }, "Added on top of the package price."), ...st.sizes.map(a => h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, a.label), num(a.price, a.label + " price", (x) => a.price = x)))),
       section("Extras & add-on services", h("p", { class: "muted small" }, "Added on top of a package, on the website and on invoices. New ones start as Invoices only; switch one on to offer it on the website too."), extrasBox),
-      section("Bikes & house washing", h("p", { class: "muted small" }, "One price each. A house wash books the whole day."),
+      section("Bikes, houses & trash cans", h("p", { class: "muted small" }, "One price each (trash cans: per can). A house wash books the whole day."),
         h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Bike or e-bike detail"), num(st.bike.price, "Bike detail price", (x) => st.bike.price = x)),
-        h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Full house pressure wash"), num(st.house.price, "House wash price", (x) => st.house.price = x))),
+        h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Full house pressure wash"), num(st.house.price, "House wash price", (x) => st.house.price = x)),
+        h("div", { class: "row2", style: "align-items:center" }, h("span", { style: "font-weight:700" }, "Trash can cleaning, per can"), num(st.trash.price, "Trash can price per can", (x) => st.trash.price = x))),
       section("Open times", field("First day taking appointments", start),
         h("div", { class: "field" }, h("span", { class: "lbl" }, "Weekday start times"), timeList("slotsWeekday")),
         h("div", { class: "field" }, h("span", { class: "lbl" }, "Weekend start times"), timeList("slotsWeekend")),
@@ -2703,6 +2716,7 @@
       for (const a of [...next.sizes, ...next.addons]) if (!(a.price >= 0 && a.price <= 1000)) problems.push((a.label || "An extra") + " must be $0–$1,000");
       if (!(next.bike.price >= 0 && next.bike.price <= 1000)) problems.push("the bike price must be $0–$1,000");
       if (!(next.house.price >= 0 && next.house.price <= 1000)) problems.push("the house wash price must be $0–$1,000");
+      if (!(next.trash.price >= 0 && next.trash.price <= 150)) problems.push("the trash can price must be $0–$150 a can");
       for (const [k, val] of Object.entries(next.socials)) if (val && !/^https:\/\/[^\s"'<>]+$/.test(val)) problems.push(SOC.find(s => s.k === k).label + " link must start with https://");
       const D = next.discounts, whole = (x, lo, hi) => Number.isInteger(x) && x >= lo && x <= hi;
       if (!whole(D.military.percent, 1, 90)) problems.push("the military discount must be 1–90%");

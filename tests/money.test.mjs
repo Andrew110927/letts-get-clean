@@ -13,9 +13,9 @@ const ST = {
   ],
   sizes: [{ id: "car", label: "Car / sedan", price: 0 }, { id: "suv", label: "SUV / truck", price: 10 }, { id: "van", label: "Minivan / 3-row", price: 15 }],
   addons: [{ id: "freshener", label: "Air freshener", price: 2 }, { id: "heavy", label: "Extra-dirty interior", price: 10 }, { id: "wax", label: "Wax coat upgrade", price: 20 }],
-  bike: { price: 20 }, house: { price: 300 }
+  bike: { price: 20 }, house: { price: 300 }, trash: { price: 15 }
 };
-const NAMES = { bike: "Bike detail", house: "Full house pressure wash" };
+const NAMES = { bike: "Bike detail", house: "Full house pressure wash", trash: "Trash can cleaning" };
 const pkg = (id) => ST.packages.find(p => p.id === id);
 const inv = (o) => ({ customer_id: "c1", items: [{ name: "The Full Detail", qty: 1, unit_cents: 5000 }], tip_cents: 0, discount_cents: 0, tax_percent: 0, ...o });
 
@@ -136,6 +136,15 @@ test("a booking with a website discount is invoiced at full price, with the disc
 test("bike and house bookings become one line at their booked price", () => {
   assert.deepEqual(LGC.linesFromBooking({ service: "bike", size: "E-bike", total: 20 }, ST, NAMES), [{ ref: "svc:bike", name: "Bike detail · E-bike", qty: 1, unit_cents: 2000 }]);
   assert.deepEqual(LGC.linesFromBooking({ service: "house", size: "House", total: 300 }, ST, NAMES), [{ ref: "svc:house", name: "Full house pressure wash", qty: 1, unit_cents: 30000 }]);
+});
+
+test("a trash can booking becomes one line per can at the booked price", () => {
+  assert.deepEqual(LGC.linesFromBooking({ service: "trash", size: "3 cans", total: 45 }, ST, NAMES), [{ ref: "svc:trash", name: "Trash can cleaning", qty: 3, unit_cents: 1500 }]);
+  assert.deepEqual(LGC.linesFromBooking({ service: "trash", size: "1 can", total: 0 }, ST, NAMES), [{ ref: "svc:trash", name: "Trash can cleaning", qty: 1, unit_cents: 1500 }], "no total: today's price");
+  // A website discount is added back onto the lines; the invoice carries it separately.
+  assert.deepEqual(LGC.linesFromBooking({ service: "trash", size: "2 cans", total: 27, discount_amount: 3 }, ST, NAMES).map(l => [l.qty, l.unit_cents]), [[2, 1500]]);
+  // A total changed to something that doesn't split evenly stays one line, so the invoice still matches it.
+  assert.deepEqual(LGC.linesFromBooking({ service: "trash", size: "3 cans", total: 40 }, ST, NAMES), [{ ref: "svc:trash", name: "Trash can cleaning · 3 cans", qty: 1, unit_cents: 4000 }]);
 });
 
 test("invoice numbers are the prefix and four digits", () => {

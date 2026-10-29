@@ -54,6 +54,12 @@ Updates arrive by themselves: whenever you open the app with signal, you get the
 6. **Send it.** **Share the invoice PDF** sends a branded invoice by Messages, Mail or any app. **Text** sends a message with tap-to-pay Cash App and Venmo links, amount already filled in. Sending a draft marks it as sent.
 7. **Paid later?** Open the invoice and tap the method under **Payments**. For half now and half later, tap **Part payment, other amount or date**.
 
+**Bookings to know about**
+- **Two cars, one visit.** A customer can add a second car. It books the time slot right after the first car and shows as its own job (the notes say "Car 1 of 2" and "Car 2 of 2"), so each car gets its own invoice. Any discount is already taken off: the two-car deal comes off the second car, and a percent discount comes off each car.
+- **Military / first responder.** If the booking shows that discount, check their ID at the appointment.
+- **Trash cans.** The job says how many cans ("3 cans"), and its invoice fills in as 3 × $15. On an invoice you start yourself, tap **Trash can $15** once per can.
+- **How they found you.** Every website booking says where the customer heard about you. Bookings from your printed QR codes fill this in by themselves, and **More → Social** counts them by source.
+
 ---
 
 ## 3. Invoices and quotes (Invoices tab)
@@ -92,11 +98,11 @@ Every booking is filed under its customer automatically by phone number, along w
 | --- | --- |
 | Contact | The phone number customers call or text. |
 | Launch deal | The last day of launch prices. The day after, the website switches to regular prices by itself. Clear it to end the deal now. |
-| Discounts & promos | Military and first responders, the two-car deal, and holiday promos. A booking gets one discount, whichever saves the customer most. |
+| Discounts & promos | Military and first responders, the two-car deal, and holiday promos. A booking gets one discount, whichever saves the customer most. A holiday promo you switch on also shows a banner at the top of the website, but only between its start and end dates. |
 | Prices | The deal price and the regular price for each package. |
 | Vehicle sizes | The extra charge for bigger vehicles. |
 | Extras & add-on services | Add-ons and their prices. New ones are for invoices only until you switch them on for the website. |
-| Bikes & house washing | One price each. A house wash books the whole day. |
+| Bikes, houses & trash cans | One price each (trash cans are per can). A house wash books the whole day. |
 | Open times | Your first day, start times on weekdays and weekends, and days off. |
 | Social links | Shown on the website and the Social screen. |
 

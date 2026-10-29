@@ -63,8 +63,10 @@ test("switched-off discounts and other services don't count", () => {
   assert.equal(LGD.bestDiscount({ service: "house", subtotal: 300, military: true }, withPromos("black-friday"), "2026-11-28"), null);
   assert.equal(LGD.bestDiscount({ service: "bike", subtotal: 20, secondCar: 20 }, LGD.DEFAULT_DISCOUNTS, "2026-11-10"), null, "two-car is cars only");
   const all = withPromos("black-friday");
-  all.promos[0].services = ["car", "bike", "house"];
+  all.promos[0].services = ["car", "bike", "house", "trash"];
   assert.equal(LGD.bestDiscount({ service: "house", subtotal: 300 }, all, "2026-11-28").amount, 36);
+  assert.equal(LGD.bestDiscount({ service: "trash", subtotal: 45 }, all, "2026-11-28").amount, 5, "a promo can include trash cans");
+  assert.equal(LGD.bestDiscount({ service: "trash", subtotal: 45 }, withPromos("black-friday"), "2026-11-28"), null, "but not unless Andrew adds them");
 });
 
 test("a dollar-amount promo works too, capped at the price", () => {
