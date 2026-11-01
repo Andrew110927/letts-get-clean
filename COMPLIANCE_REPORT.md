@@ -16,7 +16,7 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 | 8 | Third parties and security | ✅ | Fonts self-hosted (`fonts/`); a CSP and referrer policy `<meta>` on every page; `noreferrer` on links that open new tabs. No npm packages ship. *GitHub Pages can't send nosniff or Permissions-Policy headers: remaining risk* |
 | 9 | Dark patterns | ✅ | The pre-ticked box is gone; the "(5 stars)" pre-fill on texted reviews is gone; the countdown tied to the real end date became a plain end date |
 | 10 | Hidden fees | ✅ | Every price, size surcharge and extra is on one list; "Reg. $35" is now "$35 after Nov 16"; the vehicle switch shows the true total per size; terms say Andrew asks before adding anything |
-| 11 | Reviews | ✅ | "Every honest review gets posted, good or bad" is on the site, plus the moderation rule in the terms. *Andrew to confirm Ann is a real customer and to approve negative reviews too* |
+| 11 | Reviews | ✅ | "Every honest review gets posted, good or bad" is on the site, plus the moderation rule in the terms. Ann is a real customer (Andrew, 10-31). Keep approving negative reviews too |
 | 12 | Claims | ✅ | Nothing unsupported was found; copy kept modest. *Confirm every exterior gets the foam pre-wash* |
 | 13 | Alt text and captions | ✅ | All images described; the stars are drawn with one text label; the reels have written descriptions. Checked 10-31: the Sonata reel is music with no talking (caption track `media/reel_web.vtt` says so); the Outback reel's audio is silent |
 | 14 | Contrast | ✅ | Field edges now 3.6:1 (were about 1.2:1); the footer's blue is now 3.8:1. axe: 0 contrast issues |
@@ -24,7 +24,7 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 | 16 | Business details | ✅ | Footer: name, owner, town, phone, text, socials, every policy link, Cookie settings, Privacy request; hours in the contact rows; schema unchanged (public details only); `accessibility.html` |
 | 17 | Age and kids | ✅ | Any age welcome. Under 13 needs a parent or guardian to book (FAQ, terms, privacy). Minors' data is limited to what the job needs |
 | 18 | Unsubscribe | ✅ N/A | No email list. Texts: "Text STOP any time" is on the form and in the policies |
-| 19 | Media licenses | ⚠️ | `MEDIA_LICENSES.md`. *Two unknowns: who made the mascot, and where the Sonata reel's song came from (the Outback reel turned out to be silent)* |
+| 19 | Media licenses | ✅ | `MEDIA_LICENSES.md`. Every file is accounted for: the mascot is Andrew's own art of his dog; the Sonata reel's music was made for the business by Claude; the other reels are silent (Andrew, 10-31). *Only the hero film is still "presumably own footage"* |
 | 20 | Data deletion | ✅ | Privacy request steps on `privacy.html#request`, the checklist `DATA_REQUESTS.md`, and **Forget this customer** in LGC Pro (app 1.8.0, cache lgcpro-v15) calling `forget_customer()`. It blanks the details everywhere and keeps every money total. Covered by three new database tests (99 of 99 pass). Live since 10-31 |
 
 ## The new design (the "make it 1000000 times better" phase)
@@ -64,22 +64,23 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 
 ## What Andrew needs to do (outside the code)
 
-2. **Answer the open questions:**
-   - legal name and business type (sole proprietor, DBA or LLC)
-   - whether to add an email for privacy requests
-   - a satisfaction guarantee or re-do window (the policy says only "tell Andrew before you pay")
-   - whether prices really rise to $35 / $40 / $70 after Nov 16
-   - who made the mascot
-   - what the soundtracks on reels 1 and 2 are
-   - whether Ann is a real customer
-3. **Confirm the defaults written into the policies:**
+**Answered by Andrew on 10-31 and now in the site:**
+- The business is owned and run by Andrew Letts (no LLC).
+- Email andrew.letts@icloud.com: added to the footer, the about section, the business schema and every policy page, plus email privacy requests.
+- **No satisfaction guarantee:** the refund policy keeps "look the work over before you pay, and Andrew fixes anything missed right then".
+- Prices really do rise to $35 / $40 / $70 after Nov 16, and again in summer. Update `site_settings` and the print files when that happens.
+- The mascot is Andrew's own art of his dog; the Sonata reel's music was made for the business.
+- Ann is a real customer.
+
+**Still to do:**
+1. **Confirm the defaults written into the policies:**
    - refund replies within 2 days, refunds sent within 7
    - records kept up to 7 years
    - before and after photos with plates blurred and no faces or addresses
    - the condition-check wording
-5. **Tell me where the Sonata reel's song came from.** If it's a TikTok or CapCut track, I'll swap in a silent version.
-6. **Have a lawyer review** the policy pages, especially the sections listed below.
-7. Optional: an OpenRouter key for the image skills (see `design/image-prompts.md`).
+2. **Have a lawyer review** the policy pages, especially the sections listed below.
+3. **Check whether you need an assumed name certificate.** In New York, someone doing business under a name other than their own ("Letts Get Clean" instead of "Andrew Letts") generally has to file one with the county clerk. It's cheap and quick; ask the Orange County Clerk.
+4. Optional: an OpenRouter key for the image skills (see `design/image-prompts.md`).
 
 ## Sections that most need a lawyer
 
