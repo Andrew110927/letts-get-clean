@@ -14,6 +14,8 @@ import {
 // A real car model, when Andrew drops one in: media/car.glb (glTF, front facing -Z as glTF models do, any size).
 // Its paint takes the wash shader; glass, lamps and everything else keep their own materials.
 const CAR_URL = new URL("../media/car.glb", import.meta.url).href;
+// Which way the model's nose points in its own file: glTF convention is -z, Blender exports often come out +z.
+const CAR_FRONT = "+z";
 
 const LENGTH = 4.8, HALF = LENGTH / 2;
 const BODY_WHITE = 0xF1F2F4, DIRT = 0xA89A82, GLASS_DUSTY = 0x7D7F80, GLASS_CLEAR = 0x0B1016;
@@ -24,13 +26,13 @@ const smooth = (a, b, v) => MathUtils.smoothstep(v, a, b);
 // Where the camera is at each point of the scroll: position, what it looks at, and how far the car sits off centre
 // (positive = car on the right, so the words have the left). The copy swaps sides each package.
 const KEYS = [
-  [0.00, [6.6, 2.0, 8.0], [0.3, 0.6, 0], 0.5],
+  [0.00, [7.0, 2.1, 8.6], [0.3, 0.6, 0], 0.48],
   [0.17, [4.0, 1.0, 7.6], [0.5, 0.55, 0], 0.5],
   [0.34, [-2.4, 1.1, 7.2], [-0.3, 0.6, 0], 0.45],
   [0.50, [-6.4, 1.9, 6.2], [-0.4, 0.8, 0], -0.6],
   [0.66, [-4.6, 1.7, 7.6], [-0.2, 0.8, 0], -0.55],
-  [0.82, [6.2, 2.4, 6.9], [0, 0.6, 0], 0.45],
-  [1.00, [7.4, 2.6, 6.6], [0, 0.6, 0], 0.45]
+  [0.82, [7.6, 2.7, 8.4], [0, 0.6, 0], 0.3],
+  [1.00, [9.2, 3.0, 8.4], [0, 0.6, 0], 0.28]
 ];
 
 const GLSL_NOISE = /* glsl */ `
@@ -52,10 +54,19 @@ function paintMaterial(uniforms) {
       .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = (uToCar * modelMatrix * vec4(position, 1.0)).xyz;");
     s.fragmentShader = s.fragmentShader
       .replace("#include <common>", `#include <common>
-        uniform float uWipe, uBeads, uGloss, uTime; uniform vec3 uDirt; varying vec3 vObj;
+        uniform float uWipe, uBeads, uGloss, uTime, uKeyOn; uniform vec3 uDirt, uKey; varying vec3 vObj;
         ${GLSL_NOISE}
         float washT(vec3 o) { return (${HALF.toFixed(2)} - o.x) / ${LENGTH.toFixed(2)}; }`)
       .replace("#include <color_fragment>", `#include <color_fragment>
+        if (uKeyOn > 0.5) {
+          vec3 c = diffuseColor.rgb;
+          float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b)), sat = (mx - mn) / max(mx, 1e-4);
+          float h = mx == mn ? 0.0 : mx == c.r ? mod((c.g - c.b) / (mx - mn), 6.0) : mx == c.g ? (c.b - c.r) / (mx - mn) + 2.0 : (c.r - c.g) / (mx - mn) + 4.0;
+          float dh = abs(h - uKey.x); dh = min(dh, 6.0 - dh);
+          float near = (1.0 - smoothstep(0.5, 1.1, dh)) * smoothstep(0.08, 0.2, sat);
+          float lum = dot(c, vec3(0.3, 0.59, 0.11));
+          diffuseColor.rgb = mix(c, vec3(0.92) * clamp(lum / max(uKey.y, 1e-3), 0.25, 1.3), near);
+        }
         float t = washT(vObj);
         float cleanHere = 1.0 - smoothstep(uWipe - 0.07, uWipe + 0.07, t);
         // Road grime: blotchy, and heaviest low on the body where the wheels throw it.
@@ -216,7 +227,26 @@ function mist(count) {
 // Loads media/car.glb if it exists. Sizes it to the drawn car's length, grounds and centres it, turns its nose to +x,
 // and gives its paint the wash. Materials are told apart by name first, then by looks: glass is transparent, the
 // paint is whatever covers the most of the car.
-async function loadRealCar(paint, glass, interior) {
+// The paint's hue and brightness: the most common hue among the coloured pixels of a small copy of the texture.
+const hueOf = (c) => { const mx = Math.max(c.r, c.g, c.b), mn = Math.min(c.r, c.g, c.b); if (mx === mn) return 0; const d = mx - mn; return mx === c.r ? ((c.g - c.b) / d + 6) % 6 : mx === c.g ? (c.b - c.r) / d + 2 : (c.r - c.g) / d + 4; };
+function dominantColour(image) {
+  try {
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const ctx = c.getContext("2d", { willReadFrequently: true }); ctx.drawImage(image, 0, 0, 64, 64);
+    const d = ctx.getImageData(0, 0, 64, 64).data, bins = new Array(24).fill(0), lums = new Array(24).fill(0);
+    for (let i = 0; i < d.length; i += 4) {
+      const col = new Color().setRGB(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255, "srgb");
+      const mx = Math.max(col.r, col.g, col.b), mn = Math.min(col.r, col.g, col.b);
+      if (mx < 0.03 || (mx - mn) / mx < 0.15) continue;
+      const b = Math.floor(hueOf(col) / 6 * 24) % 24; bins[b]++; lums[b] += 0.3 * col.r + 0.59 * col.g + 0.11 * col.b;
+    }
+    const top = bins.indexOf(Math.max(...bins));
+    if (bins[top] < 40) return null;
+    return { h: (top + 0.5) / 24 * 6, lum: lums[top] / bins[top] };
+  } catch (e) { return null; }
+}
+
+async function loadRealCar(paint, glass, interior, uniforms) {
   const head = await fetch(CAR_URL, { method: "HEAD" }).catch(() => null);
   if (!head || !head.ok) return null;
   const { GLTFLoader } = await import("../vendor/GLTFLoader.js");
@@ -228,7 +258,7 @@ async function loadRealCar(paint, glass, interior) {
   }
   const gltf = await loader.parseAsync(buf, "");
   const root = gltf.scene;
-  root.rotation.y = -Math.PI / 2;
+  root.rotation.y = CAR_FRONT === "+z" ? Math.PI / 2 : -Math.PI / 2;
   root.updateMatrixWorld(true);
   const box = new Box3().setFromObject(root), size = box.getSize(new Vector3()), centre = box.getCenter(new Vector3());
   const car = new Group(), inner = new Group();
@@ -260,6 +290,8 @@ async function loadRealCar(paint, glass, interior) {
       pm.onBeforeCompile = paint.onBeforeCompile; pm.customProgramCacheKey = paint.customProgramCacheKey;
       // Keep the model's own detail maps; the colour goes white under them, like the Sonata.
       pm.map = mat.map || null; pm.normalMap = mat.normalMap || null; pm.roughnessMap = mat.roughnessMap || null; pm.metalnessMap = mat.metalnessMap || null;
+      const key = pm.map ? dominantColour(pm.map.image) : (mat.color ? { h: hueOf(mat.color), lum: 0.3 * mat.color.r + 0.59 * mat.color.g + 0.11 * mat.color.b } : null);
+      if (key) { uniforms.uKey.value.set(key.h, key.lum, 0); uniforms.uKeyOn.value = 1; }
       swap(meshes, mat, pm);
     } else if (isGlass(mat) || /glass|window|windshield|windscreen/i.test(mat.name || "")) {
       swap(meshes, mat, glass);
@@ -308,7 +340,7 @@ export function start(stage, opts = {}) {
   const scene = new Scene();
   scene.environment = studio(renderer);
   const camera = new PerspectiveCamera(32, 1, 0.1, 80);
-  const uniforms = { uWipe: { value: 0 }, uBeads: { value: 0 }, uGloss: { value: 0 }, uTime: { value: 0 }, uDirt: { value: new Color(DIRT) }, uToCar: { value: new Matrix4() } };
+  const uniforms = { uWipe: { value: 0 }, uBeads: { value: 0 }, uGloss: { value: 0 }, uTime: { value: 0 }, uDirt: { value: new Color(DIRT) }, uToCar: { value: new Matrix4() }, uKeyOn: { value: 0 }, uKey: { value: new Vector3() } };
   const paint = paintMaterial(uniforms);
   const glass = new MeshPhysicalMaterial({ color: GLASS_DUSTY, roughness: 0.55, metalness: 0, transparent: true, opacity: 0.94, clearcoat: 0.4 });
   const interior = {
@@ -322,7 +354,7 @@ export function start(stage, opts = {}) {
   mirror.scale.y = -1;
   scene.add(car, contactShadow());
   // Swap in the real model once it arrives; the drawn car shows until then.
-  loadRealCar(paint, glass, interior).then((real) => {
+  loadRealCar(paint, glass, interior, uniforms).then((real) => {
     if (!real || stopped) return;
     scene.remove(car, mirror);
     ({ car, lamp, tail } = real);
