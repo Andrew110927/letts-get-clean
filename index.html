@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Only this site, its Supabase project and its own files may load; inline script and style stay allowed because the page is one file. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; font-src 'self'; connect-src 'self' https://fisenrazdvnobzjpihti.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Letts Get Clean · Mobile Car Detailing in Orange County, NY</title>
-<meta name="description" content="Mobile car detailing in Orange County, NY. Exterior, interior and full details in your driveway or drop-off in Newburgh, $20 bike and e-bike details, trash can cleaning ($15 a can), and full house pressure washing. See your price and book online in a minute. Call or text (845) 282-9387.">
+<meta name="description" content="Mobile car detailing in Orange County, NY. Exterior, interior and full details in your driveway or drop-off in Newburgh, $20 bike and e-bike details, trash can cleaning ($15 a can), and full house pressure washing. Instant quote, book online, pay after the job.">
 <link rel="canonical" href="https://andrew110927.github.io/letts-get-clean/">
 <meta property="og:title" content="Letts Get Clean · Mobile Car Detailing">
 <meta property="og:description" content="Dirty car? Not for long. Hand wash and deep interior cleaning in your driveway. Book online in Orange County, NY.">
@@ -20,6 +23,9 @@
 <link rel="apple-touch-icon" href="media/icon-180.png">
 <!-- The hero photo is the first big thing phones paint (they skip the video), so fetch it before anything else. -->
 <link rel="preload" as="image" href="media/hero_poster.webp" type="image/webp" fetchpriority="high">
+<!-- Fonts are served from this site, so no visitor's IP address goes to a font service. -->
+<link rel="preload" as="font" href="fonts/anton-latin.woff2" type="font/woff2" crossorigin>
+<link rel="preload" as="font" href="fonts/inter-latin.woff2" type="font/woff2" crossorigin>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -38,555 +44,585 @@
   "sameAs": ["https://www.instagram.com/lettsgetclean", "https://www.tiktok.com/@lettsgetclean"]
 }
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800;900&display=swap">
 <style>
-/* Layout: one long mobile-first page.
-   header → hero → caution-tape ticker → how it works → packages → house washing → before/after sliders → three reels → booking → reviews → about → FAQ → area → footer.
-   Phones get a sticky bottom bar with the live price. */
+/* Direction: "the name as a monument". The business name is the headline, set across the bottom of a real
+   driveway; everything else stays small and calm so the contrast holds. Brand colours and faces are kept
+   from the print materials (cards, magnets, flyers): ground #07080B, accent #29C8FF, Anton + Inter. */
+@font-face{font-family:"Anton";src:url(fonts/anton-latin.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Inter";src:url(fonts/inter-latin.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 :root{
   color-scheme:dark;
-  --bg:#07080B; --panel:#12151B; --panel2:#181C24; --line:#262C36; --line2:#323a46;
-  --fg:#F4F5F7; --dim:#A7AEB8; --mute:#8A919C;
-  --accent:#29C8FF; --accent-ink:#04131A; --accent-soft:rgba(41,200,255,.12);
+  --bg:#07080B; --surface:#12151B; --surface-2:#1A1F28; --surface-3:#232A35;
+  --ink:#F4F5F7; --muted:#A7AEB8;
+  --accent:#29C8FF; --accent-hover:#5CD7FF; --accent-deep:#1C9ACB; --accent-ink:#04131A; --accent-soft:rgba(41,200,255,.14);
+  --paper:#F4F5F7; --paper-2:#E2E6EB; --paper-ink:#07080B; --paper-muted:#4A525E;
+  /* Form field edges: 3.6:1 against the booking panel, so every input's outline is visible (WCAG 1.4.11). */
+  --field:#6B7584;
   --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171;
   --display:"Anton","Impact","Arial Narrow Bold",sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --r:18px;
+  /* Five type steps do all the work: small, body, lead, section heading, and the monument. */
+  --t-small:14px; --t-body:17px; --t-lead:clamp(20px,1.7vw,24px); --t-h2:clamp(40px,5vw,76px); --t-mono:clamp(76px,14.6vw,320px);
+  --m:clamp(16px,2.2vw,32px); --gap:clamp(64px,6.5vw,104px); --col:24px;
+  --ease:cubic-bezier(.2,.7,.2,1);
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:84px;-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth;scroll-padding-top:88px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased}
 [hidden]{display:none!important}
 img,video{max-width:100%;display:block}
 a{color:var(--accent)}
 button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-main,footer{overflow-x:clip}
-.wrap{max-width:1140px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.5px;line-height:1;margin:0;text-wrap:balance}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;line-height:.95;letter-spacing:-.005em;margin:0;text-wrap:balance}
+h2{font-size:var(--t-h2)}
 p{margin:0}
-.eyebrow{font-weight:900;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin:0}
-.muted{color:var(--dim)}
+.muted{color:var(--muted)}
 .sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 24px;border-radius:999px;border:0;cursor:pointer;font-weight:800;text-decoration:none;letter-spacing:.3px;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;white-space:nowrap}
-.btn-primary{background:var(--accent);color:var(--accent-ink);box-shadow:5px 5px 0 var(--fg)}
-.btn-primary:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 var(--fg)}
-.btn-primary:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--fg)}
-.btn-ghost{background:transparent;color:var(--fg);border:2px solid var(--line2)}
-.btn-ghost:hover{border-color:var(--accent)}
-.btn-dark{background:var(--bg);color:var(--fg)}
-.btn-sm{min-height:40px;padding:0 16px;font-size:14px}
-.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
-section{padding-block:80px}
-.sec-head{display:flex;flex-direction:column;gap:12px;margin-bottom:36px;max-width:720px}
-.sec-head h2{font-size:clamp(42px,7vw,72px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36}
-.sec-head p.muted{font-size:18px}
-.ic{display:inline-flex;flex-shrink:0}
+.skip{position:fixed;left:var(--m);top:-80px;z-index:100;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:12px 18px;border-radius:999px;text-decoration:none;transition:top .2s}
+.skip:focus{top:12px}
+main,footer{overflow-x:clip}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col);padding-inline:var(--m)}
 
-/* scroll reveal (only when JS runs, so nothing is ever stuck invisible) */
-.js .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1)}
-.js .reveal.in{opacity:1;transform:none}
+/* buttons: one shape (fully round), one fill */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 26px;border-radius:999px;border:0;cursor:pointer;font-weight:700;text-decoration:none;background:var(--accent);color:var(--accent-ink);transition:transform .2s var(--ease),background-color .2s}
+.btn:hover{background:var(--accent-hover);transform:translateY(-2px)}
+.btn:active{transform:translateY(1px) scale(.98)}
+.btn:disabled{opacity:.6;cursor:progress;transform:none}
+.btn-ghost{background:var(--surface-3);color:var(--ink)}
+.btn-ghost:hover{background:#2E3644}
+.btn-dark{background:var(--paper-ink);color:var(--paper)}
+.btn-dark:hover{background:#1E232C}
+.btn-sm{min-height:44px;padding:0 18px;font-size:var(--t-small)}
+.ic{display:inline-grid;place-items:center;flex-shrink:0}
 
-/* holiday promo bar: only rendered while a promo is switched on and inside its dates */
-.promo-bar{background:var(--accent);color:var(--accent-ink);text-align:center;font-weight:800;font-size:15px;line-height:1.35;padding:10px 16px}
-.promo-bar a{color:inherit;text-decoration:underline;text-underline-offset:3px;white-space:nowrap;margin-left:6px}
-.promo-bar small{font-weight:700;opacity:.8;margin-left:6px;white-space:nowrap}
-
-/* header */
-header.top{position:sticky;top:0;z-index:50;background:rgba(7,8,11,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
-.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:68px}
-.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--fg)}
-.brand img{width:46px;height:46px;border-radius:50%;flex-shrink:0;filter:drop-shadow(0 0 8px rgba(41,200,255,.35))}
-.brand b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:1px;text-transform:uppercase;transform:skewX(-8deg);white-space:nowrap}
+/* header: a plain bar that sits on the film, then turns solid once the hero is gone */
+.top{position:fixed;inset:0 0 auto;z-index:50;transition:background-color .3s}
+.top.solid{background:var(--bg)}
+.promo-bar{background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:var(--t-small);padding:9px var(--m);display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px}
+.promo-bar small{font-size:var(--t-small);font-weight:600}
+.promo-bar a{color:var(--accent-ink);font-weight:800}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px;padding-inline:var(--m)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand img{width:40px;height:40px;border-radius:50%}
+.brand b{font-family:var(--display);font-weight:400;font-size:var(--t-lead);letter-spacing:.5px;text-transform:uppercase;transform:skewX(-8deg);white-space:nowrap}
 .brand b span{color:var(--accent)}
-nav.links{display:flex;gap:2px}
-nav.links a{color:var(--dim);text-decoration:none;font-weight:700;font-size:14px;padding:8px 12px;border-radius:999px}
-nav.links a:hover{color:var(--fg);background:var(--panel)}
-.top-cta{display:flex;gap:8px;align-items:center}
-.menu-btn{display:none;width:44px;height:44px;border-radius:12px;border:2px solid var(--line2);background:var(--panel);cursor:pointer;place-items:center}
-@media (max-width:900px){nav.links{display:none}.menu-btn{display:grid}}
-@media (max-width:760px){.top-cta .btn-primary{display:none}} /* phones book from the bottom bar */
-@media (max-width:380px){.brand b{font-size:22px}}
-.menu{position:fixed;inset:0;z-index:70;background:rgba(7,8,11,.97);backdrop-filter:blur(8px);display:flex;flex-direction:column;padding:calc(84px + env(safe-area-inset-top,0px)) 24px 32px;gap:6px;overflow-y:auto}
-.menu a.m{font-family:var(--display);font-size:40px;text-transform:uppercase;color:var(--fg);text-decoration:none;padding:6px 0;border-bottom:1px solid var(--line)}
-.menu a.m:hover{color:var(--accent)}
-.menu .row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
-.menu-close{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px}
+nav.links{display:flex;gap:4px;margin-left:auto}
+nav.links a{color:var(--ink);text-decoration:none;font-weight:600;font-size:var(--t-small);padding:12px 12px;border-radius:999px;transition:background-color .2s}
+nav.links a:hover{background:rgba(244,245,247,.12)}
+.menu-btn{display:none;min-height:44px;padding:0 16px;border-radius:999px;border:0;background:rgba(244,245,247,.14);color:var(--ink);font-weight:700;font-size:var(--t-small);cursor:pointer}
+.menu{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;gap:6px;padding:20px var(--m) 32px;overflow:auto}
+.menu .menu-close{align-self:flex-end;display:inline-flex}
+.menu a.m{font-family:var(--display);text-transform:uppercase;font-size:var(--t-h2);line-height:1.1;color:var(--ink);text-decoration:none;padding:4px 0}
+.menu .row{display:flex;gap:10px;margin-top:auto;padding-top:24px}
+.menu .row .btn{flex:1}
 
-/* hero */
-.hero{position:relative;overflow:hidden;isolation:isolate;padding-block:76px 64px}
-.hero-media{position:absolute;inset:0;z-index:-2;background:#000 url(media/hero_poster.webp) center/cover no-repeat}
-.hero-media video{width:100%;height:100%;object-fit:cover;filter:saturate(1.1)}
-.hero-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,8,11,.96) 0%,rgba(7,8,11,.84) 42%,rgba(7,8,11,.5) 75%,rgba(7,8,11,.35) 100%),linear-gradient(0deg,var(--bg) 0%,rgba(7,8,11,0) 30%)}
-@media (max-width:900px){.hero-shade{background:linear-gradient(180deg,rgba(7,8,11,.74) 0%,rgba(7,8,11,.88) 55%,var(--bg) 100%)}}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:44px;align-items:center}
-@media (max-width:900px){.hero .wrap{grid-template-columns:minmax(0,1fr)}}
-.deal-badge{display:inline-flex;align-items:center;gap:10px;background:var(--fg);color:var(--bg);font-family:var(--display);font-size:19px;letter-spacing:1px;text-transform:uppercase;padding:8px 18px;border-radius:999px;transform:rotate(-1.5deg);box-shadow:5px 5px 0 var(--accent);margin-bottom:22px}
-.deal-badge small{font-family:var(--body);font-weight:800;font-size:12px;letter-spacing:1px;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 9px;white-space:nowrap}
-@media (max-width:480px){.deal-badge{font-size:15px;flex-wrap:wrap;row-gap:4px;padding:8px 14px}}
-.hero h1{font-size:clamp(52px,11.5vw,134px);transform:skewX(-8deg);transform-origin:left bottom;margin-top:14px;animation:slam .55s cubic-bezier(.2,1.4,.4,1) both}
-.hero h1 .l1{display:block;text-shadow:6px 6px 0 #2a303a}
-.hero h1 .l2{display:inline-block;margin-top:10px;background:var(--accent);color:var(--accent-ink);padding:2px 20px 8px;transform:rotate(-2deg);box-shadow:9px 9px 0 var(--fg);animation:slam2 .6s .18s cubic-bezier(.2,1.5,.4,1) both}
-@keyframes slam{0%{transform:skewX(-8deg) scale(1.3);opacity:0}100%{transform:skewX(-8deg) scale(1);opacity:1}}
-@keyframes slam2{0%{transform:rotate(-8deg) scale(1.3)}100%{transform:rotate(-2deg) scale(1)}}
-.hero p.lede{font-size:19px;color:var(--dim);max-width:46ch;margin-top:26px}
-.hero .ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px}
-.trust{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:26px;padding:0;list-style:none;color:var(--fg);font-weight:700;font-size:14px}
-.trust li{display:flex;gap:8px;align-items:center}
-.next-chip{display:inline-flex;align-items:center;gap:10px;background:rgba(18,21,27,.85);border:1px solid rgba(41,200,255,.45);color:var(--fg);border-radius:999px;padding:8px 16px;font-weight:700;font-size:14px;margin-top:22px;text-decoration:none}
-.next-chip i{width:10px;height:10px;border-radius:50%;background:var(--ok);animation:ping 1.8s infinite}
-.next-chip.wait i{background:var(--warn)}
-@keyframes ping{0%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}80%,100%{box-shadow:0 0 0 12px rgba(74,222,128,0)}}
-.facts{display:grid;gap:12px}
-.fact{display:flex;gap:14px;align-items:flex-start;background:rgba(18,21,27,.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:18px}
-.fact .ib{width:42px;height:42px;border-radius:12px;background:var(--panel2);display:grid;place-items:center;flex-shrink:0}
-.fact b{display:block;font-size:16px}
-.fact span.t{color:var(--dim);font-size:14px}
-.phone-num{font-family:var(--display);font-size:30px;letter-spacing:1px;color:var(--fg);text-decoration:none}
-.phone-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.spark{position:absolute;color:var(--accent);font-size:22px;pointer-events:none;animation:twinkle 2.4s ease-in-out infinite;text-shadow:0 0 12px rgba(41,200,255,.8);z-index:0}
-.spark.w{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.9)}
-@keyframes twinkle{0%,100%{transform:scale(.4) rotate(0);opacity:.25}50%{transform:scale(1.15) rotate(45deg);opacity:1}}
-@media (max-width:900px){.spark{display:none}}
-.mascot{display:grid;justify-items:center;margin-bottom:8px}
-.mascot img{width:clamp(116px,14vw,188px);height:auto;border-radius:50%;filter:drop-shadow(0 0 26px rgba(41,200,255,.45));animation:bob 4s ease-in-out infinite}
-.mascot .approved{position:relative;margin-top:-16px;background:var(--fg);color:var(--bg);font-family:var(--display);font-size:17px;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;padding:5px 16px;border-radius:999px;transform:rotate(-4deg);box-shadow:0 0 0 3px var(--accent),0 0 24px rgba(41,200,255,.55)}
-@keyframes bob{50%{transform:translateY(-6px)}}
+/* hero: film title on the bottom edge */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:#000}
+.hero-media{position:absolute;inset:0}
+.hero-media video{width:100%;height:100%;object-fit:cover;object-position:50% 38%}
+/* Neutral scrims only under text: a short one under the bar, a taller one under the name. */
+.hero::before,.hero::after{content:"";position:absolute;left:0;right:0;pointer-events:none}
+.hero::before{top:0;height:200px;background:linear-gradient(rgba(7,8,11,.88),rgba(7,8,11,.5) 45%,rgba(7,8,11,0))} /* taste-skill-ignore: neutral scrim under the bar on the film */
+.hero::after{bottom:0;height:48%;background:linear-gradient(rgba(7,8,11,0),rgba(7,8,11,.88) 70%)} /* taste-skill-ignore: neutral scrim under the name on the film */
+.hero-foot{position:relative;z-index:1;padding:0 var(--m) 30px}
+.hero-dim{position:absolute;inset:0;background:var(--bg);opacity:0;pointer-events:none}
+.hero-line{max-width:44ch;font-size:clamp(18px,1.4vw,20px);font-weight:500;line-height:1.45;margin-bottom:clamp(12px,1.4vw,22px)}
+.hero h1{font-size:var(--t-mono);line-height:.8;letter-spacing:-.01em;white-space:nowrap;margin:0 -.02em}
+.hero h1 .line{display:inline-block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em;vertical-align:bottom}
+.hero h1 [data-line]{display:inline-block}
+@media (prefers-reduced-motion:no-preference){
+  .js .hero h1 [data-line]{transform:translateY(105%);animation:line-up .9s var(--ease) forwards;animation-delay:calc(var(--i) * 120ms + 150ms)}
+  .js .hero [data-load]{opacity:0;transform:translateY(12px);animation:load-rise .55s var(--ease) forwards;animation-delay:var(--d)}
+  .js .hero-media video{animation:settle 1.6s var(--ease) both}
+}
+@keyframes line-up{to{transform:none}}
+@keyframes load-rise{to{opacity:1;transform:none}}
+@keyframes settle{from{transform:scale(1.06)}}
+/* As the first screen leaves, the film sinks and darkens while the name lifts away a little faster. */
+@supports (animation-timeline: view()){
+  @media (prefers-reduced-motion:no-preference){
+    .hero{view-timeline-name:--hero}
+    .hero-media{animation:hero-sink linear both;animation-timeline:--hero;animation-range:exit 0% exit 100%}
+    .hero-dim{animation:hero-dim linear both;animation-timeline:--hero;animation-range:exit 0% exit 100%}
+    .hero-foot{animation:hero-lift linear both;animation-timeline:--hero;animation-range:exit 0% exit 70%}
+  }
+}
+@keyframes hero-sink{to{transform:translateY(8%) scale(1.06)}}
+@keyframes hero-dim{to{opacity:.35}}
+@keyframes hero-lift{to{transform:translateY(-6%);opacity:0}}
 
-/* ticker */
-.ticker{position:relative;overflow:hidden;background:repeating-linear-gradient(-45deg,var(--accent) 0 18px,var(--bg) 18px 36px);padding-block:10px;transform:rotate(-1.5deg);margin:10px -20px}
-.ticker .belt{background:var(--bg);white-space:nowrap;padding-block:12px;overflow:hidden}
-.ticker .run{display:inline-flex;gap:44px;padding-left:44px;font-family:var(--display);font-size:24px;letter-spacing:1.5px;text-transform:uppercase;animation:run 40s linear infinite}
-.ticker .run i{font-style:normal;color:var(--accent)}
-@keyframes run{to{transform:translateX(-50%)}}
+/* how it works: the detail printed as a slip */
+.slip{background:var(--paper);color:var(--paper-ink);font-variant-numeric:tabular-nums;clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),95.83% 100%,91.67% calc(100% - 14px),87.5% 100%,83.33% calc(100% - 14px),79.17% 100%,75% calc(100% - 14px),70.83% 100%,66.67% calc(100% - 14px),62.5% 100%,58.33% calc(100% - 14px),54.17% 100%,50% calc(100% - 14px),45.83% 100%,41.67% calc(100% - 14px),37.5% 100%,33.33% calc(100% - 14px),29.17% 100%,25% calc(100% - 14px),20.83% 100%,16.67% calc(100% - 14px),12.5% 100%,8.333% calc(100% - 14px),4.167% 100%,0% calc(100% - 14px))}
+.how{padding-block:var(--gap)}
+.how-copy{grid-column:1/6;display:grid;gap:22px;align-content:start}
+.how-copy p{max-width:32ch;font-size:var(--t-lead);line-height:1.4}
+.how .slip{grid-column:7/12;max-width:480px;width:100%;padding:30px 32px 62px;justify-self:start}
+.slip h3{font-family:var(--body);text-transform:none;font-weight:800;font-size:var(--t-body);letter-spacing:0;line-height:1.3;margin:28px 0 8px}
+.slip h3:first-child{margin-top:0}
+.slip .row{display:flex;align-items:baseline;gap:8px;padding:5px 0}
+.slip .row .what{flex-shrink:1}
+.slip .row .dots{flex:1;min-width:24px;overflow:hidden;white-space:nowrap;color:#9AA1AB;letter-spacing:2px}
+.slip .row .dots::before{content:"··································································································"}
+.slip .row .val{white-space:nowrap;color:var(--paper-muted);font-weight:600}
+.slip .row.end{background:var(--paper-ink);color:var(--paper);margin:26px -32px 0;padding:0 32px;min-height:46px;align-items:center;font-weight:700}
+.slip .row.end .dots{color:#5D6572}
+.slip .row.end .val{color:var(--paper)}
 
-/* how it works */
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-@media (max-width:760px){.steps{grid-template-columns:minmax(0,1fr)}}
-.stepc{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;display:grid;gap:10px;align-content:start}
-.stepc .num{font-family:var(--display);font-size:64px;line-height:.8;color:var(--accent);text-shadow:4px 4px 0 #04131A}
-.stepc h3{font-size:28px}
-.stepc p{color:var(--dim)}
+/* pricing: plans that step up, plus the one live control (vehicle size) */
+.prices{padding-block:0 var(--gap)}
+.tiles{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 1fr;gap:8px;align-items:end}
+.tiles-head{grid-column:1/3;grid-row:1;align-self:start;display:grid;gap:22px;padding-bottom:28px}
+.tiles-head p{max-width:46ch}
+.sizes{display:flex;flex-wrap:wrap;gap:8px;border:0;margin:0;padding:0}
+.sizes legend{font-weight:700;margin-bottom:10px;padding:0}
+.sizes label{position:relative}
+.sizes input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.sizes span{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 18px;border-radius:999px;background:var(--surface-2);font-weight:700;font-size:var(--t-small);transition:background-color .2s,color .2s}
+.sizes span small{font-weight:600;color:var(--muted);font-size:var(--t-small)}
+.sizes input:checked+span{background:var(--ink);color:var(--paper-ink)}
+.sizes input:checked+span small{color:var(--paper-muted)}
+.sizes input:focus-visible+span{outline:3px solid var(--accent);outline-offset:3px}
+.tile{display:flex;flex-direction:column;border-radius:4px;overflow:hidden;background:var(--surface-2)}
+.tile:nth-child(2){grid-row:2;min-height:360px}
+.tile:nth-child(3){grid-row:2;min-height:480px;background:var(--surface-3)}
+.tile:nth-child(4){grid-row:1/3;min-height:600px;background:var(--accent);color:var(--accent-ink)}
+.tile .in{padding:28px;display:grid;gap:6px;align-content:start;flex:1}
+.tile h3{font-family:var(--body);text-transform:none;font-weight:800;font-size:var(--t-lead);letter-spacing:0;line-height:1.2}
+.tile .price{font-family:var(--display);font-size:var(--t-h2);line-height:1;margin-top:6px}
+.tile .after{font-size:var(--t-small);font-weight:600;color:var(--muted)}
+.tile:nth-child(4) .after{color:var(--accent-ink)}
+.tile ul{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:6px}
+.tile li{font-size:var(--t-body)}
+.tile .buy{display:flex;align-items:center;justify-content:space-between;min-height:64px;padding:0 28px;background:#0E1116;color:var(--ink);font-weight:700;text-decoration:none;transition:background-color .2s}
+.tile:nth-child(3) .buy{background:#161A21}
+.tile:nth-child(4) .buy{background:var(--accent-deep);color:var(--accent-ink)}
+.tile .buy:hover{background:var(--paper-ink)}
+.tile:nth-child(4) .buy:hover{background:#178BB8}
+.tile .buy::after{content:"";width:9px;height:9px;border-top:2.5px solid currentColor;border-right:2.5px solid currentColor;transform:rotate(45deg);margin-right:4px;transition:transform .2s var(--ease)}
+.tile .buy:hover::after{transform:translateX(4px) rotate(45deg)}
+.prices-note{grid-column:1/-1;margin-top:20px;color:var(--muted);font-size:var(--t-small)}
 
-/* packages */
-.pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:stretch}
-@media (max-width:900px){.pk-grid{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}}
-.pk{background:var(--fg);color:var(--bg);border-radius:22px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:8px 8px 0 var(--accent);position:relative;transition:transform .25s ease,box-shadow .25s ease}
-.pk:hover{transform:translateY(-6px) rotate(-1deg);box-shadow:12px 14px 0 var(--accent)}
-.pk.best{background:var(--accent);color:var(--accent-ink);box-shadow:8px 8px 0 var(--fg)}
-.pk.best:hover{box-shadow:12px 14px 0 var(--fg)}
-.pk .tag{font-size:12px;font-weight:900;letter-spacing:3px;text-transform:uppercase;opacity:.75}
-.pk h3{font-size:40px}
-.pk .price{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
-.pk .now{font-family:var(--display);font-size:78px;line-height:.9}
-.pk .now sup{font-size:32px;vertical-align:top;position:relative;top:6px}
-.pk .was{font-family:var(--display);font-size:24px;opacity:.6;text-decoration:line-through;text-decoration-thickness:3px;padding-bottom:8px}
-.pk ul{list-style:none;padding:0;margin:0;display:grid;gap:9px;font-weight:600;font-size:15px}
-.pk li{display:flex;gap:10px;align-items:flex-start}
-.pk li .ic{margin-top:3px}
-.pk .pick{margin-top:auto;padding-top:6px}
-.pk .pick .btn{width:100%}
-.stamp{position:absolute;top:-28px;right:-12px;width:96px;height:96px;transform:rotate(12deg)}
-.pk-note{margin-top:28px;display:flex;gap:10px 22px;flex-wrap:wrap;color:var(--dim);font-size:14px;font-weight:600}
-.pk-note span{display:flex;gap:8px;align-items:center}
-.extra-cards{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px}
-.bike-card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.bike-card .ib{width:56px;height:56px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;flex-shrink:0}
-.bike-card .txt{flex:1;min-width:220px;display:grid;gap:4px}
-.bike-card h3{font-size:30px}
-.bike-card .buy{display:flex;align-items:center;gap:16px}
-.bike-card .now{font-family:var(--display);font-size:56px;line-height:.9}
-.bike-card .now sup{font-size:24px;vertical-align:top;position:relative;top:4px}
-.bike-card .now small{font-family:var(--body);font-weight:700;font-size:14px;color:var(--dim);margin-left:4px}
+/* services: statement, rates pushed right */
+.services{padding-block:var(--gap);row-gap:0}
+.services h2{grid-column:1/-1;text-indent:3vw;max-width:16ch;margin-bottom:64px}
+.fade{grid-column:1/5;grid-row:2/4;align-self:end;margin:0;width:100%;max-width:440px}
+.fade .frame{position:relative;aspect-ratio:4/5;overflow:hidden;background:var(--surface)}
+.fade img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.6s ease}
+.fade img.on{opacity:1}
+.fade figcaption{margin-top:12px;font-size:var(--t-small);color:var(--muted)}
+.rates-word{grid-column:7;grid-row:2;font-size:var(--t-small);color:var(--muted);padding-top:13px}
+.rates{grid-column:8/13;grid-row:2}
+.rate{display:grid;grid-template-columns:30% minmax(0,1fr) auto;gap:16px;align-items:baseline;padding:13px 0;color:var(--ink);text-decoration:none;border-radius:4px;transition:background-color .2s,padding .2s}
+a.rate:hover{background:var(--surface);padding-inline:12px}
+.rate .k{color:var(--muted);font-size:var(--t-small)}
+.rate .n small{display:block;color:var(--muted);font-size:var(--t-small)}
+.rate .v{font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.rate.first{margin-top:44px}
+.rates-foot{margin-top:24px;color:var(--muted);font-size:var(--t-small)}
 
-/* house washing */
-#house{background:var(--panel)}
-.house{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:48px;align-items:center}
-@media (max-width:900px){.house{grid-template-columns:minmax(0,1fr)}.house .pk{max-width:520px}}
-.house h2{font-size:clamp(46px,7vw,76px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36;margin:12px 0 18px}
-.house h2 span{color:var(--accent)}
-.house p.big{font-size:20px;line-height:1.6}
-.house .promises li{background:var(--bg)}
+/* showcase: one wide band of unequal panels (the three real reels and one still) */
+.results{padding-top:var(--gap)}
+.results h2{padding-left:calc(var(--m) + (100vw - 2 * var(--m)) / 6);padding-right:var(--m);margin-bottom:64px}
+.band{display:flex;height:68svh;min-height:440px;background:#000}
+.panel{position:relative;flex:var(--g) 1 0;min-width:0;overflow:hidden;transition:flex-grow .5s var(--ease)}
+.panel video,.panel img{width:100%;height:100%;object-fit:cover}
+.panel .title{position:absolute;left:24px;top:24px;z-index:1;margin:0;font-family:var(--display);text-transform:uppercase;font-size:var(--t-lead);line-height:1;color:var(--paper);pointer-events:none}
+.panel .sub{position:absolute;left:24px;top:56px;z-index:1;margin:0;font-size:var(--t-small);font-weight:600;color:var(--paper);pointer-events:none}
+.panel.has-title::before{content:"";position:absolute;inset:0 40% 50% 0;z-index:1;background:linear-gradient(160deg,rgba(7,8,11,.7),rgba(7,8,11,0) 70%);pointer-events:none} /* taste-skill-ignore: neutral scrim under the panel title on the reel poster */
+.play{position:absolute;inset:0;z-index:2;display:grid;place-items:center;border:0;background:transparent;cursor:pointer}
+.play span{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--paper-ink);display:grid;place-items:center;transition:transform .25s var(--ease)}
+.play:hover span,.play:focus-visible span{transform:scale(1.12)}
+.band-cap{padding:16px var(--m) 0;font-size:var(--t-body)}
+@media (hover:hover) and (min-width:901px){.panel:hover{flex-grow:6}}
 
-/* before/after sliders */
-.ba-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-@media (max-width:760px){.ba-grid{grid-template-columns:minmax(0,1fr)}}
-.ba-card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:12px;display:grid;gap:12px}
-.ba{--pos:50%;position:relative;margin:0;border-radius:16px;overflow:hidden;aspect-ratio:4/5;background:var(--panel2);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize}
+/* compare: two big sliders */
+.compare{padding-block:var(--gap)}
+.compare-copy{grid-column:1/5;display:grid;gap:20px;align-content:start}
+.compare-copy p{max-width:30ch;font-size:var(--t-lead);line-height:1.4}
+.ba-grid{grid-column:5/13;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ba-card{display:grid;gap:12px}
+.ba{--pos:50%;position:relative;margin:0;overflow:hidden;aspect-ratio:4/5;background:var(--surface);touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize}
 .ba img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 .ba .before{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
-.ba .line{position:absolute;top:0;bottom:0;left:var(--pos);width:3px;margin-left:-1.5px;background:var(--fg);box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 18px rgba(41,200,255,.7);pointer-events:none}
-.ba .knob{position:absolute;top:50%;left:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.45),0 0 0 4px rgba(244,245,247,.9)}
-.ba .lbl{position:absolute;top:12px;font-family:var(--display);font-size:18px;letter-spacing:2px;padding:4px 12px;border-radius:999px;pointer-events:none}
-.ba .lbl.b{left:12px;background:#3A332A;color:#fff;border:2px solid #7A6A52}
-.ba .lbl.a{right:12px;background:var(--accent);color:var(--accent-ink)}
-.ba input[type=range]{position:absolute;inset:auto 0 0 0;width:100%;opacity:0;height:1px;pointer-events:none}
+.ba .line{position:absolute;top:0;bottom:0;left:var(--pos);width:3px;margin-left:-1.5px;background:var(--paper)}
+.ba .knob{position:absolute;top:50%;left:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.ba .lbl{position:absolute;bottom:14px;font-weight:700;font-size:var(--t-small);padding:6px 12px;border-radius:999px;background:var(--bg);color:var(--ink)}
+.ba .lbl.b{left:14px}.ba .lbl.a{right:14px;background:var(--accent);color:var(--accent-ink)}
+.ba input[type=range]{position:absolute;inset:auto 0 0;width:100%;opacity:0;pointer-events:none}
 .ba:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:3px}
-.ba-cap{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:0 6px 4px;font-weight:700}
-.ba-cap small{color:var(--dim);font-weight:600}
+.ba-cap{font-size:var(--t-small);color:var(--muted)}
 
-/* reels: three phone-framed videos in a row (text beside them on wide screens, below them under 1080px);
-   on phones a swipeable row with the next one peeking in */
-.watch{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:40px;align-items:center}
-.watch h2{font-size:clamp(38px,3.8vw,54px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36;margin-top:12px}
-@media (max-width:1080px){.watch h2{font-size:clamp(40px,11vw,64px)}}
-@media (max-width:1080px){.watch{grid-template-columns:minmax(0,1fr);justify-items:center;gap:36px}}
-.reels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:100%;max-width:780px}
-.reel-item{margin:0;display:grid;gap:12px;min-width:0}
-.reel-item figcaption{display:grid;gap:2px;padding:0 8px;font-weight:800;font-size:15px}
-.reel-item figcaption span{color:var(--dim);font-weight:600;font-size:13px}
-@media (max-width:700px){
-  .reels{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;max-width:none;width:calc(100% + 32px);margin:0 -16px;padding:0 16px 8px;scrollbar-width:none}
-  .reels::-webkit-scrollbar{display:none}
-  .reel-item{flex:0 0 min(80%,320px);scroll-snap-align:center}
-}
-.phone{position:relative;width:100%;aspect-ratio:9/16;border-radius:34px;padding:10px;background:linear-gradient(145deg,#1d222b,#0b0d11);box-shadow:0 30px 80px rgba(41,200,255,.18),0 0 0 2px #262c36}
-.phone video{width:100%;height:100%;object-fit:cover;border-radius:26px;background:#000}
-.watch ul{list-style:none;padding:0;margin:20px 0 28px;display:grid;gap:12px;font-weight:600}
-.watch li{display:flex;gap:12px;align-items:flex-start}
-.watch li .ic{margin-top:2px}
-
-/* booking */
-#book{background:linear-gradient(var(--bg),var(--panel) 25%,var(--panel) 75%,var(--bg))}
-.book-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
-@media (max-width:960px){.book-grid{grid-template-columns:minmax(0,1fr)}}
-.step{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:grid;gap:16px}
-.step + .step{margin-top:16px}
-.step h3{font-size:26px;display:flex;align-items:center;gap:12px}
-.step h3 .n{font-family:var(--body);font-weight:900;font-size:13px;width:28px;height:28px;border-radius:50%;background:var(--line2);color:var(--fg);display:grid;place-items:center;flex-shrink:0;transition:background .2s}
-.step.done h3 .n{background:var(--accent);color:var(--accent-ink)}
-.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+/* booking: the working form on its own field, the quote printed as a slip */
+.book{background:var(--surface);padding-block:var(--gap)}
+.book-head{grid-column:1/-1;display:grid;gap:18px;margin-bottom:56px}
+.book-head p{max-width:52ch;font-size:var(--t-lead);line-height:1.4}
+.book-grid{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,420px);gap:clamp(24px,5vw,80px);align-items:start}
+#bookDone{grid-column:1/-1}
+form{display:grid;gap:44px}
+.step{display:grid;gap:16px}
+.step h3{font-size:var(--t-lead);line-height:1.1}
+.req-note{font-size:var(--t-small);color:var(--muted);margin-top:-36px}
+.sub-h{font-weight:700;margin-top:6px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
 .choice{position:relative;display:block}
 .choice input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
-.choice .face{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border:2px solid var(--line);border-radius:14px;background:var(--panel2);height:100%;transition:border-color .15s,background .15s}
-.choice .face b{font-size:15px}
-.choice .face span{color:var(--dim);font-size:13px}
-.choice:hover .face{border-color:var(--line2)}
-.choice input:checked + .face{border-color:var(--accent);background:var(--accent-soft)}
-.choice input:focus-visible + .face{outline:3px solid var(--accent);outline-offset:2px}
-.sub-h{font-weight:800;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
-.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin;scroll-snap-type:x proximity}
-.day{flex:0 0 auto;min-width:74px;padding:10px 8px;border-radius:14px;border:2px solid var(--line);background:var(--panel2);cursor:pointer;text-align:center;display:grid;gap:2px;scroll-snap-align:start}
-.day small{color:var(--dim);font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
-.day b{font-family:var(--display);font-weight:400;font-size:26px;line-height:1}
-.day[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
-.day[disabled]{opacity:.4;cursor:not-allowed}
-.day .full{color:var(--bad)}
+.choice .face{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:4px;background:var(--surface-2);height:100%;outline:2px solid transparent;outline-offset:-2px;transition:background-color .2s,outline-color .2s}
+.choice .face b{font-size:var(--t-body)}
+.choice .face span{color:var(--muted);font-size:var(--t-small)}
+.choice:hover .face{background:var(--surface-3)}
+.choice input:checked+.face{background:var(--accent-soft);outline-color:var(--accent)}
+.choice input:focus-visible+.face{outline:3px solid var(--ink);outline-offset:2px}
+.note{background:var(--surface-2);border-radius:4px;padding:12px 16px;font-size:var(--t-small);color:var(--ink)}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px}
+.day{display:grid;justify-items:center;gap:2px;padding:10px 4px;border-radius:4px;border:0;background:var(--surface-2);cursor:pointer;transition:background-color .2s}
+.day small{font-size:var(--t-small);color:var(--muted)}
+.day b{font-family:var(--display);font-weight:400;font-size:var(--t-lead);line-height:1.1}
+.day:hover:not(:disabled){background:var(--surface-3)}
+.day[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.day[aria-pressed="true"] small{color:var(--accent-ink)}
+.day:disabled{opacity:.45;cursor:not-allowed}
+.day .full{color:var(--warn)}
 .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.slot{min-height:48px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);cursor:pointer;font-weight:800;display:grid;place-items:center;line-height:1.15}
-.slot small{font-weight:700;font-size:11px;color:var(--bad)}
-.slot[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
-.slot[disabled]{opacity:.45;cursor:not-allowed}
-.field{display:grid;gap:6px}
-.field label{font-weight:700;font-size:14px}
-.field label small{color:var(--mute);font-weight:600}
-.field input,.field select,.field textarea{width:100%;min-height:50px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);font-size:16px}
-.field textarea{min-height:90px;resize:vertical}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);outline:none}
+.slot{min-height:52px;border-radius:4px;border:0;background:var(--surface-2);cursor:pointer;font-weight:700;display:grid;place-items:center;line-height:1.15;padding:6px;transition:background-color .2s}
+.slot small{font-weight:600;font-size:var(--t-small);color:var(--muted)}
+.slot:hover:not(:disabled){background:var(--surface-3)}
+.slot[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.slot:disabled{opacity:.45;cursor:not-allowed}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:grid;gap:6px;align-content:start}
+.field label{font-weight:700;font-size:var(--t-small)}
+.field label small{color:var(--muted);font-weight:600;font-size:var(--t-small)}
+.field label .req{color:var(--accent)}
+.field input,.field select,.field textarea{width:100%;min-height:52px;padding:12px 14px;border-radius:4px;border:2px solid var(--field);background:var(--bg);font-size:16px}
+.field textarea{min-height:96px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:1px}
 .field [aria-invalid="true"]{border-color:var(--bad)}
-.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-@media (max-width:560px){.row2{grid-template-columns:minmax(0,1fr)}}
-.check{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;background:var(--panel2);border:2px solid var(--line);cursor:pointer}
-.check.bad{border-color:var(--bad)}
+.hint{font-size:var(--t-small);color:var(--muted)}
+.check{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:14px 16px;border-radius:4px;background:var(--surface-2)}
 .check input{width:22px;height:22px;accent-color:var(--accent);margin:2px 0 0;flex-shrink:0}
-.check.light{background:transparent;border:0;padding:0;font-size:14px;color:var(--dim)}
-.check.light input{width:18px;height:18px}
-.note{background:var(--accent-soft);border:1px solid rgba(41,200,255,.35);border-radius:14px;padding:14px 16px;font-size:14px}
-.summary{position:sticky;top:96px;background:var(--fg);color:var(--bg);border-radius:22px;padding:24px;box-shadow:8px 8px 0 var(--accent);display:grid;gap:12px}
-.summary h3{font-size:30px}
-.summary .eyebrow{color:#0a6f93}
-.summary .line{display:flex;justify-content:space-between;gap:12px;font-weight:600;font-variant-numeric:tabular-nums}
-.summary .line span:first-child{color:#3a414c}
-.summary .line span:last-child{white-space:nowrap}
-.summary .line.save span{color:#0a6b35;font-weight:800}
-.summary .total{border-top:2px dashed #c9ced6;padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end}
-.summary .total b{font-family:var(--display);font-weight:400;font-size:58px;line-height:.9}
-.summary .when{font-weight:800}
-.summary .btn{width:100%;background:var(--bg);color:var(--fg);box-shadow:5px 5px 0 var(--accent)}
-.summary small{color:#3a414c}
-.progress{display:grid;gap:6px}
-.progress .bar{height:8px;border-radius:999px;background:#d9dde3;overflow:hidden}
-.progress .bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .3s ease}
-.progress span{font-size:13px;font-weight:800;color:#3a414c}
-.err{color:#b4232c;font-weight:700;font-size:14px}
-.done-card{background:var(--bg);border:2px solid var(--accent);border-radius:22px;padding:28px;display:grid;gap:16px;max-width:760px;margin:0 auto}
-.done-card h3{font-size:clamp(34px,6vw,48px)}
-.done-card .big-check{width:64px;height:64px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:5px 5px 0 var(--fg)}
+.check .muted{font-size:var(--t-small)}
+.check.bad{outline:2px solid var(--bad);outline-offset:-2px}
+.check.light{background:transparent;padding-inline:0}
+/* the quote slip */
+.summary{position:sticky;top:96px;padding:28px 28px 54px;display:grid;gap:14px}
+.summary .label{font-weight:800}
+.summary h3{font-size:var(--t-lead);line-height:1.1}
+.summary .line{display:flex;justify-content:space-between;gap:12px;font-size:var(--t-small)}
+.summary .line span:last-child{font-weight:700;white-space:nowrap}
+.summary .line.save{color:#0B7A3B}
+.summary .total{display:flex;justify-content:space-between;align-items:center;background:var(--paper-ink);color:var(--paper);margin:0 -28px 4px;padding:10px 28px;font-weight:700}
+.summary .total b{font-family:var(--display);font-weight:400;font-size:var(--t-h2);line-height:1}
+.summary .when{font-weight:700}
+.summary .progress{display:grid;gap:8px}
+.summary .progress .bar{all:unset;display:block;height:6px;border-radius:999px;background:var(--paper-2);overflow:hidden}
+.summary .progress .bar i{display:block;height:100%;background:var(--accent-deep);border-radius:999px;transition:width .3s var(--ease)}
+.summary #progText{font-size:var(--t-small);color:var(--paper-muted)}
+.summary .check{background:var(--paper-2);color:var(--paper-ink)}
+.summary .check a{color:var(--paper-ink);font-weight:700}
+.summary .check.bad{outline:2px solid #B42318;outline-offset:-2px}
+.summary .err{color:#B42318;font-weight:700;font-size:var(--t-small)}
+.summary #bookBtn{width:100%}
+.summary .fine{font-size:var(--t-small);color:var(--paper-muted)}
+.done-card{max-width:760px;padding:32px 32px 62px;display:grid;gap:18px}
+.done-card h3{font-size:var(--t-h2)}
+.done-card .big-check{width:56px;height:56px;border-radius:50%;background:var(--accent);display:grid;place-items:center}
+.done-card .recap{background:var(--paper-2);border-radius:4px;padding:16px;display:grid;gap:4px}
+.done-card .muted,.done-card .recap .muted{color:var(--paper-muted)}
+.done-card ol{margin:0;padding-left:20px;display:grid;gap:8px}
 .done-card .btns{display:flex;gap:10px;flex-wrap:wrap}
-.done-card .recap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:4px;font-size:15px}
-.done-card ol{margin:0;padding-left:20px;display:grid;gap:8px;color:var(--dim)}
-.done-card ol b{color:var(--fg)}
+.done-card .btn-ghost{background:var(--paper-2);color:var(--paper-ink)}
+.done-card .err{color:#8A5A00}
 
-/* reviews */
-.rv-top{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:24px}
-.rv-avg{font-family:var(--display);font-size:76px;line-height:.9}
-.stars{color:var(--accent);letter-spacing:2px;font-size:20px}
-.rv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
-.rv{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:10px;align-content:start}
-.rv p{font-size:16px}
-.rv .who{display:flex;justify-content:space-between;gap:10px;color:var(--dim);font-size:14px}
-.rv .who b{color:var(--fg)}
-.rv-empty{border:2px dashed var(--line2);border-radius:20px;padding:30px;display:grid;gap:14px;justify-items:start;max-width:640px}
-.rv-empty h3{font-size:30px}
-.rv-form{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;display:grid;gap:16px;max-width:640px}
-.rv-form h3{font-size:30px}
+/* reviews: one letter */
+.reviews{padding-block:var(--gap)}
+.reviews-head{grid-column:1/5;display:grid;gap:16px;align-content:start}
+.letter{grid-column:5/11;max-width:620px;display:grid;gap:20px}
+.letter .open{font-size:var(--t-lead);font-weight:500;line-height:1.35}
+.letter p{font-size:var(--t-body);line-height:1.55}
+.letter .sign{margin-top:20px;font-size:var(--t-body)}
+.letter .sign b{display:block}
+.stars{display:inline-flex;gap:3px;color:var(--accent);vertical-align:-2px}
+.more-rv{grid-column:5/11;display:grid;gap:48px;margin-top:72px}
+.rv-ask{grid-column:5/11;margin-top:56px;display:grid;gap:14px;justify-items:start}
+.rv-ask p{max-width:46ch}
+.rv-form{grid-column:5/11;margin-top:40px;display:grid;gap:16px;max-width:560px}
+.rv-form .field input,.rv-form .field textarea{background:var(--surface)}
 .star-pick{display:flex;gap:4px}
-.star-pick button{background:none;border:0;font-size:38px;line-height:1;cursor:pointer;color:var(--line2);padding:2px;transition:transform .1s}
-.star-pick button:hover{transform:scale(1.12)}
+.star-pick button{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--surface-3);cursor:pointer;display:grid;place-items:center;transition:color .15s,transform .15s}
 .star-pick button[aria-pressed="true"]{color:var(--accent)}
+.star-pick button:hover{transform:scale(1.1)}
 
-/* about */
-.about{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
-@media (max-width:860px){.about{grid-template-columns:minmax(0,1fr)}}
-.about-logo{width:100%;height:auto;border-radius:24px;box-shadow:10px 10px 0 var(--accent)}
-.about p.big{font-size:20px;line-height:1.6;color:var(--fg)}
-.promises{list-style:none;padding:0;margin:24px 0 0;display:grid;gap:14px}
-.promises li{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
-.promises li b{display:block}
-.promises li span{color:var(--dim);font-size:15px}
-.promises .ib{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;flex-shrink:0}
+/* about: side facts, wide paragraph */
+.about{padding-block:var(--gap)}
+.about-row{display:grid;grid-template-columns:34% minmax(0,1fr);padding-inline:var(--m);column-gap:var(--col)}
+.facts{display:grid;gap:20px;align-content:start;max-width:200px}
+.facts img{width:120px;height:120px;border-radius:50%}
+.facts div{font-size:var(--t-small)}
+.facts div span{display:block;color:var(--muted)}
+.facts div b{font-weight:600}
+.about-copy{max-width:90%;display:grid;gap:22px}
+.about-copy p{font-size:var(--t-lead);line-height:1.4}
+.about-row.second{margin-top:120px}
+.about-row .word{font-size:var(--t-small);font-weight:700}
+.lists{display:flex;flex-wrap:wrap;gap:40px 64px}
+.lists ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;width:280px;align-content:start}
+.lists h3{font-family:var(--body);text-transform:none;font-size:var(--t-small);font-weight:700;letter-spacing:0;margin-bottom:6px}
+.lists li{display:flex;justify-content:space-between;gap:16px;font-size:var(--t-body)}
+.lists li span{color:var(--muted)}
+.lists a{color:var(--ink)}
 
-/* faq */
-.faq{display:grid;gap:12px;max-width:820px}
-.faq details{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0 20px;transition:border-color .2s}
-.faq details[open]{border-color:var(--line2)}
-.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0;font-weight:800;font-size:17px}
+/* FAQ: wide heading, indented questions */
+.faq-sec{padding-block:var(--gap)}
+.faq-sec h2{grid-column:1/-1;margin-bottom:80px}
+.faq{grid-column:5/13;display:grid;gap:12px}
+.faq details{border-radius:4px;transition:background-color .25s}
+.faq details[open]{background:var(--surface)}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:16px 24px;margin-inline:-24px;font-size:var(--t-lead);font-weight:500}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary .pm{width:30px;height:30px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;flex-shrink:0;transition:transform .2s}
-.faq details[open] summary .pm{transform:rotate(45deg);background:var(--accent);color:var(--accent-ink)}
-.faq details p{color:var(--dim);padding:0 0 18px}
+.faq summary .chev{width:12px;height:12px;flex-shrink:0;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translate(-3px,-3px);transition:transform .25s var(--ease)}
+.faq details[open] summary .chev{transform:rotate(225deg)}
+.faq details p{padding:0 0 22px;max-width:48ch;font-size:var(--t-body)}
+.faq details[open] p{padding-inline:0}
 
-/* area + contact */
-.area{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px}
-@media (max-width:860px){.area{grid-template-columns:minmax(0,1fr)}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;display:grid;gap:14px;align-content:start}
-.card h3{font-size:28px}
-.towns{display:flex;flex-wrap:wrap;gap:8px}
-.towns span{padding:7px 14px;border-radius:999px;background:var(--panel2);border:1px solid var(--line2);font-weight:700;font-size:14px}
-.pay{display:flex;gap:8px;flex-wrap:wrap}
-.chip-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;border:2px solid var(--line2);color:var(--fg);text-decoration:none;font-weight:700;font-size:14px;background:var(--panel2)}
-.chip-link:hover{border-color:var(--accent)}
-.chip-link small{color:var(--accent);font-weight:700}
-.chip-link.off{opacity:.5}
-.chip-link.off small{color:var(--mute)}
-.cta-band{margin-top:28px;background:var(--accent);color:var(--accent-ink);border-radius:24px;padding:32px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;box-shadow:8px 8px 0 var(--fg)}
-.cta-band h3{font-size:clamp(32px,5vw,48px);transform:skewX(-6deg)}
-.cta-band .btn-dark{box-shadow:4px 4px 0 var(--fg)}
+/* contact: the details in display rows */
+.contact{padding-top:0}
+.contact .rowx{display:flex;align-items:flex-end;min-height:150px;padding:0 var(--m) 24px;font-family:var(--display);text-transform:uppercase;font-size:var(--t-h2);line-height:1;color:var(--ink);text-decoration:none;background:var(--bg)}
+.contact .rowx:nth-child(even){background:var(--surface)}
+.contact a.rowx{transition:color .2s}
+.contact a.rowx:hover{color:var(--accent)}
+.contact .go{display:inline-grid;place-items:center;width:.9em;height:.9em;border-radius:50%;background:var(--accent);color:var(--accent-ink);margin-left:24px;align-self:center;transition:transform .25s var(--ease)}
+.contact a.rowx:hover .go{transform:translateX(8px)}
+.contact .hours-b{display:none}
 
-/* footer */
-footer{border-top:1px solid var(--line);padding-block:44px 56px}
-footer .wrap{display:flex;justify-content:space-between;gap:28px;flex-wrap:wrap;align-items:flex-start}
-footer .cols{display:flex;gap:40px;flex-wrap:wrap}
-footer .col{display:grid;gap:8px;align-content:start}
-footer .col a{color:var(--dim);text-decoration:none;font-weight:600}
-footer .col a:hover{color:var(--fg)}
-footer .fine{color:var(--mute);font-size:13px;width:100%}
-.socials{display:flex;gap:10px;flex-wrap:wrap}
-.checker{height:18px;background:conic-gradient(var(--fg) 0 25%,var(--bg) 0 50%,var(--fg) 0 75%,var(--bg) 0) 0 0/18px 18px}
+/* footer: invitation over the cropped name, in the inverse colours */
+footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:relative;min-height:100svh;display:flex;flex-direction:column}
+.foot-top{padding-top:clamp(64px,9vw,120px)}
+.foot-top h2{grid-column:1/8}
+.foot-top .btn-dark{margin-top:28px}
+.foot-links{grid-column:10/13;display:grid;gap:10px;align-content:start}
+.foot-links a,.foot-links span{color:var(--paper-ink);font-weight:600;text-decoration:none}
+.foot-links a:hover{text-decoration:underline}
+.legal{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;padding:0 var(--m);margin-top:auto;font-size:var(--t-small);color:var(--paper-muted)}
+.legal nav{display:flex;flex-wrap:wrap;gap:6px 18px}
+.legal a{color:var(--paper-ink);text-decoration:none;font-weight:600;padding:3px 0}
+.legal a:hover{text-decoration:underline}
+.giant{font-family:var(--display);text-transform:uppercase;font-size:28vw;line-height:.8;white-space:nowrap;margin:16px 0 0 calc(var(--m) - .03em);transform:translateY(30%);color:var(--paper-ink);pointer-events:none;user-select:none}
+.giant span{color:#1786B3}
 
-/* phone bottom bar */
-.mbar{display:none}
-@media (max-width:760px){
-  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;gap:12px;align-items:center;justify-content:space-between;background:rgba(7,8,11,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transition:transform .25s ease}
-  .mbar.away{transform:translateY(110%)}
-  .mbar b{font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:.5px}
-  .mbar small{display:block;color:var(--dim);font-size:12px}
-  .mbar .btns{display:flex;gap:8px}
-  footer{padding-bottom:120px}
+/* the toast is the only thing that floats */
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:70;background:var(--paper);color:var(--paper-ink);font-weight:700;padding:12px 18px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100vw - 32px)} /* taste-skill-ignore: the toast really floats over the page */
+
+/* entrances: each part rises once as its section arrives; without script everything is simply there */
+@media (prefers-reduced-motion:no-preference){
+  .js .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .9s var(--ease);transition-delay:var(--d,0ms)}
+  .js .reveal.in{opacity:1;transform:none}
 }
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:800;padding:12px 20px;border-radius:999px;z-index:100;box-shadow:4px 4px 0 var(--accent);max-width:calc(100vw - 32px);text-align:center}
-@media (min-width:761px){.toast{bottom:28px}}
 
+@media (max-width:1100px){
+  nav.links a:nth-child(n+5){display:none}
+  .how .slip{grid-column:7/13}
+  .rates{grid-column:7/13}.rates-word{display:none}
+}
+@media (max-width:900px){
+  :root{--col:16px}
+  nav.links{display:none}
+  .menu-btn{display:inline-flex;align-items:center}
+  .hero h1{font-size:22vw;line-height:.84;white-space:normal}
+  .hero h1 .line{display:block}
+  .hero-line{font-size:18px}
+  .how-copy,.how .slip{grid-column:1/-1}
+  .how .slip{margin-top:40px;max-width:none;padding-inline:22px}
+  .slip .row.end{margin-inline:-22px;padding-inline:22px}
+  .tiles{grid-template-columns:1fr;grid-template-rows:none}
+  .tiles-head,.tile:nth-child(n){grid-column:1;grid-row:auto;min-height:0}
+  .tile .buy{font-size:var(--t-lead)}
+  .services h2{text-indent:0;margin-bottom:48px}
+  .rates{grid-column:1/-1;grid-row:2}
+  .rate{grid-template-columns:minmax(0,1fr) auto}
+  .rate .k{grid-column:1/-1;margin-bottom:-12px}
+  .fade{grid-column:4/-1;grid-row:3;margin-top:40px;max-width:none;width:100%}
+  .results h2{padding-left:var(--m);margin-bottom:32px}
+  .band{flex-wrap:wrap;height:84svh;min-height:520px}
+  .panel{flex:0 0 auto;height:50%}
+  .panel:nth-child(1),.panel:nth-child(4){width:64%}
+  .panel:nth-child(2),.panel:nth-child(3){width:36%}
+  .panel .title{left:16px;top:16px}
+  .panel .sub{left:16px;top:44px}
+  .compare-copy,.ba-grid{grid-column:1/-1}
+  .ba-grid{margin-top:32px}
+  .book-grid{grid-template-columns:1fr}
+  .summary{position:static}
+  .row2{grid-template-columns:1fr}
+  .reviews-head,.letter,.more-rv,.rv-ask,.rv-form{grid-column:1/-1}
+  .letter{margin-top:32px;max-width:none}
+  .letter .open{font-size:24px}
+  .letter p{font-size:var(--t-body)}
+  .about-row{grid-template-columns:1fr;row-gap:32px}
+  .about-copy{max-width:none;order:-1}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}
+  .facts img{grid-column:1/-1}
+  .about-row.second{margin-top:56px}
+  .faq-sec h2{margin-bottom:40px}
+  .faq{grid-column:1/-1}
+  .faq summary{font-size:19px}
+  .faq details[open]{margin-inline:calc(-1 * var(--m));padding-inline:var(--m);border-radius:0}
+  .contact .rowx{min-height:84px;padding-bottom:16px}
+  .contact .hours-a{display:none}.contact .hours-b{display:flex}
+  .contact a.rowx.greet{background:var(--accent);color:var(--accent-ink)}
+  .contact a.rowx.greet .go{width:56px;height:56px;margin-left:auto;background:var(--accent-ink);color:var(--accent)}
+  .foot-top h2{grid-column:1/-1}
+  .foot-top .btn-dark{width:100%}
+  .foot-links{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:32px}
+  .giant{font-size:34vw}
+}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .hero h1,.hero h1 .l2,.spark,.mascot img,.next-chip i,.ticker .run{animation:none}
-  .pk,.pk:hover{transition:none;transform:none}
-  .js .reveal{opacity:1;transform:none;transition:none}
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  .js .reveal{opacity:1;transform:none}
 }
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to main content</a>
 
-<header class="top">
-  <div class="wrap">
+<header class="top" id="topbar">
+  <div class="promo-bar" id="promoBar" role="region" aria-label="Current deal" hidden></div>
+  <div class="bar">
     <a class="brand" href="#top" aria-label="Letts Get Clean home">
-      <img src="media/mascot-160.webp" width="46" height="46" alt="">
+      <img src="media/mascot-160.webp" width="40" height="40" alt="">
       <b>Letts <span>Get Clean</span></b>
     </a>
     <nav class="links" aria-label="Sections">
-      <a href="#how">How it works</a><a href="#packages">Prices</a><a href="#house">House wash</a><a href="#results">Results</a><a href="#reviews">Reviews</a><a href="#faq">FAQ</a><a href="#area">Contact</a>
+      <a href="#packages">Prices</a><a href="#results">Results</a><a href="#reviews">Reviews</a><a href="#faq">FAQ</a><a href="#contact">Contact</a>
     </nav>
-    <div class="top-cta">
-      <a class="btn btn-primary btn-sm" href="#book">Book now</a>
-      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-      </button>
-    </div>
+    <a class="btn btn-sm" href="#book">Book</a>
+    <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">Menu</button>
   </div>
 </header>
 
 <div class="menu" id="menu" hidden role="dialog" aria-modal="true" aria-label="Menu">
-  <button class="menu-btn menu-close" id="menuClose" type="button" aria-label="Close menu" style="display:grid">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-  </button>
+  <button class="menu-btn menu-close" id="menuClose" type="button">Close</button>
   <a class="m" href="#how">How it works</a>
   <a class="m" href="#packages">Prices</a>
-  <a class="m" href="#house">House wash</a>
+  <a class="m" href="#services">Bikes, cans, houses</a>
   <a class="m" href="#results">Results</a>
   <a class="m" href="#book">Book</a>
   <a class="m" href="#reviews">Reviews</a>
   <a class="m" href="#faq">FAQ</a>
-  <a class="m" href="#area">Contact</a>
-  <div class="row"><a class="btn btn-primary" data-tel href="tel:+18452829387">Call</a><a class="btn btn-ghost" data-sms href="sms:+18452829387">Text</a></div>
+  <a class="m" href="#contact">Contact</a>
+  <div class="row"><a class="btn" data-tel href="tel:+18452829387">Call</a><a class="btn btn-ghost" data-sms href="sms:+18452829387">Text</a></div>
 </div>
 
-<main id="top">
-  <div class="promo-bar" id="promoBar" role="region" aria-label="Current deal" hidden></div>
-  <section class="hero" aria-label="Letts Get Clean">
-    <div class="hero-media" aria-hidden="true"><video id="heroVid" muted loop playsinline preload="none" poster="media/hero_poster.webp"></video></div>
-    <div class="hero-shade" aria-hidden="true"></div>
-    <span class="spark" style="left:58%;top:18%;animation-delay:.2s" aria-hidden="true">✦</span>
-    <span class="spark w" style="left:66%;top:44%;animation-delay:1s;font-size:30px" aria-hidden="true">✦</span>
-    <span class="spark" style="left:88%;top:26%;animation-delay:1.6s;font-size:16px" aria-hidden="true">✦</span>
-    <span class="spark w" style="left:79%;top:72%;animation-delay:.6s;font-size:18px" aria-hidden="true">✦</span>
-    <div class="wrap">
-      <div>
-        <div class="deal-badge" id="dealBadge" hidden>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>
-          <span id="dealText">Launch deal</span><small id="dealLeft"></small>
-        </div>
-        <p class="eyebrow">Car &amp; bike detailing · house washing · Orange County, NY</p>
-        <h1><span class="l1">Dirty car?</span><span class="l2">Not for long.</span></h1>
-        <p class="lede">Hand wash, foam bath and a deep interior clean, done right in your driveway. Pick a package, see your exact price and book a time in about a minute.</p>
-        <div class="ctas">
-          <a class="btn btn-primary" href="#book">Get my price</a>
-          <a class="btn btn-ghost" href="#results">See the results</a>
-        </div>
-        <ul class="trust" id="trust" aria-label="Why customers book"></ul>
-        <a class="next-chip" href="#book" id="nextChip" hidden><i aria-hidden="true"></i><span id="nextText">Next opening</span></a>
-      </div>
-      <div class="facts">
-        <div class="mascot"><img src="media/mascot.webp" width="640" height="640" alt="The Letts Get Clean mascot, a cartoon dog in sunglasses holding a soapy sponge"><span class="approved"><span aria-hidden="true">★</span> Mama Letts approved <span aria-hidden="true">★</span></span></div>
-        <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></span><div><b>We come to you</b><span class="t">Most appointments are at your home. Or drop your car off with Andrew in Newburgh.</span></div></div>
-        <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div><b>Have power + a hose ready</b><span class="t">We hook up to your outdoor outlet and water spigot.</span></div></div>
-        <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><b>Hours</b><span class="t" id="hoursText">Weekdays from 3 PM · Weekends from 1:30 PM</span></div></div>
-        <div class="fact"><span class="ib"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span><div style="display:grid;gap:8px;min-width:0"><b>Call or text Andrew</b><a class="phone-num" data-tel data-phone href="tel:+18452829387">(845) 282-9387</a>
-          <div class="phone-row"><a class="btn btn-primary btn-sm" data-tel href="tel:+18452829387">Call</a><a class="btn btn-ghost btn-sm" data-sms href="sms:+18452829387">Text</a><button class="btn btn-ghost btn-sm" type="button" data-copy-phone>Copy</button></div></div></div>
-      </div>
+<main id="main">
+  <section class="hero" id="top" aria-labelledby="heroName">
+    <div class="hero-media"><video id="heroVid" muted loop playsinline preload="none" poster="media/hero_poster.webp" aria-label="A freshly washed white Hyundai Sonata in a driveway"></video></div>
+    <div class="hero-dim" aria-hidden="true"></div>
+    <div class="hero-foot">
+      <p class="hero-line" id="heroLine" data-load style="--d:520ms">Dirty car? Not for long. Hand wash and interior detailing, done in your Orange County driveway.</p>
+      <h1 id="heroName"><span class="line"><span data-line style="--i:0">Letts</span></span> <span class="line"><span data-line style="--i:1">Get Clean</span></span></h1>
     </div>
   </section>
 
-  <div class="ticker" aria-hidden="true"><div class="belt"><div class="run" id="tickerRun"></div></div></div>
-
-  <section id="how" style="padding-block:72px 16px">
-    <div class="wrap">
-      <div class="sec-head reveal"><p class="eyebrow">Simple as 1, 2, 3</p><h2>How it works</h2></div>
-      <div class="steps">
-        <div class="stepc reveal"><span class="num">1</span><h3>Pick what we clean</h3><p>A car package, a bike or e-bike detail, trash cans, or a full house wash. See your exact price before you book, no surprises.</p></div>
-        <div class="stepc reveal"><span class="num">2</span><h3>Choose a time</h3><p>Tap an open day and time. Andrew texts you to confirm your spot.</p></div>
-        <div class="stepc reveal"><span class="num">3</span><h3>We come to you</h3><p>Have an outdoor outlet and a hose ready. Pay when it's done: cash, Cash App or Venmo.</p></div>
-      </div>
+  <section class="how grid" id="how" aria-labelledby="howH">
+    <div class="how-copy">
+      <h2 class="reveal" id="howH">How a detail goes</h2>
+      <p class="reveal" style="--d:80ms">You book online in about a minute and see the exact price first. Andrew brings the soap, towels and gear. You just need an outdoor outlet and a hose.</p>
+    </div>
+    <div class="slip reveal" style="--d:160ms" role="group" aria-label="What happens, step by step">
+      <h3>Online</h3>
+      <div class="row"><span class="what">Pick what we clean</span><span class="dots" aria-hidden="true"></span><span class="val">car, bike, cans, house</span></div>
+      <div class="row"><span class="what">See your exact price</span><span class="dots" aria-hidden="true"></span><span class="val">before you book</span></div>
+      <div class="row"><span class="what">Pick an open time</span><span class="dots" aria-hidden="true"></span><span class="val">about a minute</span></div>
+      <h3>Before the day</h3>
+      <div class="row"><span class="what">Andrew texts to confirm</span><span class="dots" aria-hidden="true"></span><span class="val">by text</span></div>
+      <div class="row"><span class="what">Dropping it off instead</span><span class="dots" aria-hidden="true"></span><span class="val">address by text</span></div>
+      <h3>On the day</h3>
+      <div class="row"><span class="what">Outlet and hose ready</span><span class="dots" aria-hidden="true"></span><span class="val">you</span></div>
+      <div class="row"><span class="what">Foam bath, hand wash, wheels</span><span class="dots" aria-hidden="true"></span><span class="val">outside</span></div>
+      <div class="row"><span class="what">Vacuum, wipe-down, mats</span><span class="dots" aria-hidden="true"></span><span class="val">inside</span></div>
+      <div class="row end"><span class="what">Pay after the job</span><span class="dots" aria-hidden="true"></span><span class="val">cash, Cash App, Venmo</span></div>
     </div>
   </section>
 
-  <section id="packages">
-    <div class="wrap">
-      <div class="sec-head reveal"><p class="eyebrow">Three packages</p><h2>Pick your package</h2><p class="muted" id="pkgNote"></p></div>
-      <div class="pk-grid" id="pkGrid"></div>
-      <div class="pk-note reveal" id="pkExtras"></div>
-      <div class="extra-cards">
-        <div class="bike-card reveal">
-          <span class="ib" aria-hidden="true" id="bikeIcon"></span>
-          <div class="txt"><p class="eyebrow">Bikes too</p><h3>Bike or e-bike detail</h3><p class="muted">Regular bikes and e-bikes, cleaned by hand. We come to you, or drop it off in Newburgh.</p></div>
-          <div class="buy"><span class="now"><sup>$</sup><span id="bikePrice">20</span></span><a class="btn btn-primary btn-sm" href="#book" data-service="bike">Book a bike</a></div>
-        </div>
-        <div class="bike-card reveal">
-          <span class="ib" aria-hidden="true" id="trashIcon"></span>
-          <div class="txt"><p class="eyebrow">Trash cans too</p><h3>Trash can cleaning</h3><p class="muted">Trash and recycling cans cleaned right at your house. Pick how many when you book.</p></div>
-          <div class="buy"><span class="now"><sup>$</sup><span id="trashPrice">15</span><small>a can</small></span><a class="btn btn-primary btn-sm" href="#book" data-service="trash">Book trash cans</a></div>
-        </div>
+  <section class="prices grid" id="packages" aria-labelledby="pkgH">
+    <div class="tiles" id="pkGrid">
+      <div class="tiles-head">
+        <h2 class="reveal" id="pkgH">Pick your package</h2>
+        <p class="reveal muted" style="--d:80ms" id="pkgNote"></p>
+        <fieldset class="sizes reveal" style="--d:140ms" id="sizeSwitch"><legend>Your vehicle</legend></fieldset>
       </div>
     </div>
+    <p class="prices-note" id="pkExtras"></p>
   </section>
 
-  <section id="house">
-    <div class="wrap house">
-      <div class="reveal">
-        <p class="eyebrow">Pressure washing</p>
-        <h2>House <span>washing</span></h2>
-        <p class="big">Dirty siding? We pressure wash the whole outside of your house so it looks fresh again.</p>
-        <ul class="promises">
-          <li><span class="ib" aria-hidden="true" data-icon="cal"></span><div><b>Your house gets the whole day</b><span>A house wash books the full day, so yours is the only job we take that day.</span></div></li>
-          <li><span class="ib" aria-hidden="true" data-icon="home"></span><div><b>Have water + power ready</b><span>We hook up to your outdoor hose spigot and outlet.</span></div></li>
-          <li><span class="ib" aria-hidden="true" data-icon="cash"></span><div><b>Pay after the job</b><span>Cash, Cash App or Venmo. No deposit.</span></div></li>
-        </ul>
+  <section class="services grid" id="services" aria-labelledby="svcH">
+    <h2 class="reveal" id="svcH">Bikes, trash cans, whole houses too</h2>
+    <figure class="fade reveal" id="fade">
+      <div class="frame">
+        <img class="on" src="media/ext_before.webp" width="900" height="1125" loading="lazy" alt="Before: the white Hyundai Sonata's front end, dusty">
+        <img src="media/ext_after.webp" width="900" height="1125" loading="lazy" alt="After: the same Sonata, washed and shining">
+        <img src="media/int_before.webp" width="900" height="1125" loading="lazy" alt="Before: the Sonata's front seats and console">
+        <img src="media/int_after.webp" width="900" height="1125" loading="lazy" alt="After: the same seats and console, cleaned">
       </div>
-      <article class="pk best reveal">
-        <span class="tag">Full house</span>
-        <h3>House pressure wash</h3>
-        <div class="price"><span class="now"><sup>$</sup><span id="housePrice">300</span></span></div>
-        <ul id="houseList"></ul>
-        <div class="pick"><a class="btn btn-sm btn-dark" href="#book" data-service="house">Book a house wash</a></div>
-      </article>
-    </div>
+      <figcaption>Hyundai Sonata, before and after</figcaption>
+    </figure>
+    <p class="rates-word" aria-hidden="true">Rates</p>
+    <div class="rates reveal" style="--d:80ms" id="rates"></div>
   </section>
 
-  <section id="results">
-    <div class="wrap">
-      <div class="sec-head reveal"><p class="eyebrow">Real car · real results</p><h2>Before &amp; after</h2><p class="muted">Drag the slider to see the difference.</p></div>
-      <div class="ba-grid" id="baGrid"></div>
+  <section class="results" id="results" aria-labelledby="resH">
+    <h2 class="reveal" id="resH">Real cars, real driveways</h2>
+    <div class="band reveal" style="--d:80ms">
+      <figure class="panel has-title" style="--g:5;margin:0">
+        <video src="media/reel_web.mp4" poster="media/reel_poster.webp" playsinline preload="none" aria-label="Hyundai Sonata before and after video"></video>
+        <figcaption><p class="title">Hyundai Sonata</p><p class="sub">The reveal · 0:28</p></figcaption>
+        <button class="play" type="button" aria-label="Play the Hyundai Sonata video"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
+      </figure>
+      <figure class="panel" style="--g:2;margin:0">
+        <img src="media/ext_after.webp" width="900" height="1125" loading="lazy" alt="The white Sonata after its exterior detail">
+      </figure>
+      <figure class="panel" style="--g:3;margin:0">
+        <video src="media/reel2_web.mp4" poster="media/reel2_poster.webp" playsinline preload="none" aria-label="Subaru Outback before and after video, inside and out"></video>
+        <button class="play" type="button" aria-label="Play the Subaru Outback video, inside and out, 43 seconds"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
+      </figure>
+      <figure class="panel" style="--g:2;margin:0">
+        <video src="media/reel3_web.mp4" poster="media/reel3_poster.webp" playsinline preload="none" aria-label="Chevy Silverado before and after video, interior and wheels"></video>
+        <button class="play" type="button" aria-label="Play the Chevy Silverado video, interior and wheels, 26 seconds"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
+      </figure>
     </div>
+    <p class="band-cap">Three real details in Orange County: a Hyundai Sonata, a Subaru Outback and a Chevy Silverado.</p>
   </section>
 
-  <section id="watch" style="padding-top:24px">
-    <div class="wrap watch">
-      <div class="reels reveal" role="region" aria-label="Before and after videos" tabindex="0">
-        <figure class="reel-item">
-          <div class="phone"><video id="reel" src="media/reel_web.mp4" poster="media/reel_poster.webp" controls playsinline preload="none" aria-label="Hyundai Sonata before and after video"></video></div>
-          <figcaption><b>Hyundai Sonata</b><span>The reveal · 0:28</span></figcaption>
-        </figure>
-        <figure class="reel-item">
-          <div class="phone"><video id="reel2" src="media/reel2_web.mp4" poster="media/reel2_poster.webp" controls playsinline preload="none" aria-label="Subaru Outback before and after video, inside and out"></video></div>
-          <figcaption><b>Subaru Outback</b><span>Inside &amp; out · 0:43</span></figcaption>
-        </figure>
-        <figure class="reel-item">
-          <div class="phone"><video id="reel3" src="media/reel3_web.mp4" poster="media/reel3_poster.webp" controls playsinline preload="none" aria-label="Chevy Silverado before and after video, interior and wheels"></video></div>
-          <figcaption><b>Chevy Silverado</b><span>Interior &amp; wheels · 0:26</span></figcaption>
-        </figure>
+  <section class="compare grid" id="compare" aria-labelledby="cmpH">
+    <div class="compare-copy">
+      <h2 class="reveal" id="cmpH">Before and after</h2>
+      <p class="reveal" style="--d:80ms">Same white Sonata, same driveway. The outside, then the inside.</p>
+    </div>
+    <div class="ba-grid" id="baGrid"></div>
+  </section>
+
+  <section class="book" id="book" aria-labelledby="bookH">
+    <div class="grid">
+      <div class="book-head">
+        <h2 class="reveal" id="bookH">Book your detail</h2>
+        <p class="reveal" style="--d:80ms">Pick what we clean and a time. The price updates as you go, and you pay after the job.</p>
       </div>
-      <div class="reveal">
-        <p class="eyebrow">Three real details</p>
-        <h2>Watch the<br><span style="color:var(--accent)">transformation</span></h2>
-        <ul>
-          <li><span class="ic" style="color:var(--accent)">✦</span>Foam bath to lift dirt before anything touches the paint</li>
-          <li><span class="ic" style="color:var(--accent)">✦</span>Deep vacuum and wipe-down inside</li>
-          <li><span class="ic" style="color:var(--accent)">✦</span>Real cars, real driveways, right here in Orange County</li>
-        </ul>
-        <a class="btn btn-primary" href="#book">Book your detail</a>
-      </div>
-    </div>
-  </section>
-
-  <section id="book">
-    <div class="wrap">
-      <div class="sec-head reveal"><p class="eyebrow">Instant price · live openings</p><h2>Book your detail</h2></div>
       <div class="book-grid" id="bookArea">
-        <form id="bookForm" novalidate>
-          <input type="text" id="hp1" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
-          <div class="step" id="st1"><h3><span class="n">1</span>What are we cleaning?</h3>
+        <form id="bookForm" novalidate aria-describedby="reqNote">
+          <input type="text" id="hp1" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="sr">
+          <div class="step" id="st1"><h3>What are we cleaning?</h3>
             <div class="choices" id="svcChoices" role="radiogroup" aria-label="What are we cleaning"></div>
             <p class="sub-h" id="pkHead">Package</p>
             <div class="choices" id="pkChoices"></div>
             <p class="note" id="houseNote" hidden>A house wash takes the whole day, so only days with nothing else booked can be picked. That day is yours.</p>
           </div>
-          <div class="step" id="st2"><h3><span class="n">2</span>Vehicle &amp; extras</h3>
+          <div class="step" id="st2"><h3>Vehicle and extras</h3>
             <p class="sub-h">Vehicle size</p>
             <div class="choices" id="sizeChoices"></div>
-            <p class="sub-h">Extras <span style="text-transform:none;letter-spacing:0;font-weight:600">(optional)</span></p>
+            <p class="sub-h">Extras (optional)</p>
             <div class="choices" id="addonChoices"></div>
-            <label class="check" id="twoCarRow"><input type="checkbox" id="fTwoCar"><span><b>Add a second car</b><br><span class="muted" style="font-size:14px" id="twoCarSub">Same visit, back to back.</span></span></label>
+            <label class="check" id="twoCarRow"><input type="checkbox" id="fTwoCar"><span><b>Add a second car</b><br><span class="muted" id="twoCarSub">Same visit, back to back.</span></span></label>
             <div id="car2" hidden style="display:grid;gap:12px">
               <p class="sub-h">Second car: package</p>
               <div class="choices" id="pk2Choices"></div>
@@ -594,124 +630,134 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
               <div class="choices" id="size2Choices"></div>
             </div>
           </div>
-          <div class="step" id="st3"><h3><span class="n">3</span>Day &amp; time</h3>
+          <div class="step" id="st3"><h3>Day and time</h3>
             <div class="days" id="days" role="group" aria-label="Choose a day"></div>
             <div class="slots" id="slots" role="group" aria-label="Choose a time"></div>
           </div>
-          <div class="step" id="st4"><h3><span class="n">4</span>Where &amp; your details</h3>
+          <div class="step" id="st4"><h3>Where, and your details</h3>
+            <p class="hint" id="reqNote">Fields marked <span aria-hidden="true">*</span><span class="sr">with a star</span> are required.</p>
             <div class="choices" id="locChoices" role="radiogroup" aria-label="Where should the detail happen"></div>
-            <p class="note" id="dropNote" hidden>Drop-off is at Andrew's place in Newburgh. For privacy the address isn't posted online. Andrew texts it to you after you book, or call/text <b data-phone>(845) 282-9387</b> to get it.</p>
+            <p class="note" id="dropNote" hidden>Drop-off is at Andrew's place in Newburgh. For privacy the address isn't posted online. Andrew texts it to you after you book, or call or text <b data-phone>(845) 282-9387</b> to get it.</p>
             <div class="row2">
-              <div class="field"><label for="fName">Name</label><input id="fName" autocomplete="name" required></div>
-              <div class="field"><label for="fPhone">Phone <small>(for Andrew's confirm text)</small></label><input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" required></div>
+              <div class="field"><label for="fName">Name <span class="req" aria-hidden="true">*</span></label><input id="fName" autocomplete="name" required></div>
+              <div class="field"><label for="fPhone">Phone <span class="req" aria-hidden="true">*</span></label><input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" required aria-describedby="smsNote"><p class="hint" id="smsNote">Andrew texts this number about your booking only. Msg and data rates may apply. Text STOP any time and he'll stop.</p></div>
             </div>
             <div class="row2" id="addrRow">
-              <div class="field"><label for="fAddr">Street address</label><input id="fAddr" autocomplete="street-address" required></div>
-              <div class="field"><label for="fTown">Town</label><input id="fTown" autocomplete="address-level2" list="townList" placeholder="Newburgh, Middletown, Goshen…" required><datalist id="townList"></datalist></div>
+              <div class="field"><label for="fAddr">Street address <span class="req" aria-hidden="true">*</span></label><input id="fAddr" autocomplete="street-address" required></div>
+              <div class="field"><label for="fTown">Town <span class="req" aria-hidden="true">*</span></label><input id="fTown" autocomplete="address-level2" list="townList" placeholder="Newburgh, Middletown, Goshen…" required><datalist id="townList"></datalist></div>
             </div>
             <div class="row2">
-              <div class="field" id="carField"><label for="fCar" id="fCarLbl">Car <small>(make &amp; model)</small></label><input id="fCar" placeholder="e.g. Hyundai Sonata"></div>
-              <div class="field"><label for="fSource">How did you hear about us?</label>
-                <select id="fSource" required><option value="">Choose one</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>Google</option><option>Nextdoor</option><option>Flyer</option><option>Business card</option><option>Car magnet</option><option>Yard sign</option><option>Friend or family</option><option>Car show/pop-up</option><option>Other</option></select></div>
+              <div class="field" id="carField"><label for="fCar" id="fCarLbl">Car <small>(make and model)</small></label><input id="fCar" placeholder="e.g. Hyundai Sonata"></div>
+              <div class="field"><label for="fSource">How did you hear about us? <small>(optional)</small></label>
+                <select id="fSource"><option value="">Choose one</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>Google</option><option>Nextdoor</option><option>Flyer</option><option>Business card</option><option>Car magnet</option><option>Yard sign</option><option>Friend or family</option><option>Car show/pop-up</option><option>Other</option></select></div>
             </div>
-            <div class="field" id="car2Field" hidden><label for="fCar2">Second car <small>(make &amp; model)</small></label><input id="fCar2" placeholder="e.g. Honda CR-V"></div>
+            <div class="field" id="car2Field" hidden><label for="fCar2">Second car <small>(make and model)</small></label><input id="fCar2" placeholder="e.g. Honda CR-V"></div>
             <div class="field"><label for="fNotes">Anything we should know? <small>(optional)</small></label><textarea id="fNotes" placeholder="Stains, pet hair, gate code, where to park…"></textarea></div>
-            <label class="check" id="hookRow"><input type="checkbox" id="fHook"><span><b>I have an outdoor outlet and a hose spigot we can use.</b><br><span class="muted" style="font-size:14px">Needed for at-home appointments.</span></span></label>
-            <label class="check" id="milRow" hidden><input type="checkbox" id="fMilitary"><span><b>I'm active military, a veteran, or a first responder</b><br><span class="muted" style="font-size:14px" id="milSub">Please have your ID ready at the appointment.</span></span></label>
-            <label class="check light"><input type="checkbox" id="fRemember" checked><span>Remember my details on this device for next time</span></label>
+            <label class="check" id="hookRow"><input type="checkbox" id="fHook"><span><b>I have an outdoor outlet and a hose spigot we can use. <span class="req" aria-hidden="true">*</span></b><br><span class="muted">Needed for at-home appointments.</span></span></label>
+            <label class="check" id="milRow" hidden><input type="checkbox" id="fMilitary"><span><b>I'm active military, a veteran, or a first responder</b><br><span class="muted" id="milSub">Please have your ID ready at the appointment.</span></span></label>
+            <label class="check light"><input type="checkbox" id="fRemember"><span>Remember my details on this device for next time</span></label>
           </div>
         </form>
-        <div class="summary" role="region" aria-label="Your quote" aria-live="polite">
-          <p class="eyebrow">Your quote</p>
-          <h3 id="sumPkg">The Full Detail</h3>
+        <div class="summary slip" role="region" aria-label="Your quote" aria-live="polite">
+          <h3>Your quote: <span id="sumPkg">The Full Detail</span></h3>
+          <div class="total"><span>Total</span><b id="sumTotal">$50</b></div>
           <div id="sumLines" style="display:grid;gap:8px"></div>
-          <div class="total"><span style="font-weight:800">Total</span><b id="sumTotal">$50</b></div>
-          <div class="when" id="sumWhen">Pick a day and time</div>
-          <div class="progress"><div class="bar"><i id="progBar" style="width:50%"></i></div><span id="progText">Step 3 of 4: pick a time</span></div>
-          <div class="err" id="bookErr" role="alert" hidden></div>
+          <p class="when" id="sumWhen">Pick a day and time</p>
+          <div class="progress"><div class="bar"><i id="progBar" style="width:50%"></i></div><span id="progText">Next: pick a day and time</span></div>
+          <label class="check" id="agreeRow"><input type="checkbox" id="fAgree"><span>I agree to the <a href="terms.html" target="_blank" rel="noopener">terms</a> and the <a href="refund-policy.html" target="_blank" rel="noopener">refund and cancellation policy</a>. <span class="req" aria-hidden="true">*</span></span></label>
+          <p class="err" id="bookErr" role="alert" hidden></p>
           <button class="btn" id="bookBtn" type="button">Book this detail</button>
-          <small>No payment now. Pay after the job: cash, Cash App or Venmo. Andrew texts to confirm.</small>
+          <p class="fine">No payment now. Pay after the job: cash, Cash App or Venmo. Andrew texts to confirm. See the <a href="privacy.html" style="color:inherit">privacy policy</a>.</p>
         </div>
       </div>
       <div id="bookDone" hidden></div>
     </div>
   </section>
 
-  <section id="reviews">
-    <div class="wrap">
-      <div class="sec-head reveal"><p class="eyebrow">What customers say</p><h2>Reviews</h2></div>
-      <div class="rv-top" id="rvTop"></div>
-      <div class="rv-grid" id="rvGrid"></div>
-      <div id="rvAsk"></div>
-      <form class="rv-form" id="rvForm" novalidate hidden>
-        <input type="text" id="hp2" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
-        <h3 id="review">Leave a review</h3>
-        <p class="muted" style="margin-top:-6px">Had your car detailed? Tell people how it went. Reviews show up after a quick check.</p>
-        <div class="star-pick" id="starPick" role="group" aria-label="Star rating"></div>
-        <div class="field"><label for="rvName">First name</label><input id="rvName" autocomplete="given-name" maxlength="40"></div>
-        <div class="field"><label for="rvText">How did it go?</label><textarea id="rvText" maxlength="800"></textarea></div>
-        <div class="err" id="rvErr" role="alert" hidden style="color:var(--bad)"></div>
-        <div><button class="btn btn-primary" type="submit" id="rvBtn">Post review</button></div>
-      </form>
+  <section class="reviews grid" id="reviews" aria-labelledby="rvH">
+    <div class="reviews-head">
+      <h2 class="reveal" id="rvH">What customers say</h2>
+      <p class="muted reveal" style="--d:80ms" id="rvTop"></p>
     </div>
+    <div class="letter reveal" style="--d:120ms" id="rvGrid"></div>
+    <div class="more-rv" id="rvMore"></div>
+    <div class="rv-ask" id="rvAsk"></div>
+    <form class="rv-form" id="rvForm" novalidate hidden>
+      <input type="text" id="hp2" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="sr">
+      <h3 id="review">Leave a review</h3>
+      <p class="muted">Had your car detailed? Tell people how it went. Every honest review gets posted after a quick check, good or bad.</p>
+      <div class="star-pick" id="starPick" role="group" aria-label="Star rating"></div>
+      <div class="field"><label for="rvName">First name <small>(optional)</small></label><input id="rvName" autocomplete="given-name" maxlength="40"></div>
+      <div class="field"><label for="rvText">How did it go?</label><textarea id="rvText" maxlength="800"></textarea></div>
+      <p class="err" id="rvErr" role="alert" hidden style="color:var(--bad)"></p>
+      <div><button class="btn" type="submit" id="rvBtn">Post review</button></div>
+    </form>
   </section>
 
-  <section id="about" style="background:var(--panel)">
-    <div class="wrap about">
-      <img class="about-logo reveal" src="media/mascot-lockup.webp" width="1080" height="1055" loading="lazy" alt="Letts Get Clean logo: the mascot, a cartoon dog in sunglasses holding a soapy sponge, over the words Mama Letts approved. Mobile detailing, Orange County, NY.">
-      <div class="reveal">
-        <p class="eyebrow">Who's washing your car</p>
-        <h2 style="font-size:clamp(42px,6.5vw,68px);transform:skewX(-6deg);transform-origin:left bottom;text-shadow:5px 5px 0 #262c36;margin:12px 0 22px">Hey, I'm Andrew</h2>
-        <p class="big">I started Letts Get Clean to bring a careful, honest detail right to your driveway in Orange County. I bring the soap, towels and gear, and I take my time on every car, inside and out.</p>
-        <ul class="promises">
-          <li><span class="ib"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11V7a5 5 0 0 1 10 0v4"/><rect x="4" y="11" width="16" height="10" rx="2"/></svg></span><div><b>Pay after, never upfront</b><span>No deposit. You pay when the job's done.</span></div></li>
-          <li><span class="ib"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.7c3 3.4 6 6.8 6 10.3a6 6 0 0 1-12 0c0-3.5 3-6.9 6-10.3z"/></svg></span><div><b>Hand washed</b><span>A foam bath and a hand wash, not a drive-through brush.</span></div></li>
-          <li><span class="ib"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#29C8FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span><div><b>Talk to the owner</b><span>Call or text Andrew directly at <a data-tel data-phone href="tel:+18452829387" style="color:var(--fg)">(845) 282-9387</a>.</span></div></li>
+  <section class="about" id="about" aria-labelledby="abH">
+    <div class="about-row">
+      <div class="facts reveal">
+        <img src="media/mascot-160.webp" width="120" height="120" loading="lazy" alt="The Letts Get Clean mascot, a cartoon dog in sunglasses holding a soapy sponge">
+        <div><span>Owner</span><b>Andrew Letts</b></div>
+        <div><span>Based in</span><b>Newburgh, NY</b></div>
+        <div><span>First jobs</span><b>October 2026</b></div>
+      </div>
+      <div class="about-copy">
+        <h2 class="reveal" id="abH">Hey, I'm Andrew</h2>
+        <p class="reveal" style="--d:80ms">I started Letts Get Clean to bring a careful, honest detail right to your driveway in Orange County. I bring the soap, towels and gear, and I take my time on every car, inside and out: a foam bath and a hand wash, never a drive-through brush. You pay after the job, and you can call or text me directly.</p>
+      </div>
+    </div>
+    <div class="about-row second">
+      <p class="word reveal">Paying and places</p>
+      <div class="lists reveal" style="--d:80ms">
+        <ul aria-labelledby="payH">
+          <li><h3 id="payH">Ways to pay, after the job</h3></li>
+          <li>Cash <span>at the job</span></li>
+          <li>Cash App <a href="https://cash.app/$AndrewLetta" target="_blank" rel="noopener noreferrer">$AndrewLetta</a></li>
+          <li>Venmo <a href="https://venmo.com/u/Andrew-Letts-9" target="_blank" rel="noopener noreferrer">@Andrew-Letts-9</a></li>
         </ul>
+        <ul id="towns" aria-labelledby="townsH"></ul>
       </div>
     </div>
   </section>
 
-  <section id="faq">
-    <div class="wrap">
-      <div class="sec-head reveal"><p class="eyebrow">Good to know</p><h2>Questions</h2></div>
-      <div class="faq" id="faqList"></div>
-    </div>
+  <section class="faq-sec grid" id="faq" aria-labelledby="faqH">
+    <h2 class="reveal" id="faqH">Questions, answered</h2>
+    <div class="faq" id="faqList"></div>
   </section>
 
-  <section id="area" style="padding-top:24px">
-    <div class="wrap">
-      <div class="area">
-        <div class="card reveal"><h3>Where we go</h3><p class="muted">Mobile details all over Orange County, New York, or drop your car off in Newburgh.</p><div class="towns" id="towns"></div></div>
-        <div class="card reveal"><h3>Ways to pay</h3><p class="muted">Pay at the end of the job.</p>
-          <div class="pay"><span class="chip-link">Cash</span><a class="chip-link" href="https://cash.app/$AndrewLetta" target="_blank" rel="noopener">Cash App <small>$AndrewLetta</small></a><a class="chip-link" href="https://venmo.com/u/Andrew-Letts-9" target="_blank" rel="noopener">Venmo <small>@Andrew-Letts-9</small></a></div>
-        </div>
-      </div>
-      <div class="cta-band reveal">
-        <div><h3>Ready for a clean car?</h3><p style="font-weight:700;margin-top:6px" id="ctaLine">Book online in a minute, or call/text Andrew.</p></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-dark" href="#book">Book now</a><a class="btn btn-dark" data-sms href="sms:+18452829387">Text Andrew</a></div>
-      </div>
-    </div>
+  <section class="contact" id="contact" aria-label="Contact details">
+    <h2 class="rowx" id="ctH">Letts Get Clean</h2>
+    <p class="rowx">Newburgh, Orange County, NY</p>
+    <p class="rowx hours-a" id="hoursText">Weekdays 3 PM · Weekends 1:30 PM</p>
+    <p class="rowx hours-b" id="hoursDays">Every day</p>
+    <p class="rowx hours-b" id="hoursTimes">From 3 PM, weekends 1:30</p>
+    <a class="rowx" data-tel data-phone href="tel:+18452829387">(845) 282-9387</a>
+    <a class="rowx greet" href="#book">Book a time<span class="go" aria-hidden="true"><svg width="38%" height="38%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
   </section>
 </main>
 
 <footer>
-  <div class="wrap">
-    <div style="display:grid;gap:12px;max-width:360px">
-      <a class="brand" href="#top"><img src="media/mascot-160.webp" width="46" height="46" alt=""><b>Letts <span>Get Clean</span></b></a>
-      <span class="muted">Mobile car and bike detailing and house washing in Orange County, NY.</span>
-      <div class="socials" id="socials"></div>
+  <div class="foot-top grid">
+    <div style="grid-column:1/8">
+      <h2>Ready for a clean car?</h2>
+      <p style="margin-top:14px;font-weight:600" id="ctaLine">Book online in a minute, or call or text Andrew.</p>
+      <a class="btn btn-dark" href="#book">Book now</a>
     </div>
-    <div class="cols">
-      <div class="col"><b>Contact</b><a data-tel data-phone href="tel:+18452829387">(845) 282-9387</a><a data-sms href="sms:+18452829387">Text us</a><a href="#book">Book online</a></div>
-      <div class="col"><b>Site</b><a href="#packages">Prices</a><a href="#house">House washing</a><a href="#results">Before &amp; after</a><a href="#faq">FAQ</a><a href="#review">Leave a review</a><a href="app/" rel="nofollow">Owner login</a></div>
+    <div class="foot-links" id="socials">
+      <a data-tel data-phone href="tel:+18452829387">(845) 282-9387</a>
+      <a data-sms href="sms:+18452829387">Text Andrew</a>
     </div>
-    <p class="fine">© <span id="year">2026</span> Letts Get Clean · Newburgh, NY</p>
   </div>
+  <div class="legal">
+    <span>© <span id="year">2026</span> Letts Get Clean · Andrew Letts · Newburgh, NY</span>
+    <nav aria-label="Policies">
+      <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="cookies.html">Cookies</a><a href="cookies.html#settings">Cookie settings</a><a href="accessibility.html">Accessibility</a><a href="privacy.html#request">Privacy request</a><a href="app/" rel="nofollow">Owner login</a>
+    </nav>
+  </div>
+  <p class="giant" aria-hidden="true">Letts <span>Get Clean</span></p>
 </footer>
-<div class="checker" aria-hidden="true"></div>
 
-<div class="mbar" id="mbar" role="region" aria-label="Quick booking"><div><b id="mbarPrice">From $25</b><small id="mbarSub">Mobile detailing · Orange County</small></div><div class="btns"><a class="btn btn-ghost btn-sm" data-sms href="sms:+18452829387" aria-label="Text Andrew">Text</a><a class="btn btn-primary btn-sm" id="mbarBtn" href="#book">Book now</a></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="app/discounts.js"></script>
@@ -785,7 +831,8 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     pin: '<path d="M12 21s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
     bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l2 7h-6M14 6h2"/>',
-    trash: '<path d="M4 7h16M10 3h4M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'
+    trash: '<path d="M4 7h16M10 3h4M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
+    arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>'
   };
 
   // busy: "date_time" keys that are taken; busyDays: days a house wash holds; bookedDays: days with any booking.
@@ -901,32 +948,20 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
   // ---------- public page ----------
   function renderPublic() {
     const st = S.settings, deal = dealOn();
-    $("dealBadge").hidden = !deal;
-    if (deal) {
-      const left = Math.ceil((dealEnd() - new Date()) / 864e5);
-      $("dealText").textContent = "Launch prices · ends " + fmtDate(st.dealEnds, { month: "short", day: "numeric" });
-      $("dealLeft").textContent = left <= 1 ? "Last day!" : left + " days left";
-    }
     document.querySelectorAll("[data-tel]").forEach(a => a.href = telHref("tel"));
     document.querySelectorAll("[data-sms]").forEach(a => a.href = telHref("sms"));
     document.querySelectorAll("[data-phone]").forEach(a => a.textContent = st.phone);
+    renderHeroLine();
     const startsLater = st.startDate && st.startDate > ymd(new Date());
-    $("hoursText").textContent = hoursLine() + (startsLater ? " · First appointments " + fmtDate(st.startDate) : "");
-    $("pkgNote").textContent = deal ? `Launch prices until ${fmtDate(st.dealEnds, { weekday: "long", month: "long", day: "numeric" })}. Lock one in now.` : "Prices for a standard car. SUVs, trucks and extras are added in your quote.";
+    const wd = st.slotsWeekday.slice().sort()[0], we = st.slotsWeekend.slice().sort()[0];
+    $("hoursText").textContent = [wd ? "Weekdays " + fmtTime(wd) : null, we ? "Weekends " + fmtTime(we) : null].filter(Boolean).join(" · ") + (startsLater ? " · from " + fmtDate(st.startDate, { month: "short", day: "numeric" }) : "");
+    $("hoursDays").textContent = wd && we ? "Seven days a week" : wd ? "Weekdays" : "Weekends";
+    $("hoursTimes").textContent = [wd ? "From " + fmtTime(wd) : null, we ? (wd ? "weekends " : "From ") + fmtTime(we) : null].filter(Boolean).join(", ");
+    $("pkgNote").textContent = deal ? `Launch prices until ${fmtDate(st.dealEnds, { weekday: "long", month: "long", day: "numeric" })}. Pick your vehicle and the prices below change to match.` : "Pick your vehicle and the prices below change to match. Extras are added in your quote.";
 
-    const trust = [[ICON.cash, "Pay after the job"], [ICON.home, "We bring the gear"], [ICON.pin, "Local to Newburgh"]];
-    if (st.slotsWeekday.length && st.slotsWeekend.length) trust.splice(2, 0, [ICON.clock, "Open 7 days"]);
-    $("trust").replaceChildren(...trust.map(([d, t]) => h("li", {}, icon(d, "#29C8FF", 18), t)));
-
-    const promo = renderPromo();
-    const items = [...(promo ? [promo.message] : []), deal ? "Launch deal · ends " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) : "Book online in a minute", "We come to you", "Pay after the job", "Orange County, NY", "Call or text " + st.phone,
-      ...st.packages.map(p => p.name + " $" + priceOf(p)), "Bike detail $" + st.bike.price, "Trash cans $" + st.trash.price + " a can", "House wash $" + st.house.price];
-    const run = $("tickerRun"); run.replaceChildren();
-    for (let r = 0; r < 2; r++) for (const t of items) { run.append(h("span", {}, t)); run.append(h("i", {}, "✦")); }
-
+    renderPromo();
     renderPackages(); renderServices(); renderSocials(); renderChoices(); renderDays(); renderSummary(); renderNext(); renderFaq();
-    $("mbarPrice").textContent = "From " + money(minPrice());
-    $("ctaLine").textContent = deal ? "Launch prices end " + fmtDate(st.dealEnds, { month: "long", day: "numeric" }) + ". Book online in a minute." : "Book online in a minute, or call/text Andrew.";
+    $("ctaLine").textContent = deal ? "Launch prices end " + fmtDate(st.dealEnds, { month: "long", day: "numeric" }) + ". Book online in a minute, or call or text Andrew." : "Book online in a minute, or call or text Andrew.";
   }
 
   // The promo bar shows the first holiday promo Andrew switched on whose dates include today
@@ -940,52 +975,62 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     return promo;
   }
 
+  // The three packages step up in height like a bar chart, so the biggest one is literally the biggest. The vehicle
+  // switch above them is the page's one live control: it re-prices every tile and carries the choice into the booking form.
   function renderPackages() {
     const st = S.settings, deal = dealOn(), g = $("pkGrid");
-    g.replaceChildren();
-    const tagFor = { exterior: "Outside", interior: "Inside" };
-    st.packages.forEach(p => {
-      const best = p.id === "full", save = p.regular - p.deal;
-      const card = h("article", { class: "pk " + reveal() + (best ? " best" : "") },
-        h("span", { class: "tag" }, best ? (deal && save > 0 ? "Best value · Save $" + save : "Best value") : (tagFor[p.id] || "Package")),
-        h("h3", {}, p.name),
-        h("div", { class: "price" }, h("span", { class: "now", html: `<sup>$</sup>${Number(priceOf(p))}` }), deal && save > 0 ? h("span", { class: "was" }, "Reg. $" + p.regular) : null),
-        h("ul", {}, p.items.map(t => h("li", {}, icon(ICON.check, best ? "#04131A" : "#07080B", 16, 3), t))),
-        h("div", { class: "pick" }, h("a", { class: "btn btn-sm btn-dark", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)));
-      if (best && deal && save > 0) card.append(h("span", { class: "stamp", html: `<svg viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Save ${Number(save)} dollars"><path d="M60,2 L70,20 L89,10 L91,32 L113,32 L104,52 L120,62 L104,74 L112,94 L90,94 L88,116 L69,106 L60,120 L50,106 L31,116 L29,94 L8,94 L16,74 L0,62 L16,52 L7,32 L29,32 L31,10 L50,20 Z" fill="#07080B"/><text x="60" y="56" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-size="22" fill="#fff">SAVE</text><text x="60" y="86" text-anchor="middle" font-family="Anton,Impact,sans-serif" font-size="28" fill="#29C8FF">$${Number(save)}</text></svg>` }));
-      g.append(card);
+    if (!st.sizes.some(s => s.id === sel.size)) sel.size = st.sizes[0].id;
+    const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
+    $("sizeSwitch").replaceChildren(h("legend", {}, "Your vehicle"), ...st.sizes.map(s => h("label", {},
+      h("input", { type: "radio", name: "sizeSwitch", value: s.id, checked: s.id === size.id, onchange: () => { sel.size = s.id; renderPackages(); renderChoices(); renderSummary(); } }),
+      h("span", {}, s.label, s.price ? h("small", {}, "+" + money(s.price)) : null))));
+    g.querySelectorAll(".tile").forEach(t => t.remove());
+    st.packages.forEach((p, i) => {
+      const now = priceOf(p) + (size.price || 0), later = p.regular + (size.price || 0), save = later - now;
+      g.append(h("article", { class: "tile " + reveal(), style: "--d:" + (i * 80) + "ms" },
+        h("div", { class: "in" },
+          h("h3", {}, p.name),
+          h("p", { class: "price" }, money(now)),
+          // A launch price only shows its later price because that is the price it truly goes to after the end date.
+          deal && save > 0 ? h("p", { class: "after" }, money(later) + " after " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + (i === st.packages.length - 1 ? ", so you save " + money(save) : "")) : null,
+          h("ul", {}, p.items.map(t => h("li", {}, t)))),
+        h("a", { class: "buy", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)));
     });
-    const sizes = st.sizes.filter(s => s.price).map(s => s.label + " +" + money(s.price)).join(" · ");
-    $("pkExtras").replaceChildren(...[
-      sizes ? h("span", {}, icon(ICON.plus, "#29C8FF", 16), sizes) : null,
-      st.addons.length ? h("span", {}, icon(ICON.spark, "#29C8FF", 16), "Extras from " + money(Math.min(...st.addons.map(a => a.price)))) : null,
-      h("span", {}, icon(ICON.cash, "#29C8FF", 16), "No deposit, pay after")].filter(Boolean));
+    $("pkExtras").textContent = (st.addons.length ? "Extras from " + money(Math.min(...st.addons.map(a => a.price))) + " are added in your quote, only if you pick them. " : "") + "No deposit: you pay after the job.";
     observeReveals();
   }
 
   function minPrice() { const st = S.settings; return Math.min(...st.packages.map(priceOf), st.bike.price); }
-  // The bike and trash can cards and the house washing section; their prices come from the live settings.
+  // Every other price on one list: the other services, the car extras, and the deals Andrew has switched on.
   function renderServices() {
-    const st = S.settings;
-    $("bikePrice").textContent = st.bike.price;
-    $("trashPrice").textContent = st.trash.price;
-    $("trashIcon").replaceChildren(icon(ICON.trash, "#29C8FF", 30, 2));
-    $("housePrice").textContent = st.house.price;
-    $("bikeIcon").replaceChildren(icon(ICON.bike, "#29C8FF", 30, 2));
-    document.querySelectorAll("#house [data-icon]").forEach(el => el.replaceChildren(icon(ICON[el.dataset.icon], "#29C8FF", 20, 2.4)));
-    $("houseList").replaceChildren(...["The whole outside of your house", "Booked for the whole day", "Pay after the job"].map(t => h("li", {}, icon(ICON.check, "#04131A", 16, 3), t)));
+    const st = S.settings, ds = st.discounts;
+    const row = (k, name, sub, val, svc) => {
+      const kids = [h("span", { class: "k" }, k), h("span", { class: "n" }, name, sub ? h("small", {}, sub) : null), h("span", { class: "v" }, val, svc ? icon(ICON.arrowR, "currentColor", 16, 2.6) : null)];
+      return svc ? h("a", { class: "rate", href: "#book", "aria-label": "Book " + name.toLowerCase() + ", " + val, onclick: () => setService(svc) }, ...kids) : h("div", { class: "rate" }, ...kids);
+    };
+    const group = (rows) => { if (rows[0]) rows[0].classList.add("first"); return rows; };
+    const services = [
+      row("Service", "Bike or e-bike detail", "We come to you, or drop it off in Newburgh", money(st.bike.price), "bike"),
+      row("Service", "Trash can cleaning", "Cleaned right at your house", money(st.trash.price) + " a can", "trash"),
+      row("Service", "House pressure wash", "The whole outside, and it takes the whole day", money(st.house.price), "house")];
+    const extras = group([...st.sizes.filter(s => s.price).map(s => row("Car size", s.label, "Added to any package", "+" + money(s.price))),
+      ...st.addons.map(a => row("Car extra", a.label, "Only if you pick it", "+" + money(a.price)))]);
+    const deals = group([ds && ds.twoCar.on ? row("Deal", "Second car, same visit", "Back to back", money(ds.twoCar.amount) + " off") : null,
+      ds && ds.military.on && ds.military.services.length ? row("Deal", "Military, veterans, first responders", "Have your ID ready at the appointment", ds.military.percent + "% off") : null].filter(Boolean));
+    $("rates").replaceChildren(...services, ...extras, ...deals, deals.length ? h("p", { class: "rates-foot" }, "One discount per booking, whichever saves you the most.") : null);
   }
 
   function renderSocials() {
-    const box = $("socials"); box.replaceChildren();
+    const box = $("socials");
+    box.querySelectorAll("[data-soc]").forEach(a => a.remove());
     for (const s of SOC) {
       const url = S.settings.socials[s.k];
-      if (url) box.append(h("a", { class: "chip-link", href: url, target: "_blank", rel: "noopener" }, icon(s.d, "#29C8FF"), s.label));
+      if (url) box.append(h("a", { href: url, target: "_blank", rel: "noopener noreferrer", "data-soc": "" }, s.label));
     }
   }
 
   function renderGallery() {
-    $("baGrid").replaceChildren(...GALLERY.map((p, i) => h("div", { class: "ba-card reveal" }, slider(p, i), h("div", { class: "ba-cap" }, h("span", {}, p.title), h("small", {}, p.caption)))));
+    $("baGrid").replaceChildren(...GALLERY.map((p, i) => h("div", { class: "ba-card reveal", style: "--d:" + (80 + i * 90) + "ms" }, slider(p, i), h("p", { class: "ba-cap" }, p.title + " · " + p.caption))));
     observeReveals();
   }
   function slider(p, i) {
@@ -994,7 +1039,7 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       h("img", { class: "after", src: p.after, alt: "After: " + p.title + ", " + p.caption, loading: "lazy", width: "900", height: "1125" }),
       h("img", { class: "before", src: p.before, alt: "Before: " + p.title + ", " + p.caption, loading: "lazy", width: "900", height: "1125" }),
       h("span", { class: "line" }, h("span", { class: "knob" }, icon(ICON.arrows, "#04131A", 22, 2.8))),
-      h("span", { class: "lbl b" }, "BEFORE"), h("span", { class: "lbl a" }, "AFTER"), range);
+      h("span", { class: "lbl b" }, "Before"), h("span", { class: "lbl a" }, "After"), range);
     const set = (v) => { v = Math.max(0, Math.min(100, v)); fig.style.setProperty("--pos", v + "%"); range.value = v; };
     range.addEventListener("input", () => set(Number(range.value)));
     let dragging = false;
@@ -1077,8 +1122,6 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     $("fCarLbl").replaceChildren(car ? "Car " : "Bike ", h("small", {}, car ? "(make & model)" : "(brand & model)"));
     $("fCar").placeholder = car ? "e.g. Hyundai Sonata" : "e.g. Trek FX 2, Rad Power RadCity";
     $("fNotes").placeholder = svc === "house" ? "Stories, siding, where the spigot is, pets…" : svc === "trash" ? "Where the cans are, gate code, pets…" : "Stains, pet hair, gate code, where to park…";
-    // Numbers follow the visible steps, so a bike, trash can or house booking reads 1, 2, 3.
-    let n = 0; ["st1", "st2", "st3", "st4"].forEach(id => { if (!$(id).hidden) $(id).querySelector(".n").textContent = ++n; });
     applyLoc();
   }
   function applyLoc() {
@@ -1151,21 +1194,18 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     }
     return null;
   }
-  function renderNext() {
-    const n = nextOpening(), chip = $("nextChip");
-    chip.hidden = !S.busyLoaded; if (chip.hidden) return;
-    chip.classList.toggle("wait", !n);
-    if (!n) {
-      // Everything online is taken: offer the waitlist (a pre-filled text) instead of hiding the chip.
-      $("nextText").textContent = "Fully booked · join the waitlist";
-      chip.href = telHref("sms", waitlistText()); chip.onclick = null;
-      return;
+  function renderNext() { renderHeroLine(); }
+  // The first screen answers what it costs and when: the launch price, its real end date and the next open time,
+  // all in the one plain sentence above the name.
+  function renderHeroLine() {
+    const st = S.settings, deal = dealOn(), from = money(Math.min(...st.packages.map(priceOf)));
+    let t = "Dirty car? Not for long. Hand wash and interior detailing, done in your Orange County driveway, from " + from + (deal ? " until " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + "." : ".");
+    if (S.busyLoaded) {
+      const n = nextOpening(), today = ymd(new Date()), tmrw = ymd(new Date(Date.now() + 864e5));
+      t += n ? " Next opening: " + (n.date === today ? "today" : n.date === tmrw ? "tomorrow" : fmtDate(n.date, { weekday: "long", month: "short", day: "numeric" })) + " at " + fmtTime(n.time) + "."
+             : " Fully booked online right now, so text Andrew to join the waitlist.";
     }
-    chip.href = "#book";
-    const today = ymd(new Date()), tmrw = ymd(new Date(Date.now() + 864e5));
-    const day = n.date === today ? "Today" : n.date === tmrw ? "Tomorrow" : fmtDate(n.date);
-    $("nextText").textContent = "Next opening: " + day + " · " + fmtTime(n.time);
-    chip.onclick = () => { sel.date = n.date; sel.time = n.time; renderDays(); renderSummary(); };
+    $("heroLine").textContent = t;
   }
 
   // name/label/adds are what the booking row stores (package, size, addons); lines are the quote card.
@@ -1240,9 +1280,8 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     all.forEach(([id, ok]) => $(id).classList.toggle("done", ok));
     const steps = all.filter(([id]) => !$(id).hidden), done = steps.filter(s => s[1]).length, nextIdx = steps.findIndex(s => !s[1]);
     $("progBar").style.width = (done / steps.length * 100) + "%";
-    $("progText").textContent = nextIdx === -1 ? "Ready to book" : "Step " + (nextIdx + 1) + " of " + steps.length + ": " + steps[nextIdx][2];
+    $("progText").textContent = nextIdx === -1 ? ($("fAgree").checked ? "Ready to book" : "Ready: tick the box to agree, then book") : "Next: " + steps[nextIdx][2];
     $("bookBtn").textContent = q.svc === "house" ? "Book the house wash" : q.svc === "bike" ? "Book the bike detail" : q.svc === "trash" ? "Book the trash cans" : q.car2 ? "Book both cars" : "Book this detail";
-    if ($("mbar").dataset.inBook === "1") $("mbarPrice").textContent = "Total " + money(q.total);
   }
 
   // ---------- booking ----------
@@ -1256,7 +1295,8 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     need(!!v("fName"), "fName", "add your name");
     need(digits10(v("fPhone")).length === 10, "fPhone", "add a 10-digit phone number");
     if (!drop) { need(!!v("fAddr"), "fAddr", "add your street address"); need(!!v("fTown"), "fTown", "add your town"); }
-    need(!!v("fSource"), "fSource", "pick how you heard about us");
+    $("agreeRow").classList.toggle("bad", !$("fAgree").checked);
+    if (!$("fAgree").checked) { problems.push("tick the box to agree to the terms"); first = first || "fAgree"; }
     $("hookRow").classList.toggle("bad", !drop && !$("fHook").checked);
     if (!drop && !$("fHook").checked) { problems.push("confirm you have an outlet and hose"); first = first || "hookRow"; }
     if (problems.length) {
@@ -1370,10 +1410,9 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
         setTimeout(() => URL.revokeObjectURL(url), 4000);
       } catch (e) { toast("Couldn't make the calendar file on this device."); }
     } }, icon(ICON.cal, "currentColor", 18), "Add to calendar");
-    const card = h("div", { class: "done-card" },
+    const card = h("div", { class: "done-card slip" },
       h("span", { class: "big-check" }, icon(ICON.check, "#04131A", 32, 3)),
-      h("p", { class: "eyebrow" }, saved ? "Your spot is held" : "Almost booked"),
-      h("h3", {}, when),
+      h("h3", {}, (saved ? "Booked: " : "Almost booked: ") + when),
       h("div", { class: "recap" },
         h("b", {}, `${q.car2 ? "Car 1: " : ""}${q.name} · ${q.label}${q.adds.length ? " · " + q.adds.map(a => a.label).join(", ") : ""}`),
         q.car2 ? h("b", {}, `Car 2: ${q.car2.name} · ${q.car2.label}`) : null,
@@ -1419,38 +1458,49 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
   }
 
   // ---------- reviews ----------
-  function starsStr(n) { n = Math.max(0, Math.min(5, Math.round(n))); return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
+  // Stars are drawn shapes with one text label, so screen readers hear "4 out of 5 stars" once.
+  const STAR = '<path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/>';
+  function stars(n) {
+    n = Math.max(0, Math.min(5, Math.round(n)));
+    return h("span", { class: "stars", role: "img", "aria-label": n + " out of 5 stars", html: [1, 2, 3, 4, 5].map(i => `<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><g fill="${i <= n ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">${STAR}</g></svg>`).join("") });
+  }
+  // The newest review is set like a letter; the first sentence opens it and the rest follows as plain paragraphs.
+  function letter(r, big) {
+    // No lookbehind in the pattern: older iPhones can't parse it, and one syntax error would stop the whole page.
+    const sentences = (r.text.match(/[^.!?]+(?:[.!?]+|$)/g) || [r.text]).map(x => x.trim()).filter(Boolean);
+    const open = sentences[0] && sentences[0].length <= 160 ? sentences.shift() : null;
+    const when = r.created_at ? new Date(r.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" }) : "";
+    return h("article", { class: big ? "" : "letter" },
+      open ? h("blockquote", { class: "open", style: "margin:0" }, open) : null,
+      sentences.length ? h("p", {}, sentences.join(" ")) : null,
+      h("p", { class: "sign" }, h("b", {}, r.name || "A customer"), stars(r.stars), " ", when));
+  }
   function renderReviews() {
     const rv = S.reviews;
-    const top = $("rvTop"); top.replaceChildren();
     if (rv.length) {
       const avg = rv.reduce((n, r) => n + r.stars, 0) / rv.length;
-      top.append(h("span", { class: "rv-avg" }, avg.toFixed(1)), h("div", {}, h("div", { class: "stars", "aria-label": avg.toFixed(1) + " out of 5 stars" }, starsStr(avg)), h("span", { class: "muted" }, rv.length + (rv.length === 1 ? " review" : " reviews"))));
-    }
-    $("rvGrid").replaceChildren(...rv.map(r => h("article", { class: "rv" },
-      h("div", { class: "stars", "aria-label": r.stars + " out of 5 stars" }, starsStr(r.stars)), h("p", {}, "“" + r.text + "”"),
-      h("div", { class: "who" }, h("b", {}, r.name || "Customer"), h("span", {}, r.created_at ? new Date(r.created_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "")))));
+      $("rvTop").textContent = avg.toFixed(1) + " average from " + rv.length + (rv.length === 1 ? " review" : " reviews") + ". Every honest review gets posted, good or bad.";
+    } else $("rvTop").textContent = "Letts Get Clean is brand new, so there aren't many reviews yet.";
+    $("rvGrid").replaceChildren(...(rv.length ? letter(rv[0], true).childNodes : []));
+    $("rvMore").replaceChildren(...rv.slice(1).map(r => letter(r, false)));
     const ask = $("rvAsk"); ask.replaceChildren();
     const form = $("rvForm");
     if (S.reviewsOn === false) {
       // Reviews database isn't reachable: offer a text instead of a form that can't post.
       form.hidden = true;
-      ask.append(h("div", { class: "rv-empty" }, h("h3", {}, rv.length ? "Had a detail?" : "Be one of our first reviews"),
-        h("p", { class: "muted" }, "Text Andrew a line about how it went and he'll add it here."),
-        h("a", { class: "btn btn-primary", href: telHref("sms", "Review for Letts Get Clean (5 stars): ") }, "Text my review")));
+      ask.append(h("p", {}, "Had a detail? Text Andrew a line about how it went and he'll add it here."),
+        h("a", { class: "btn", href: telHref("sms", "Review for Letts Get Clean: ") }, "Text my review"));
       return;
     }
-    if (!rv.length && form.hidden) {
-      ask.append(h("div", { class: "rv-empty" }, h("h3", {}, "Be one of our first reviews"),
-        h("p", { class: "muted" }, "Letts Get Clean is brand new. If Andrew detailed your car, a quick review helps a local business a ton."),
-        h("button", { class: "btn btn-primary", type: "button", onclick: openReviewForm }, "Write a review")));
-    } else if (form.hidden) {
-      ask.append(h("div", { style: "margin-top:24px" }, h("button", { class: "btn btn-ghost", type: "button", onclick: openReviewForm }, "Write a review")));
+    if (form.hidden) {
+      ask.append(h("p", {}, rv.length ? "Had a detail? Tell people how it went." : "If Andrew detailed your car, a quick review helps a local business a ton."),
+        h("button", { class: "btn" + (rv.length ? " btn-ghost" : ""), type: "button", onclick: openReviewForm }, "Write a review"));
     }
   }
   let rvStars = 5;
   function renderStarPick() {
-    $("starPick").replaceChildren(...[1, 2, 3, 4, 5].map(n => h("button", { type: "button", "aria-pressed": String(n <= rvStars), "aria-label": n + " star" + (n > 1 ? "s" : ""), onclick: () => { rvStars = n; renderStarPick(); } }, "★")));
+    $("starPick").replaceChildren(...[1, 2, 3, 4, 5].map(n => h("button", { type: "button", "aria-pressed": String(n <= rvStars), "aria-label": n + " star" + (n > 1 ? "s" : ""), onclick: () => { rvStars = n; renderStarPick(); },
+      html: `<svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor">${STAR}</g></svg>` })));
   }
   function openReviewForm() {
     if (S.reviewsOn === false) { $("reviews").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" }); return; }
@@ -1494,9 +1544,10 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
       ["What if it rains?", "If rain or freezing temps are in the forecast for an outside detail, Andrew will text you to pick a new time."],
       ["How do I change or cancel?", "Call or text Andrew at " + st.phone + ". The sooner the better, so someone else can take the spot."],
       ["When are you available?", hoursLine() + ". Pick any open time in the booking calendar above."],
-      ["What areas do you cover?", "Orange County, NY, including " + TOWNS.join(", ") + " and nearby towns. Not sure if you're in range? Just text."]
+      ["What areas do you cover?", "Orange County, NY, including " + TOWNS.join(", ") + " and nearby towns. Not sure if you're in range? Just text."],
+      ["Can kids book?", "Customers of any age are welcome. If you're under 13, a parent or guardian needs to book for you."]
     ];
-    $("faqList").replaceChildren(...qa.map(([q, a]) => h("details", { class: reveal() }, h("summary", {}, q, h("span", { class: "pm" }, icon(ICON.plus, "currentColor", 16, 2.8))), h("p", {}, a))));
+    $("faqList").replaceChildren(...qa.map(([q, a], i) => h("details", { class: reveal(), style: "--d:" + Math.min(i * 40, 240) + "ms" }, h("summary", {}, q, h("span", { class: "chev", "aria-hidden": "true" })), h("p", {}, a))));
     observeReveals();
     renderSchema(qa);
   }
@@ -1535,51 +1586,57 @@ footer .fine{color:var(--mute);font-size:13px;width:100%}
     menu.addEventListener("click", (e) => { if (e.target.closest("a")) open(false); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) open(false); });
   }
-  function setupMobileBar() {
-    const bar = $("mbar"), book = $("book"), foot = document.querySelector("footer");
-    if (!("IntersectionObserver" in window)) return;
-    new IntersectionObserver((ents) => {
-      const inBook = ents[0].isIntersecting;
-      bar.dataset.inBook = inBook ? "1" : "";
-      $("mbarBtn").textContent = inBook ? "Review & book" : "Book now";
-      $("mbarSub").textContent = inBook ? "No payment until the job's done" : "Mobile detailing · Orange County";
-      if (inBook) renderSummary(); else $("mbarPrice").textContent = "From " + money(minPrice());
-    }, { rootMargin: "-40% 0px -40% 0px" }).observe(book);
-    new IntersectionObserver((ents) => bar.classList.toggle("away", ents[0].isIntersecting)).observe(foot);
-    $("mbarBtn").addEventListener("click", (e) => {
-      if (bar.dataset.inBook !== "1" || $("bookArea").hidden) return;
-      e.preventDefault();
-      document.querySelector(".summary").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-    });
+  // The bar sits clear over the film, then turns solid once the hero has scrolled away.
+  function setupHeader() {
+    const bar = $("topbar");
+    if (!("IntersectionObserver" in window)) { bar.classList.add("solid"); return; }
+    new IntersectionObserver((ents) => bar.classList.toggle("solid", !ents[0].isIntersecting), { rootMargin: "-90px 0px 0px 0px" }).observe(document.querySelector(".hero"));
+  }
+  // Signature move: the Sonata photo slowly crossfades from before to after, outside then inside. It pauses while
+  // the tab is hidden or the photo is off screen, and with reduced motion it simply stays on the first picture.
+  function setupFade() {
+    const imgs = [...document.querySelectorAll("#fade img")];
+    if (reduceMotion || imgs.length < 2) return;
+    let i = 0, seen = false;
+    if ("IntersectionObserver" in window) new IntersectionObserver((ents) => { seen = ents[0].isIntersecting; }).observe($("fade")); else seen = true;
+    setInterval(() => {
+      if (document.hidden || !seen) return;
+      imgs[i].classList.remove("on"); i = (i + 1) % imgs.length; imgs[i].classList.add("on");
+    }, 5600);
   }
   function setupHeroVideo() {
     // Phones and data-saver get the still image; desktops get the looping video.
     const vid = $("heroVid");
     const saveData = navigator.connection && navigator.connection.saveData;
     if (reduceMotion || saveData || matchMedia("(max-width: 900px)").matches) return;
-    vid.src = "media/hero_loop.mp4"; vid.preload = "auto";
+    vid.src = "media/hero_loop.mp4"; vid.preload = "auto"; vid.autoplay = true;
     vid.play().catch(() => {});
   }
 
   document.querySelectorAll("[data-copy-phone]").forEach(b => b.addEventListener("click", () => copyText(S.settings.phone, "Number copied")));
   document.querySelectorAll("[data-service]").forEach(a => a.addEventListener("click", () => setService(a.dataset.service)));
   // Only one reel plays at a time, so their soundtracks never talk over each other.
-  const reels = [...document.querySelectorAll("#watch video")];
+  const reels = [...document.querySelectorAll("#results video")];
   reels.forEach(v => v.addEventListener("play", () => reels.forEach(o => { if (o !== v) o.pause(); })));
+  document.querySelectorAll("#results .play").forEach(b => b.addEventListener("click", () => {
+    const vid = b.parentElement.querySelector("video");
+    b.hidden = true; vid.controls = true; vid.preload = "auto"; vid.play().catch(() => {}); vid.focus({ preventScroll: true });
+  }));
   $("bookBtn").addEventListener("click", submitBooking);
   $("bookForm").addEventListener("submit", (e) => { e.preventDefault(); submitBooking(); });
   $("bookForm").addEventListener("input", (e) => { if (e.target.getAttribute("aria-invalid") === "true") markInvalid(e.target.id, false); renderSummary(); });
   $("bookForm").addEventListener("change", (e) => { if (e.target.id === "fHook") $("hookRow").classList.remove("bad"); renderSummary(); });
+  $("fAgree").addEventListener("change", () => { $("agreeRow").classList.remove("bad"); renderSummary(); });
   $("fPhone").addEventListener("blur", () => { $("fPhone").value = fmtPhone($("fPhone").value); });
   // A second car changes which start times work (it needs the slot after), so the calendar re-checks.
   $("fTwoCar").addEventListener("change", (e) => { sel.twoCars = e.target.checked; if (sel.twoCars) sel.pkg2 = sel.pkg; renderChoices(); renderDays(); renderSummary(); });
   $("rvForm").addEventListener("submit", submitReview);
   $("townList").replaceChildren(...TOWNS.map(t => h("option", { value: t })));
-  $("towns").replaceChildren(...TOWNS.map(t => h("span", {}, t)), h("span", { style: "border-style:dashed" }, "+ nearby towns"));
+  $("towns").replaceChildren(h("li", {}, h("h3", { id: "townsH" }, "Where we go")), ...TOWNS.map(t => h("li", {}, t)), h("li", {}, "Nearby towns", h("span", {}, "just text")));
   $("year").textContent = new Date().getFullYear();
   document.querySelectorAll('a[href="#review"]').forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); openReviewForm(); }));
 
-  setupMenu(); setupMobileBar(); setupHeroVideo();
+  setupMenu(); setupHeroVideo(); setupHeader(); setupFade();
   restoreContact(); applySourceTag();
   renderPublic(); renderGallery(); renderStarPick(); renderReviews(); observeReveals();
   painted = true;
