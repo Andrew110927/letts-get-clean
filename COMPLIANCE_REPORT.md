@@ -11,21 +11,21 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 | 3 | Refund and cancellation | ✅ | `refund-policy.html`: no deposit, free cancelling, weather, if you're not happy, when and how refunds happen, card holds |
 | 4 | Cookie policy | ✅ | `cookies.html`: no cookies; table of the two browser-storage items; working "Clear my saved details" and "Forget the QR code tag" buttons (`#settings`) |
 | 5 | Consent banner | ✅ Not needed (decided) | Nothing optional loads, so there's nothing to consent to. Google Fonts was the only third party on page load, and it's now self-hosted. The cookie page explains this and how a banner would work if trackers are ever added |
-| 6 | Form consents | ✅ | `index.html`: required unticked terms box with links; text-message notice under the phone field; privacy link under the Book button; "Remember my details" unticked by default; required fields marked visibly (*) and in code. *A stored consent record (version and time on each booking) waits on a database change, so it isn't built yet* |
+| 6 | Form consents | ✅ | `index.html`: required unticked terms box with links; text-message notice under the phone field; privacy link under the Book button; "Remember my details" unticked by default; required fields marked visibly (*) and in code. Each booking sends the terms version; the database stamps the time with its own clock (`20261031_privacy.sql`, **not applied yet**). Until it's applied, the site saves bookings without it, so nothing breaks |
 | 7 | Collect only needed data | ✅ | "How did you hear about us?" is optional. Everything else is needed for a mobile job |
 | 8 | Third parties and security | ✅ | Fonts self-hosted (`fonts/`); a CSP and referrer policy `<meta>` on every page; `noreferrer` on links that open new tabs. No npm packages ship. *GitHub Pages can't send nosniff or Permissions-Policy headers: remaining risk* |
 | 9 | Dark patterns | ✅ | The pre-ticked box is gone; the "(5 stars)" pre-fill on texted reviews is gone; the countdown tied to the real end date became a plain end date |
 | 10 | Hidden fees | ✅ | Every price, size surcharge and extra is on one list; "Reg. $35" is now "$35 after Nov 16"; the vehicle switch shows the true total per size; terms say Andrew asks before adding anything |
 | 11 | Reviews | ✅ | "Every honest review gets posted, good or bad" is on the site, plus the moderation rule in the terms. *Andrew to confirm Ann is a real customer and to approve negative reviews too* |
 | 12 | Claims | ✅ | Nothing unsupported was found; copy kept modest. *Confirm every exterior gets the foam pre-wash* |
-| 13 | Alt text and captions | ⚠️ | All images described; the stars are drawn with one text label; the reels have written descriptions. *Reels 1 and 2 have sound and no captions (listed as a known gap on `accessibility.html`)* |
+| 13 | Alt text and captions | ✅ | All images described; the stars are drawn with one text label; the reels have written descriptions. Checked 10-31: the Sonata reel is music with no talking (caption track `media/reel_web.vtt` says so); the Outback reel's audio is silent |
 | 14 | Contrast | ✅ | Field edges now 3.6:1 (were about 1.2:1); the footer's blue is now 3.8:1. axe: 0 contrast issues |
 | 15 | Keyboard | ✅ | Skip link, visible focus, the calendar as a wrapping grid, labelled controls, menu focus and Esc. The scrolling ticker (which couldn't be paused) was removed |
 | 16 | Business details | ✅ | Footer: name, owner, town, phone, text, socials, every policy link, Cookie settings, Privacy request; hours in the contact rows; schema unchanged (public details only); `accessibility.html` |
 | 17 | Age and kids | ✅ | Any age welcome. Under 13 needs a parent or guardian to book (FAQ, terms, privacy). Minors' data is limited to what the job needs |
 | 18 | Unsubscribe | ✅ N/A | No email list. Texts: "Text STOP any time" is on the form and in the policies |
-| 19 | Media licenses | ⚠️ | `MEDIA_LICENSES.md`. *Two unknowns: who made the mascot, and what the reel soundtracks are* |
-| 20 | Data deletion | ⚠️ | Privacy request steps on `privacy.html#request`, plus the internal checklist `DATA_REQUESTS.md`. *The one-click "Forget this customer" in LGC Pro needs a database change you haven't approved yet; until then, it's the manual steps in the checklist* |
+| 19 | Media licenses | ⚠️ | `MEDIA_LICENSES.md`. *Two unknowns: who made the mascot, and where the Sonata reel's song came from (the Outback reel turned out to be silent)* |
+| 20 | Data deletion | ✅ (pending apply) | Privacy request steps on `privacy.html#request`, the checklist `DATA_REQUESTS.md`, and **Forget this customer** in LGC Pro (app 1.8.0, cache lgcpro-v15) calling `forget_customer()`. It blanks the details everywhere and keeps every money total. Covered by three new database tests (99 of 99 pass). Works once the migration is applied |
 
 ## The new design (the "make it 1000000 times better" phase)
 
@@ -48,7 +48,11 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
   - An empty booking lists every missing field; the terms box is enforced.
   - A booking dry run with the database call stubbed reaches the confirmation.
   - Nothing is saved locally unless Remember is ticked; the cookie settings clear both items; no console errors.
-- **Tests:** `node --test "tests/*.test.mjs"`: 96 of 96 pass.
+- **Tests:** `node --test "tests/*.test.mjs"`: 99 of 99 pass, including the new privacy tests (terms timed by the database; only the owner can forget; forgetting keeps every money total).
+- **Playwright, round 2:**
+  - A booking against a database that already has the terms column sends version 2026-10-31.
+  - Against one that doesn't, the first try is refused and the retry without the column saves the booking.
+  - In LGC Pro demo mode, "Forget this customer" shows its warning, needs two taps, and removes the client from the list. No errors.
 
 ## What Andrew needs to do (outside the code)
 
@@ -66,8 +70,8 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
    - records kept up to 7 years
    - before and after photos with plates blurred and no faces or addresses
    - the condition-check wording
-4. **Approve the database change** for a stored terms consent and a "Forget this customer" button (both shown to you before they're applied).
-5. **Add captions** to reels 1 and 2, or swap them for silent cuts.
+4. **Approve the database change** `supabase/migrations/20261031_privacy.sql`. It adds two booking columns (`terms_version`, `terms_agreed_at`), a trigger that stamps the time, and the owner-only `forget_customer()`. Apply it before or together with the push.
+5. **Tell me where the Sonata reel's song came from.** If it's a TikTok or CapCut track, I'll swap in a silent version.
 6. **Have a lawyer review** the policy pages, especially the sections listed below.
 7. Optional: an OpenRouter key for the image skills (see `design/image-prompts.md`).
 

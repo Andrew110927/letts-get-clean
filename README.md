@@ -12,6 +12,13 @@ for whoever works on the code.
 - Review link to text customers: https://andrew110927.github.io/letts-get-clean/#review
 - `index.html` is the whole site (no build step). GitHub Pages serves it from `main`.
 - `media/` holds the photos and videos. License plates are blurred; keep it that way for any new media.
+  Every file's source and license is in [MEDIA_LICENSES.md](MEDIA_LICENSES.md).
+- `privacy.html`, `terms.html`, `refund-policy.html`, `cookies.html` and `accessibility.html` are the policy pages
+  (shared styles in `legal.css`). Change a policy's date at the top when you change its text; the terms date is also
+  `TERMS_VERSION` in `index.html`, which each booking records.
+- `fonts/` serves Anton and Inter from the site itself (no font service sees visitors), with their licenses.
+- [DESIGN.md](DESIGN.md) is the design system; `design/` has the brand board, the phone flow and the image prompts.
+  [COMPLIANCE_REPORT.md](COMPLIANCE_REPORT.md) and [DATA_REQUESTS.md](DATA_REQUESTS.md) cover privacy and accessibility.
 
 ## How it works
 
