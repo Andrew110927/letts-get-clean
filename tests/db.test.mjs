@@ -69,6 +69,7 @@ before(async () => {
   await db.exec(await sql("20261026_booking_discounts"));
   await db.exec(await sql("20261029_trash_cans"));
   await db.exec(await sql("20261031_privacy"));
+  await db.exec(await sql("20261101_booking_email_limit"));
 });
 
 test("existing bookings become one customer per phone, skipping cancelled-only people", async () => {
@@ -313,4 +314,31 @@ test("forgetting a customer blanks their details everywhere but keeps every job'
   assert.equal((await one("select note from public.payments where invoice_id = $1", [inv.id])).note, null);
   assert.deepEqual(await one("select (select sum(total_cents) from public.invoices)::int as inv, (select sum(amount_cents) from public.payments where voided_at is null)::int as paid"), moneyBefore);
   assert.equal((await one("select count(*)::int as n from public.bookings where name = 'Zed Quill' or public.phone_key(phone) = '8455550199'")).n, 0, "no booking still carries Zed's name or number");
+});
+
+test("a website booking can carry an email, which fills in a new or blank customer email but never overwrites one", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, email) values ($1, '15:00', 'Eli Mail', '(845) 555-0161', 'eli@example.com')`, [future(80)]));
+  assert.equal((await one("select email from public.customers where phone_key = '8455550161'")).email, "eli@example.com");
+  await as("owner", () => db.query("update public.customers set email = 'kept@example.com' where phone_key = '8455550161'"));
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, email) values ($1, '17:00', 'Eli Mail', '(845) 555-0161', 'new@example.com')`, [future(80)]));
+  assert.equal((await one("select email from public.customers where phone_key = '8455550161'")).email, "kept@example.com");
+});
+
+test("an email that doesn't look like one is refused, and the booking isn't saved", async () => {
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, email) values ($1, '15:00', 'Bad Mail', '(845) 555-0162', 'not an email')`, [future(81)])), /bookings_email_check/);
+  assert.equal((await one("select count(*)::int as n from public.bookings where date = $1", [future(81)])).n, 0);
+});
+
+test("one phone number can book at most 4 times a day from the website, but the owner's app isn't limited", async () => {
+  for (let i = 0; i < 4; i++) await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Busy Bea', '(845) 555-0163')`, [future(90 + i)]));
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Busy Bea', '845-555-0163')`, [future(95)])), /booked a lot today/);
+  await as("owner", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Busy Bea', '(845) 555-0163')`, [future(96)]));
+  assert.equal((await one("select count(*)::int as n from public.bookings where name = 'Busy Bea'")).n, 5);
+});
+
+test("forgetting a customer blanks the email on their bookings too", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, email) values ($1, '15:00', 'Gone Gail', '(845) 555-0164', 'gail@example.com')`, [future(100)]));
+  const c = await one("select id from public.customers where phone_key = '8455550164'");
+  await as("owner", () => db.query("select public.forget_customer($1)", [c.id]));
+  assert.deepEqual(await one("select name, email from public.bookings where date = $1", [future(100)]), { name: "Deleted customer", email: null });
 });

@@ -59,16 +59,29 @@ No sixth size. The footer's cropped name (28vw, 34vw on phones) repeats the monu
 
 Personality: energetic but disciplined. One signature ease (`power3.out`, fast in and soft out), three durations (0.2s / 0.5s / 0.9s), staggers that finish inside 0.5s, and three layers: the name is primary, copy and prices are secondary, the foam is ambient. Scroll scenes live in `js/motion.js` (GSAP 3.13 with ScrollTrigger and SplitText); the foam is `js/bubbles.js` (Three.js r172). Both are self-hosted in `vendor/`. See `docs/adr/0001-gsap-and-threejs.md` for why.
 
-- **Load (wide screens):** the name rises letter by letter from behind its baseline, then the sentence arrives. Phones keep the CSS version, where the two lines rise.
-- **Foam (wide screens):** about two dozen iridescent soap bubbles drift up over the hero film, lean away from the pointer and pop when clicked. Not loaded on phones, with data saver, on low-memory devices, or with reduced motion. It sleeps when the hero is off screen or the tab is hidden.
+- **Hero (wide screens):**
+  - The name starts as a window cut out of black, with the driveway film playing inside the letters, and its letters rise in one by one.
+  - Scrolling grows the name until the black dissolves and the whole film shows. Then the sentence and the hero's Book button arrive. This is the page's one pinned moment.
+  - Phones and reduced motion keep the plain hero: the film with the name across the bottom.
+- **Foam and droplet (wide screens):**
+  - About two dozen iridescent soap bubbles drift up over the film, lean away from the pointer and pop when clicked.
+  - One big water droplet bends the film behind it like a lens. It follows the pointer and bursts into foam when clicked, then forms again.
+  - None of it loads on phones, with data saver, on low-memory devices, or with reduced motion. It sleeps when the hero is off screen.
+- **Smooth scrolling:** Lenis smooths the mouse wheel and same-page links, and moves focus to the link's target. Touch and keyboard scrolling stay the browser's own.
 - **How a detail goes:** the receipt feeds up out of a printer's mouth in 12 mechanical steps, header first and torn edge last. It plays once; nothing is pinned or scroll-jacked.
-- **Prices:** the three package tiles grow up from a shared floor like the bar chart they are, and the prices count up from $0. The vehicle switch rolls each price to its new amount.
+- **Packages:**
+  - Each package is a full screen with its own palette: rinse blue, leather, and bright showroom white.
+  - As a package crosses the middle of the screen the whole page takes its colours. The background fades evenly over 600ms and the text flips at the halfway point, so it never goes grey on grey.
+  - The name, price and list rise in, and the price counts up from $0. The vehicle switch rolls prices to the new amounts.
+- **Package builder:** in the booking form, the chosen package lights up the part of a drawn car it cleans (outside, inside, or both), with what's included and the live price.
+- **Reels:** play muted while on screen and stop when they leave. A tap restarts one with sound and controls.
 - **Rates and reels:** the rate rows arrive in a quick cascade; the four reel panels open like a shutter while each picture settles.
 - **Signature:** the Sonata photo in the services section slowly crossfades from before to after, outside then inside (1.6s fades, 5.6s holds). It pauses off screen or when the tab is hidden.
 - **Scroll:** the hero film sinks and dims as it leaves while the name lifts away (scroll-driven, Chrome and Edge). The footer's cropped name rises as the page reaches its end. Other parts rise 24px once, staggered 80ms.
-- **Feedback:** every button, tile strip, rate row, panel and control has a hover, press and focus state. With a mouse, the main Book buttons lean slightly toward the pointer.
+- **Feedback:** every button, rate row, panel and control has a hover, press and focus state. A strip of light crosses a button when the pointer arrives, and with a mouse the main Book buttons lean slightly toward the pointer.
+- **Texture:** a fine static film grain sits over the whole page, so no dark section is flat.
 - **Loading rule:** motion never competes with the first paint. Phones fetch GSAP only after the page has loaded; wide screens fetch it at once (deferred) and load Three.js when the page is idle. If either fails to load, the CSS entrances play and the page works the same.
-- **Reduced motion:** nothing extra is downloaded and everything is simply there: no travel, no autoplay, no foam, and the crossfade stays on the first photo.
+- **Reduced motion:** nothing extra is downloaded and everything is simply there. No travel, no autoplay, no foam, no smooth scrolling, and the crossfade stays on the first photo. The package colours still change, instantly.
 
 ## 7. Imagery
 

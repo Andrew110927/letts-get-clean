@@ -6,7 +6,7 @@
   "use strict";
   const html = document.documentElement;
   const ready = () => html.classList.remove("motion-wait");
-  if (!window.gsap || !window.ScrollTrigger || !window.SplitText) { ready(); return; }
+  if (!window.gsap || !window.ScrollTrigger || !window.SplitText || !window.Lenis) { ready(); return; }
   gsap.registerPlugin(ScrollTrigger, SplitText);
 
   // One signature ease and three durations for the whole page, so the motion reads as one personality.
@@ -15,7 +15,7 @@
   const $ = (s) => document.querySelector(s), $$ = (s, root) => [...(root || document).querySelectorAll(s)];
   const amount = (text) => Number(String(text).replace(/[^0-9.]/g, "")) || 0;
 
-  // Counts a price element from one amount to another (the tiles' figures, and the vehicle switch).
+  // Counts a price element from one amount to another (the package prices, and the vehicle switch).
   function countTo(el, from, to, duration) {
     const box = { v: from };
     return gsap.to(box, { v: to, duration: duration || SLOW, ease: "power2.out", onUpdate: () => { el.textContent = "$" + Math.round(box.v).toLocaleString(); } });
@@ -30,6 +30,31 @@
 
     html.classList.add("gsap-on");
 
+    // ---- Smooth wheel scrolling (Lenis), driven by GSAP's clock so every ScrollTrigger stays in step with it.
+    // Touch and keyboard scrolling stay the browser's own.
+    const lenis = new Lenis({ autoRaf: false });
+    lenis.on("scroll", ScrollTrigger.update);
+    const lenisTick = (t) => lenis.raf(t * 1000);
+    gsap.ticker.add(lenisTick);
+    // Same-page links glide as well. Focus still moves to the target, so the skip link and keyboard users land where they read.
+    listen(document, "click", (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      const id = a.getAttribute("href").slice(1), target = id && document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      lenis.scrollTo(target, { offset: -88 });
+      history.pushState(null, "", "#" + id);
+      if (!target.matches("a,button,input,select,textarea,[tabindex]")) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    });
+    // The full-screen menu locks the page; Lenis has to stop with it or the wheel would still move the page underneath.
+    const menuEl = $("#menu");
+    const menuWatch = new MutationObserver(() => (menuEl.hidden ? lenis.start() : lenis.stop()));
+    menuWatch.observe(menuEl, { attributes: true, attributeFilter: ["hidden"] });
+    off.push(() => { gsap.ticker.remove(lenisTick); menuWatch.disconnect(); lenis.destroy(); });
+
+
     // ---- The name (wide screens): its letters rise into place one after another, then the sentence arrives.
     // Phones keep the CSS entrance, which has already played by the time this file arrives there.
     // Split letters read badly aloud ("L e t t s"), so the heading carries its name and the letters are hidden from readers.
@@ -42,14 +67,23 @@
       // Letters are measured in the brand face, so load it first (it's preloaded; give up after 1.2s and use what's there).
       // Asking for Anton by name matters: fonts.ready can resolve before the page has even started fetching it.
       const fontsIn = document.fonts ? Promise.race([document.fonts.load('400 1em "Anton"').catch(() => {}).then(() => document.fonts.ready), new Promise(r => setTimeout(r, 1200))]) : Promise.resolve();
+      // The sentence and Book button wait under the black until the scroll below lets the film through.
+      gsap.set(".hero-foot", { opacity: 0, y: 30 });
       fontsIn.then(ctx.add(() => {
         split = SplitText.create(lines, { type: "words,chars", tag: "span", aria: "none" });
         gsap.set(split.chars, { yPercent: 115 });
         ready();
-        gsap.timeline({ delay: 0.05 })
-          .to(split.chars, { yPercent: 0, duration: SLOW, ease: "expo.out", stagger: 0.028 })
-          .from("#heroLine", { y: 16, opacity: 0, duration: STD }, 0.35);
+        gsap.to(split.chars, { yPercent: 0, duration: SLOW, ease: "expo.out", stagger: 0.028, delay: 0.05 });
       }));
+
+      // ---- The film through the letters: scrolling grows the name, the black dissolves to show the whole driveway film,
+      // then the sentence and the Book button rise. The hero holds still (pinned) for this one move only.
+      html.classList.add("hero-mask-on");
+      gsap.timeline({ defaults: { ease: "none" }, scrollTrigger: { trigger: ".hero", start: "top top", end: "+=110%", pin: true, scrub: 0.8 } })
+        .to("#heroName", { scale: 3.4, duration: 1, ease: "power1.in" }, 0)
+        .to(".hero-tag", { opacity: 0, y: -20, duration: 0.2 }, 0.05)
+        .to(".hero-mask", { opacity: 0, duration: 0.45 }, 0.45)
+        .to(".hero-foot", { opacity: 1, y: 0, duration: 0.3 }, 0.7);
     } else ready();
 
     // Groups below the fold are hidden once and revealed once. When the page re-renders (live prices arrive),
@@ -58,7 +92,7 @@
     const below = (el) => el && el.getBoundingClientRect().top > innerHeight;
     const groups = [];
     function group(trigger, targets, hidden, shown, start, onReveal) {
-      const g = { done: !below($(trigger)) };
+      const g = { done: !below($(trigger)), targets };
       if (g.done) return g;
       g.hide = () => { if (!g.done) gsap.set(targets(), hidden); };
       g.hide();
@@ -74,24 +108,30 @@
     // step, header first and torn edge last. It plays once and stays printed (no pinning, nothing scroll-jacked).
     group(".how .printer", () => [$(".how .slip")], { yPercent: 100 }, { yPercent: 0, duration: 1.2, ease: "steps(12)" }, "top 70%");
 
-    // ---- Prices: the tiles grow up from a shared floor like the bar chart they are, and the figures count up.
-    const tiles = () => $$("#pkGrid .tile");
-    const tileGroup = group("#pkGrid", tiles, { scaleY: 0, transformOrigin: "50% 100%" },
-      { scaleY: 1, duration: SLOW, ease: "power4.out", stagger: 0.08 }, "top 75%",
-      () => tiles().forEach((t, i) => {
-        const price = t.querySelector(".price"), to = amount(price.textContent);
+    // ---- Packages: each section arrives as it scrolls in. Name, price, list, button and photo rise in turn, the price
+    // counts up from $0 and the photo settles. Selectors go by id because live prices
+    // re-draw the sections.
+    const pkParts = (id) => { const pk = document.getElementById(id); return pk ? [...pk.querySelectorAll(".pk-name, .price, .after, li, .pk-cta, .pk-pic")] : []; };
+    const pkGroups = $$("#pkGrid .pk").map(pk => pk.id).map(id => [id, group("#" + id, () => pkParts(id), { opacity: 0, y: 28 },
+      { opacity: 1, y: 0, stagger: 0.06 }, "top 70%", () => {
+        const pk = document.getElementById(id);
+        if (!pk) return;
+        const price = pk.querySelector(".price"), to = amount(price.textContent);
         price.textContent = "$0";
-        gsap.delayedCall(0.15 + i * 0.08, () => countTo(price, 0, to));
-        gsap.from(t.querySelectorAll(".in > *:not(.price), .buy"), { opacity: 0, y: 14, duration: STD, delay: 0.3 + i * 0.08, stagger: 0.04 });
-      }));
-    // The vehicle switch: once the tiles have been seen, the prices roll to their new amounts instead of jumping.
+        gsap.delayedCall(0.2, () => countTo(price, 0, to));
+        gsap.from(pk.querySelectorAll(".pk-pic img"), { scale: 1.12, duration: SLOW * 1.4 });
+      })]);
+    // The vehicle switch: packages already seen roll their prices to the new amounts instead of jumping; the new sections
+    // start on the old price (no frame of the new one first). Packages not seen yet stay hidden for their entrance.
     listen(document, "lgc:prices", (e) => {
-      if (!tileGroup.done) { tileGroup.hide(); return; }
       const was = (e.detail && e.detail.was) || [];
-      // The new tiles start on the old price (no frame of the new one first), then roll.
-      tiles().forEach((t, i) => {
-        const el = t.querySelector(".price"), to = amount(el.textContent);
-        if (was[i]) { el.textContent = was[i]; countTo(el, amount(was[i]), to, STD); }
+      pkGroups.forEach(([id, g], i) => {
+        if (!g.done) { g.hide(); return; }
+        const el = document.querySelector("#" + id + " .price");
+        if (!el || !was[i]) return;
+        const to = amount(el.textContent);
+        el.textContent = was[i];
+        countTo(el, amount(was[i]), to, STD);
       });
     });
 
@@ -127,8 +167,10 @@
       off.push(() => { btn.style.translate = ""; });
     });
 
-    // Live data re-draws rows and tiles: re-hide whatever hasn't been revealed yet.
+    // Live data re-draws rows and sections: re-hide whatever hasn't been revealed yet.
     listen(document, "lgc:render", () => groups.forEach(g => g.hide()));
+    // Pieces hidden after this setup ran (re-drawn by live data) aren't part of GSAP's own undo, so if motion is switched
+    // off mid-visit, every group's pieces are put back to plain view by hand.
     // Anything that changes the page's height (the consent panel closing on phones, live prices, fonts, the reviews)
     // moves every trigger point, so re-measure once the page settles.
     let refreshT = 0;
@@ -137,9 +179,10 @@
     off.push(() => heightWatch.disconnect());
 
     return () => {
+      groups.forEach(g => gsap.set(g.targets(), { clearProps: "opacity,transform,clipPath" }));
       off.forEach(fn => fn()); if (split) split.revert();
       name.removeAttribute("aria-label"); lines.forEach(l => l.removeAttribute("aria-hidden"));
-      html.classList.remove("gsap-on", "gsap-hero");
+      html.classList.remove("gsap-on", "gsap-hero", "hero-mask-on");
     };
   });
 })();

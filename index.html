@@ -47,7 +47,7 @@
 }
 </script>
 <!-- On wide screens with motion allowed, the hero name waits (2.5s at most) for js/motion.js to raise it letter by letter. -->
-<script>if (matchMedia("(prefers-reduced-motion: no-preference) and (min-width: 901px)").matches) { document.documentElement.classList.add("motion-wait"); setTimeout(() => document.documentElement.classList.remove("motion-wait"), 2500); }</script>
+<script>if (matchMedia("(prefers-reduced-motion: no-preference) and (min-width: 901px)").matches) { const r = document.documentElement; r.classList.add("motion-wait", "hero-mask-on"); setTimeout(() => { r.classList.remove("motion-wait"); if (!r.classList.contains("gsap-on")) r.classList.remove("hero-mask-on"); }, 2500); }</script>
 <style>
 /* Direction: "the name as a monument". The business name is the headline, set across the bottom of a real
    driveway; everything else stays small and calm so the contrast holds. Brand colours and faces are kept
@@ -69,10 +69,18 @@
   --t-small:14px; --t-body:17px; --t-lead:clamp(20px,1.7vw,24px); --t-h2:clamp(40px,5vw,76px); --t-mono:clamp(76px,14.6vw,320px);
   --m:clamp(16px,2.2vw,32px); --gap:clamp(64px,6.5vw,104px); --col:24px;
   --ease:cubic-bezier(.2,.7,.2,1);
+  /* The page's own colours. A package section crossing the middle of the screen swaps these (data-package below). */
+  --page-bg:var(--bg); --page-ink:var(--ink); --page-muted:var(--muted); --page-cta:var(--accent); --page-cta-ink:var(--accent-ink);
 }
+/* One palette per package: Exterior is rinse water, Interior is leather, Full Detail is the bright showroom (all AA).
+   The background fades over 600ms but the text flips in one step at the halfway point, so dark-to-light changes never pass
+   through grey text on a grey page. */
+:root[data-package="exterior"]{--page-bg:#061823;--page-ink:#E6F7FF;--page-muted:#9FC3D4;--page-cta:#29C8FF;--page-cta-ink:#04131A}
+:root[data-package="interior"]{--page-bg:#1B120B;--page-ink:#F6E7D3;--page-muted:#CDB59A;--page-cta:#E8A86B;--page-cta-ink:#1B120B}
+:root[data-package="full"]{--page-bg:#F4F5F7;--page-ink:#07080B;--page-muted:#4A525E;--page-cta:#07080B;--page-cta-ink:#F4F5F7}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:88px;-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--page-bg);color:var(--page-ink);transition:background-color .6s linear,color .3s steps(1,end);font-family:var(--body);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased}
 [hidden]{display:none!important}
 img,video{max-width:100%;display:block}
 a{color:var(--accent)}
@@ -81,7 +89,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;line-height:.95;letter-spacing:-.005em;margin:0;text-wrap:balance}
 h2{font-size:var(--t-h2)}
 p{margin:0}
-.muted{color:var(--muted)}
+.muted{color:var(--page-muted)}
+/* Lenis (smooth wheel scrolling, js/motion.js) takes over from the browser's own smooth scrolling while it runs. */
+html.lenis{height:auto}
+html.lenis.lenis-smooth{scroll-behavior:auto!important}
+html.lenis.lenis-stopped{overflow:clip}
+/* A fine film grain over everything, so no dark section is flat. Static, so it costs nothing after the first paint. */
+body::after{content:"";position:fixed;inset:0;z-index:45;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -.4'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
+
 .sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .skip{position:fixed;left:var(--m);top:-80px;z-index:100;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:12px 18px;border-radius:999px;text-decoration:none;transition:top .2s}
 .skip:focus{top:12px}
@@ -89,8 +104,11 @@ main,footer{overflow-x:clip}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col);padding-inline:var(--m)}
 
 /* buttons: one shape (fully round), one fill */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 26px;border-radius:999px;border:0;cursor:pointer;font-weight:700;text-decoration:none;background:var(--accent);color:var(--accent-ink);transition:transform .2s var(--ease),background-color .2s}
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 26px;border-radius:999px;border:0;cursor:pointer;font-weight:700;text-decoration:none;background:var(--accent);color:var(--accent-ink);transition:transform .2s var(--ease),background-color .2s}
 .btn:hover{background:var(--accent-hover);transform:translateY(-2px)}
+/* The same strip of light crosses a button when the pointer arrives. */
+.btn::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);transform:translateX(-120%);transition:transform .7s var(--ease)} /* taste-skill-ignore: a moving highlight */
+.btn:hover::after{transform:translateX(120%)}
 .btn:active{transform:translateY(1px) scale(.98)}
 .btn:disabled{opacity:.6;cursor:progress;transform:none}
 .btn-ghost{background:var(--surface-3);color:var(--ink)}
@@ -129,12 +147,24 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
 .hero::before,.hero::after{content:"";position:absolute;left:0;right:0;pointer-events:none}
 .hero::before{top:0;height:200px;background:linear-gradient(rgba(7,8,11,.88),rgba(7,8,11,.5) 45%,rgba(7,8,11,0))} /* taste-skill-ignore: neutral scrim under the bar on the film */
 .hero::after{bottom:0;height:48%;background:linear-gradient(rgba(7,8,11,0),rgba(7,8,11,.88) 70%)} /* taste-skill-ignore: neutral scrim under the name on the film */
-.hero-foot{position:relative;z-index:1;padding:0 var(--m) 30px}
+.hero-foot{position:relative;z-index:1;padding:0 var(--m);display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 32px;margin-bottom:clamp(12px,1.4vw,22px)}
+.hero-mask{position:relative;z-index:1;padding:0 var(--m) 30px}
+/* The hero's own Book button only appears after the film reveal (wide screens); elsewhere the header's Book button is always in view. */
+.hero-cta{flex:none;display:none}
+.hero-mask-on .hero-cta{display:inline-flex}
+.hero-tag{display:none}
+.hero-mask-on .hero-tag{display:block;position:absolute;left:0;right:0;bottom:14svh;z-index:3;text-align:center;font-size:var(--t-lead);font-weight:600;color:#fff}
+/* Wide screens with motion: the name starts as a window cut out of black, with the film playing inside the letters
+   (white text multiplied over the film shows the film; black hides it). js/motion.js grows it away on scroll. */
+.hero-mask-on .hero{isolation:isolate}
+.hero-mask-on .hero-mask{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;padding:0;background:#000;color:#fff;mix-blend-mode:multiply}
+.hero-mask-on .hero-mask h1{text-align:center;font-size:clamp(80px,13.6vw,320px)}
+.hero-mask-on .hero-media,.hero-mask-on .hero-dim,.hero-mask-on .hero-foot{animation:none}
 .hero-dim{position:absolute;inset:0;background:var(--bg);opacity:0;pointer-events:none}
 /* The foam canvas (js/bubbles.js) floats over the film and under the name; it fades in once it has drawn. */
 .foam{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .9s var(--ease)}
 .foam.on{opacity:1}
-.hero-line{max-width:44ch;font-size:clamp(18px,1.4vw,20px);font-weight:500;line-height:1.45;margin-bottom:clamp(12px,1.4vw,22px)}
+.hero-line{max-width:44ch;font-size:clamp(18px,1.4vw,20px);font-weight:500;line-height:1.45;margin:0}
 .hero h1{font-size:var(--t-mono);line-height:.8;letter-spacing:-.01em;white-space:nowrap;margin:0 -.02em}
 .hero h1 .line{display:inline-block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em;vertical-align:bottom}
 .hero h1 [data-line]{display:inline-block}
@@ -144,9 +174,9 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
   .js .hero-media video{animation:settle 1.6s var(--ease) both}
 }
 /* js/motion.js owns these entrances once it runs, so the CSS versions stand down (and play as before if it can't load). */
-.motion-wait #heroName,.motion-wait #heroLine{visibility:hidden}
+.motion-wait #heroName,.motion-wait .hero-foot{visibility:hidden}
 html.gsap-hero .hero h1 [data-line],html.gsap-hero .hero [data-load]{animation:none;transform:none;opacity:1}
-html.gsap-on .slip.reveal,html.gsap-on .tile.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{opacity:1;transform:none;transition:none}
+html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{opacity:1;transform:none;transition:none}
 @keyframes line-up{to{transform:none}}
 @keyframes load-rise{to{opacity:1;transform:none}}
 @keyframes settle{from{transform:scale(1.06)}}
@@ -183,11 +213,14 @@ html.gsap-on .slip.reveal,html.gsap-on .tile.reveal,html.gsap-on #rates.reveal,h
 .slip .row.end .dots{color:#5D6572}
 .slip .row.end .val{color:var(--paper)}
 
-/* pricing: plans that step up, plus the one live control (vehicle size) */
-.prices{padding-block:0 var(--gap)}
-.tiles{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto 1fr;gap:8px;align-items:end}
-.tiles-head{grid-column:1/3;grid-row:1;align-self:start;display:grid;gap:22px;padding-bottom:28px}
-.tiles-head p{max-width:46ch}
+/* pricing: the vehicle switch, then one full-screen section per package, each in its own colours */
+.prices{padding-block:var(--gap) 0}
+.pk-head{display:grid;gap:22px;padding-bottom:clamp(24px,4vw,56px)}
+.pk-head h2{grid-column:1/8;grid-row:1}
+.pk-head #pkgNote{grid-column:1/7;grid-row:2;max-width:46ch}
+.pk-head .deal{grid-column:8/13;grid-row:1;align-self:end}
+.pk-head fieldset{grid-column:8/13;grid-row:2;justify-self:end}
+.pk-head .deal{justify-self:start;display:inline-flex;gap:10px;align-items:center;padding:8px 16px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:var(--t-small)}
 .sizes{display:flex;flex-wrap:wrap;gap:8px;border:0;margin:0;padding:0}
 .sizes legend{font-weight:700;margin-bottom:10px;padding:0}
 .sizes label{position:relative}
@@ -197,25 +230,23 @@ html.gsap-on .slip.reveal,html.gsap-on .tile.reveal,html.gsap-on #rates.reveal,h
 .sizes input:checked+span{background:var(--ink);color:var(--paper-ink)}
 .sizes input:checked+span small{color:var(--paper-muted)}
 .sizes input:focus-visible+span{outline:3px solid var(--accent);outline-offset:3px}
-.tile{display:flex;flex-direction:column;border-radius:4px;overflow:hidden;background:var(--surface-2)}
-.tile:nth-child(2){grid-row:2;min-height:360px}
-.tile:nth-child(3){grid-row:2;min-height:480px;background:var(--surface-3)}
-.tile:nth-child(4){grid-row:1/3;min-height:600px;background:var(--accent);color:var(--accent-ink)}
-.tile .in{padding:28px;display:grid;gap:6px;align-content:start;flex:1}
-.tile h3{font-family:var(--body);text-transform:none;font-weight:800;font-size:var(--t-lead);letter-spacing:0;line-height:1.2}
-.tile .price{font-family:var(--display);font-size:var(--t-h2);line-height:1;margin-top:6px}
-.tile .after{font-size:var(--t-small);font-weight:600;color:var(--muted)}
-.tile:nth-child(4) .after{color:var(--accent-ink)}
-.tile ul{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:6px}
-.tile li{font-size:var(--t-body)}
-.tile .buy{display:flex;align-items:center;justify-content:space-between;min-height:64px;padding:0 28px;background:#0E1116;color:var(--ink);font-weight:700;text-decoration:none;transition:background-color .2s}
-.tile:nth-child(3) .buy{background:#161A21}
-.tile:nth-child(4) .buy{background:var(--accent-deep);color:var(--accent-ink)}
-.tile .buy:hover{background:var(--paper-ink)}
-.tile:nth-child(4) .buy:hover{background:#178BB8}
-.tile .buy::after{content:"";width:9px;height:9px;border-top:2.5px solid currentColor;border-right:2.5px solid currentColor;transform:rotate(45deg);margin-right:4px;transition:transform .2s var(--ease)}
-.tile .buy:hover::after{transform:translateX(4px) rotate(45deg)}
-.prices-note{grid-column:1/-1;margin-top:20px;color:var(--muted);font-size:var(--t-small)}
+.pk{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col);align-items:center;min-height:100svh;padding:clamp(48px,6vw,96px) var(--m)}
+.pk-copy{grid-column:1/6;display:grid;gap:10px;align-content:center}
+.pk-name{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:clamp(60px,9vw,150px);line-height:.86;letter-spacing:-.005em;margin:0}
+.pk .price{font-family:var(--display);font-size:var(--t-h2);line-height:1;margin-top:10px}
+.pk .after{font-weight:600;color:var(--page-muted)}
+.pk ul{list-style:none;margin:14px 0 4px;padding:0;display:grid;gap:8px}
+.pk li{font-size:var(--t-lead);line-height:1.35}
+.pk-cta{justify-self:start;margin-top:12px;background:var(--page-cta);color:var(--page-cta-ink)}
+.pk-cta:hover{background:var(--page-cta);filter:brightness(1.12)}
+/* Photos are sized by the screen's height so a whole package (words and picture) fits on one screen. */
+.pk-pic{grid-column:7/13;justify-self:end;margin:0;position:relative}
+.pk-pic img{height:min(74svh,680px);width:auto;max-width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:4px}
+.pk:nth-child(even) .pk-copy{grid-column:8/13;order:2}
+.pk:nth-child(even) .pk-pic{grid-column:1/7;justify-self:start}
+/* The Full Detail shows both halves of the job: the outside large, the inside tucked over its corner. */
+.pk-pic img+img{position:absolute;width:46%;left:-12%;bottom:-8%;border:6px solid var(--page-bg)}
+.prices-note{padding:0 var(--m) var(--gap);color:var(--page-muted);font-size:var(--t-small)}
 
 /* services: statement, rates pushed right */
 .services{padding-block:var(--gap);row-gap:0}
@@ -247,6 +278,9 @@ a.rate:hover{background:var(--surface);padding-inline:12px}
 .play{position:absolute;inset:0;z-index:2;display:grid;place-items:center;border:0;background:transparent;cursor:pointer}
 .play span{width:64px;height:64px;border-radius:50%;background:var(--paper);color:var(--paper-ink);display:grid;place-items:center;transition:transform .25s var(--ease)}
 .play:hover span,.play:focus-visible span{transform:scale(1.12)}
+/* While a reel plays itself (muted), its button moves to the corner so the picture shows: sound on, or watch from the start. */
+.play.live{place-items:end end;padding:16px}
+.play.live span{width:52px;height:52px}
 .band-cap{padding:16px var(--m) 0;font-size:var(--t-body)}
 @media (hover:hover) and (min-width:901px){.panel:hover{flex-grow:6}}
 
@@ -279,6 +313,29 @@ form{display:grid;gap:44px}
 .req-note{font-size:var(--t-small);color:var(--muted);margin-top:-36px}
 .sub-h{font-weight:700;margin-top:6px}
 .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.done-mama{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.done-mama img{width:88px;height:88px;border-radius:50%;flex:none}
+.done-mama p{font-weight:800;font-size:var(--t-lead);line-height:1.25}
+/* Package builder: the chosen package lights up the part of the car it cleans, with what's included and the live price. */
+.builder{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;margin-top:12px;padding:20px;border-radius:4px;background:var(--surface-2)}
+.builder svg{width:100%;height:auto;overflow:visible}
+.builder .shell{fill:var(--surface-3);transition:fill .5s var(--ease)}
+.builder .glass{fill:#0E1116;transition:fill .5s var(--ease)}
+.builder .seat{fill:#2B323D;transition:fill .5s var(--ease)}
+.builder .tyre{fill:#05060A}.builder .rim{fill:#5E6875}
+.builder .shine{fill:#fff;opacity:0}
+.builder[data-look="exterior"] .shell,.builder[data-look="full"] .shell{fill:var(--accent)}
+.builder[data-look="interior"] .glass,.builder[data-look="full"] .glass{fill:#3A2717}
+.builder[data-look="interior"] .seat,.builder[data-look="full"] .seat{fill:#E8A86B}
+.builder[data-look="exterior"] .shine,.builder[data-look="full"] .shine{animation:shine 2.4s var(--ease) infinite}
+@keyframes shine{0%{opacity:0;transform:translateX(-60px)}25%{opacity:.55}60%,100%{opacity:0;transform:translateX(300px)}}
+.build-copy{display:grid;gap:6px}
+.build-copy b{font-size:var(--t-lead);font-weight:800;line-height:1.2}
+.build-copy .price{font-family:var(--display);font-size:var(--t-h2);line-height:1}
+.build-copy ul{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px;font-size:var(--t-small)}
+.build-copy li::before{content:"";display:inline-block;width:8px;height:8px;margin-right:10px;border-radius:50%;background:var(--accent)}
+.build-copy .fine{color:var(--muted);font-size:var(--t-small)}
+@media (max-width:600px){.builder{grid-template-columns:1fr}}
 .choice{position:relative;display:block}
 .choice input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
 .choice .face{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:4px;background:var(--surface-2);height:100%;outline:2px solid transparent;outline-offset:-2px;transition:background-color .2s,outline-color .2s}
@@ -412,6 +469,8 @@ form{display:grid;gap:44px}
 /* footer: invitation over the cropped name, in the inverse colours */
 footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:relative;min-height:100svh;display:flex;flex-direction:column}
 .foot-top{padding-top:clamp(64px,9vw,120px)}
+.signoff{display:flex;align-items:center;gap:12px;margin-top:24px;font-weight:700}
+.signoff img{width:56px;height:56px;border-radius:50%}
 .foot-top h2{grid-column:1/8}
 .foot-top .btn-dark{margin-top:28px}
 .foot-links{grid-column:10/13;display:grid;gap:10px;align-content:start}
@@ -462,9 +521,12 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   .how .printer{margin-top:40px;max-width:none}
   .how .slip{padding-inline:22px}
   .slip .row.end{margin-inline:-22px;padding-inline:22px}
-  .tiles{grid-template-columns:1fr;grid-template-rows:none}
-  .tiles-head,.tile:nth-child(n){grid-column:1;grid-row:auto;min-height:0}
-  .tile .buy{font-size:var(--t-lead)}
+  .pk-head h2,.pk-head #pkgNote,.pk-head .deal,.pk-head fieldset{grid-column:1/-1;grid-row:auto;justify-self:start}
+  .pk{grid-template-columns:1fr;min-height:0;row-gap:32px;padding-block:72px}
+  .pk-copy,.pk:nth-child(even) .pk-copy,.pk-pic,.pk:nth-child(even) .pk-pic{grid-column:1;order:0;justify-self:stretch;width:100%}
+  .pk-pic{max-width:520px}
+  .pk-pic img{height:auto;width:100%}
+  .pk-pic img+img{left:auto;right:-4%;width:42%}
   .services h2{text-indent:0;margin-bottom:48px}
   .rates{grid-column:1/-1;grid-row:2}
   .rate{grid-template-columns:minmax(0,1fr) auto}
@@ -561,6 +623,10 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     <div class="hero-dim" aria-hidden="true"></div>
     <div class="hero-foot">
       <p class="hero-line" id="heroLine" data-load style="--d:520ms">Dirty car? Not for long. Hand wash and interior detailing, done in your Orange County driveway.</p>
+      <a class="btn hero-cta" href="#book" data-load style="--d:620ms">Book now</a>
+    </div>
+    <p class="hero-tag" aria-hidden="true">Mobile car detailing in your Orange County driveway</p>
+    <div class="hero-mask">
       <h1 id="heroName"><span class="line"><span data-line style="--i:0">Letts</span></span> <span class="line"><span data-line style="--i:1">Get Clean</span></span></h1>
     </div>
   </section>
@@ -572,15 +638,15 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     </div>
     <div class="printer">
     <div class="slip reveal" style="--d:160ms" role="group" aria-label="What happens, step by step">
-      <h3>Online</h3>
+      <h3>1 · Book</h3>
       <div class="row"><span class="what">Pick what we clean</span><span class="dots" aria-hidden="true"></span><span class="val">car, bike, cans, house</span></div>
       <div class="row"><span class="what">See your exact price</span><span class="dots" aria-hidden="true"></span><span class="val">before you book</span></div>
       <div class="row"><span class="what">Pick an open time</span><span class="dots" aria-hidden="true"></span><span class="val">about a minute</span></div>
-      <h3>Before the day</h3>
+      <h3>2 · We come to you</h3>
       <div class="row"><span class="what">Andrew texts to confirm</span><span class="dots" aria-hidden="true"></span><span class="val">by text</span></div>
       <div class="row"><span class="what">Dropping it off instead</span><span class="dots" aria-hidden="true"></span><span class="val">address by text</span></div>
-      <h3>On the day</h3>
       <div class="row"><span class="what">Outlet and hose ready</span><span class="dots" aria-hidden="true"></span><span class="val">you</span></div>
+      <h3>3 · Shine</h3>
       <div class="row"><span class="what">Foam bath, hand wash, wheels</span><span class="dots" aria-hidden="true"></span><span class="val">outside</span></div>
       <div class="row"><span class="what">Vacuum, wipe-down, mats</span><span class="dots" aria-hidden="true"></span><span class="val">inside</span></div>
       <div class="row end"><span class="what">Pay after the job</span><span class="dots" aria-hidden="true"></span><span class="val">cash, Cash App, Venmo</span></div>
@@ -588,14 +654,14 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     </div>
   </section>
 
-  <section class="prices grid" id="packages" aria-labelledby="pkgH">
-    <div class="tiles" id="pkGrid">
-      <div class="tiles-head">
-        <h2 class="reveal" id="pkgH">Pick your package</h2>
-        <p class="reveal muted" style="--d:80ms" id="pkgNote"></p>
-        <fieldset class="sizes reveal" style="--d:140ms" id="sizeSwitch"><legend>Your vehicle</legend></fieldset>
-      </div>
+  <section class="prices" id="packages" aria-labelledby="pkgH">
+    <div class="pk-head grid">
+      <h2 class="reveal" id="pkgH">Pick your package</h2>
+      <p class="deal reveal" id="dealBadge" hidden></p>
+      <p class="reveal muted" style="--d:80ms" id="pkgNote"></p>
+      <fieldset class="sizes reveal" style="--d:140ms" id="sizeSwitch"><legend>Your vehicle</legend></fieldset>
     </div>
+    <div id="pkGrid"></div>
     <p class="prices-note" id="pkExtras"></p>
   </section>
 
@@ -618,7 +684,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     <h2 class="reveal" id="resH">Real cars, real driveways</h2>
     <div class="band reveal" style="--d:80ms">
       <figure class="panel has-title" style="--g:5;margin:0">
-        <video src="media/reel_web.mp4" poster="media/reel_poster.webp" playsinline preload="none" aria-label="Hyundai Sonata before and after video"><track kind="captions" src="media/reel_web.vtt" srclang="en" label="English"></video>
+        <video src="media/reel_web.mp4" poster="media/reel_poster.webp" playsinline preload="none" data-sound aria-label="Hyundai Sonata before and after video"><track kind="captions" src="media/reel_web.vtt" srclang="en" label="English"></video>
         <figcaption><p class="title">Hyundai Sonata</p><p class="sub">The reveal · 0:28</p></figcaption>
         <button class="play" type="button" aria-label="Play the Hyundai Sonata video"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
       </figure>
@@ -658,6 +724,19 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
             <div class="choices" id="svcChoices" role="radiogroup" aria-label="What are we cleaning"></div>
             <p class="sub-h" id="pkHead">Package</p>
             <div class="choices" id="pkChoices"></div>
+            <div class="builder" id="pkBuild" hidden>
+              <svg viewBox="0 0 400 160" aria-hidden="true" focusable="false">
+                <defs><clipPath id="bodyClip"><path d="M18 118c0-16 12-24 34-27l58-6c20-22 50-38 96-40h52c32 2 58 18 80 38l26 4c16 3 26 12 26 26v8c0 5-3 7-8 7H24c-4 0-6-3-6-7z"/></clipPath></defs>
+                <path class="shell" d="M18 118c0-16 12-24 34-27l58-6c20-22 50-38 96-40h52c32 2 58 18 80 38l26 4c16 3 26 12 26 26v8c0 5-3 7-8 7H24c-4 0-6-3-6-7z"/>
+                <path class="glass" d="M124 84c18-18 44-30 82-31h50c26 1 46 13 62 29z"/>
+                <rect class="seat" x="168" y="58" width="26" height="30" rx="8"/>
+                <rect class="seat" x="246" y="58" width="26" height="30" rx="8"/>
+                <g clip-path="url(#bodyClip)"><rect class="shine" x="0" y="20" width="40" height="140" transform="skewX(-20)"/></g>
+                <circle class="tyre" cx="96" cy="128" r="25"/><circle class="rim" cx="96" cy="128" r="11"/>
+                <circle class="tyre" cx="312" cy="128" r="25"/><circle class="rim" cx="312" cy="128" r="11"/>
+              </svg>
+              <div class="build-copy" id="buildCopy"></div>
+            </div>
             <p class="note" id="houseNote" hidden>A house wash takes the whole day, so only days with nothing else booked can be picked. That day is yours.</p>
           </div>
           <div class="step" id="st2"><h3>Vehicle and extras</h3>
@@ -685,6 +764,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
               <div class="field"><label for="fName">Name <span class="req" aria-hidden="true">*</span></label><input id="fName" autocomplete="name" required></div>
               <div class="field"><label for="fPhone">Phone <span class="req" aria-hidden="true">*</span></label><input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" required aria-describedby="smsNote"><p class="hint" id="smsNote">Andrew texts this number about your booking only. Msg and data rates may apply. Text STOP any time and he'll stop.</p></div>
             </div>
+            <div class="field"><label for="fEmail">Email <small>(optional)</small></label><input id="fEmail" type="email" inputmode="email" autocomplete="email" maxlength="120" aria-describedby="emailNote"><p class="hint" id="emailNote">Andrew uses it only to reach you about this booking. It never goes on a mailing list.</p></div>
             <div class="row2" id="addrRow">
               <div class="field"><label for="fAddr">Street address <span class="req" aria-hidden="true">*</span></label><input id="fAddr" autocomplete="street-address" required></div>
               <div class="field"><label for="fTown">Town <span class="req" aria-hidden="true">*</span></label><input id="fTown" autocomplete="address-level2" list="townList" placeholder="Newburgh, Middletown, Goshen…" required><datalist id="townList"></datalist></div>
@@ -788,6 +868,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       <h2>Ready for a clean car?</h2>
       <p style="margin-top:14px;font-weight:600" id="ctaLine">Book online in a minute, or call or text Andrew.</p>
       <a class="btn btn-dark" href="#book">Book now</a>
+      <p class="signoff"><img src="media/mascot-160.webp" width="56" height="56" loading="lazy" alt=""> Mama Letts approved. See you in the driveway.</p>
     </div>
     <div class="foot-links" id="socials">
       <a data-tel data-phone href="tel:+18452829387">(845) 282-9387</a>
@@ -1027,33 +1108,60 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     return promo;
   }
 
-  // The three packages step up in height like a bar chart, so the biggest one is literally the biggest. The vehicle
-  // switch above them is the page's one live control: it re-prices every tile and carries the choice into the booking form.
+  // One full-screen section per package, each repainting the page in its own colours as it crosses the middle of the
+  // screen (watchPackageColours). The vehicle switch above them re-prices all three and carries into the booking form.
+  const PK_LOOK = ["exterior", "interior", "full"];
+  const PK_PICS = {
+    exterior: [["media/ext_after.webp", "The white Hyundai Sonata after an exterior detail, washed and shining"]],
+    interior: [["media/int_after.webp", "The Sonata's front seats and console after an interior detail"]],
+    full: [["media/ext_after.webp", "The Sonata's outside after the Full Detail"], ["media/int_after.webp", "The Sonata's inside after the Full Detail"]]
+  };
   function renderPackages() {
     const st = S.settings, deal = dealOn(), g = $("pkGrid");
     if (!st.sizes.some(s => s.id === sel.size)) sel.size = st.sizes[0].id;
     const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
     $("sizeSwitch").replaceChildren(h("legend", {}, "Your vehicle"), ...st.sizes.map(s => h("label", {},
       h("input", { type: "radio", name: "sizeSwitch", value: s.id, checked: s.id === size.id, onchange: () => {
-        const was = [...g.querySelectorAll(".tile .price")].map(p => p.textContent);
+        const was = [...g.querySelectorAll(".pk .price")].map(p => p.textContent);
         sel.size = s.id; renderPackages(); renderChoices(); renderSummary();
         document.dispatchEvent(new CustomEvent("lgc:prices", { detail: { was } }));
       } }),
       h("span", {}, s.label, s.price ? h("small", {}, "+" + money(s.price)) : null))));
-    g.querySelectorAll(".tile").forEach(t => t.remove());
-    st.packages.forEach((p, i) => {
+    // The badge counts whole days to the real end date, because the prices really do go up after it.
+    const days = deal ? Math.ceil((dealEnd() - new Date()) / 864e5) : 0, badge = $("dealBadge");
+    badge.hidden = !deal;
+    if (deal) badge.textContent = "Launch deal ends " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + " · " + (days <= 1 ? "last day" : days + " days left");
+    g.replaceChildren(...st.packages.map((p, i) => {
       const now = priceOf(p) + (size.price || 0), later = p.regular + (size.price || 0), save = later - now;
-      g.append(h("article", { class: "tile " + reveal(), style: "--d:" + (i * 80) + "ms" },
-        h("div", { class: "in" },
-          h("h3", {}, p.name),
+      const look = PK_LOOK[i] || "exterior";
+      return h("article", { class: "pk", id: "pk-" + p.id, "data-package": look, "aria-labelledby": "pkh-" + p.id },
+        h("div", { class: "pk-copy" },
+          h("h3", { class: "pk-name", id: "pkh-" + p.id }, p.name),
           h("p", { class: "price" }, money(now)),
           // A launch price only shows its later price because that is the price it truly goes to after the end date.
           deal && save > 0 ? h("p", { class: "after" }, money(later) + " after " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + (i === st.packages.length - 1 ? ", so you save " + money(save) : "")) : null,
-          h("ul", {}, p.items.map(t => h("li", {}, t)))),
-        h("a", { class: "buy", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)));
-    });
+          h("ul", {}, p.items.map(t => h("li", {}, t))),
+          h("a", { class: "btn pk-cta", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)),
+        h("figure", { class: "pk-pic" }, ...PK_PICS[look].map(([src, alt]) => h("img", { src, alt, width: "900", height: "1125", loading: "lazy", decoding: "async" }))));
+    }));
     $("pkExtras").textContent = (st.addons.length ? "Extras from " + money(Math.min(...st.addons.map(a => a.price))) + " are added in your quote, only if you pick them. " : "") + "No deposit: you pay after the job.";
     observeReveals();
+    watchPackageColours();
+  }
+
+  // As a package section crosses the middle of the screen the whole page takes its colours (body transitions them over
+  // 600ms); any other section crossing the middle puts the page's own colours back.
+  let colourIO = null;
+  function watchPackageColours() {
+    if (!("IntersectionObserver" in window)) return;
+    const root = document.documentElement;
+    colourIO = colourIO || new IntersectionObserver((ents) => ents.forEach(en => {
+      if (!en.isIntersecting) return;
+      if (en.target.dataset.package) root.dataset.package = en.target.dataset.package;
+      else delete root.dataset.package;
+    }), { rootMargin: "-50% 0px -50% 0px" });
+    colourIO.disconnect();
+    document.querySelectorAll("main > section:not(#packages), footer, .pk-head, .pk, #pkExtras").forEach(el => colourIO.observe(el));
   }
 
   function minPrice() { const st = S.settings; return Math.min(...st.packages.map(priceOf), st.bike.price); }
@@ -1325,7 +1433,25 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     const drop = sel.loc === "dropoff";
     return !!v("fName") && digits10(v("fPhone")).length === 10 && (drop || (!!v("fAddr") && !!v("fTown") && $("fHook").checked));
   }
+  // The package builder: lights up the part of the car the chosen package cleans and shows what's in it and the live
+  // price (launch deal and vehicle size included). Cars only; the other services have nothing to configure.
+  function renderBuilder() {
+    const st = S.settings, box = $("pkBuild"), on = sel.service === "car";
+    box.hidden = !on;
+    if (!on) return;
+    const i = st.packages.findIndex(p => p.id === sel.pkg), p = st.packages[i] || st.packages[0];
+    const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0], extra = size.price || 0;
+    const now = priceOf(p) + extra, later = p.regular + extra;
+    box.dataset.look = PK_LOOK[i] || "exterior";
+    $("buildCopy").replaceChildren(
+      h("b", {}, p.name),
+      h("p", { class: "price" }, money(now)),
+      dealOn() && later > now ? h("p", { class: "fine" }, money(later) + " after " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + (extra ? " · " + size.label : "")) : null,
+      h("ul", {}, p.items.map(t => h("li", {}, t))),
+      h("p", { class: "fine" }, "No deposit. You pay after the job."));
+  }
   function renderSummary() {
+    renderBuilder();
     const q = quote();
     $("sumPkg").textContent = q.svc === "house" ? "House wash" : q.name;
     $("sumLines").replaceChildren(...q.lines.map(([a, b]) => h("div", { class: "line" + (b.startsWith("−") ? " save" : "") }, h("span", {}, a), h("span", {}, b))));
@@ -1350,6 +1476,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     if (!sel.date || !sel.time) { problems.push("pick a day and time"); first = "st3"; }
     need(!!v("fName"), "fName", "add your name");
     need(digits10(v("fPhone")).length === 10, "fPhone", "add a 10-digit phone number");
+    need(!v("fEmail") || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("fEmail")), "fEmail", "check your email address");
     if (!drop) { need(!!v("fAddr"), "fAddr", "add your street address"); need(!!v("fTown"), "fTown", "add your town"); }
     $("agreeRow").classList.toggle("bad", !$("fAgree").checked);
     if (!$("fAgree").checked) { problems.push("tick the box to agree to the terms"); first = first || "fAgree"; }
@@ -1389,7 +1516,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       withDiscount(booking, q.split ? q.split[0] : 0); withDiscount(second, q.split ? q.split[1] : 0);
       rows.push(second);
     }
-    rows.forEach(r => { r.terms_version = TERMS_VERSION; });
+    rows.forEach(r => { r.terms_version = TERMS_VERSION; if (v("fEmail")) r.email = v("fEmail").slice(0, 120); });
     const btn = $("bookBtn"); btn.disabled = true; btn.textContent = "Booking…";
     let result = "fail";
     if ($("hp1").value) result = "ok"; // spam trap: pretend it worked
@@ -1400,10 +1527,15 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
         let r = await send();
         // Before the privacy migration is live the terms column doesn't exist yet: save the booking without it rather than lose it.
         if (r.status === 400 && /terms_version/.test(await r.clone().text())) { rows.forEach(x => { delete x.terms_version; }); r = await send(); }
-        result = r.status === 409 ? "taken" : r.ok ? "ok" : "fail";
+        // Same for the email column, until that update is live.
+        if (r.status === 400 && /'email'|"email"|email column/.test(await r.clone().text())) { rows.forEach(x => { delete x.email; }); r = await send(); }
+        result = r.status === 409 ? "taken" : r.ok ? "ok" : (r.status === 400 && /booked a lot today/.test(await r.clone().text())) ? "limit" : "fail";
       } catch (e) { result = "fail"; }
     }
     btn.disabled = false; renderSummary();
+    if (result === "limit") {
+      err.textContent = "This phone number already has 4 bookings today. To book more, call or text Andrew at " + S.settings.phone + "."; err.hidden = false; return;
+    }
     if (result === "taken") {
       // For a house wash the whole day is gone; for anything else, at least that time (or a house wash took the day).
       // With two cars either slot could be the one that went, so just reload what's open.
@@ -1416,7 +1548,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       if (house) S.busyDays.add(sel.date);
       renderNext();
     }
-    store(SAVED_KEY, C.prefs && $("fRemember").checked ? { name: v("fName"), phone: fmtPhone(v("fPhone")), addr: v("fAddr"), town: v("fTown"), car: v("fCar") } : null);
+    store(SAVED_KEY, C.prefs && $("fRemember").checked ? { name: v("fName"), phone: fmtPhone(v("fPhone")), email: v("fEmail"), addr: v("fAddr"), town: v("fTown"), car: v("fCar") } : null);
     showDone(booking, q, result === "ok");
   }
 
@@ -1471,6 +1603,8 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       } catch (e) { toast("Couldn't make the calendar file on this device."); }
     } }, icon(ICON.cal, "currentColor", 18), "Add to calendar");
     const card = h("div", { class: "done-card slip" },
+      h("div", { class: "done-mama" }, h("img", { src: "media/mascot-160.webp", width: "88", height: "88", alt: "" }),
+        h("p", {}, saved ? "Mama Letts approved. See you soon!" : "Mama Letts needs one more step from you:")),
       h("span", { class: "big-check" }, icon(ICON.check, "#04131A", 32, 3)),
       h("h3", {}, (saved ? "Booked: " : "Almost booked: ") + when),
       h("div", { class: "recap" },
@@ -1519,7 +1653,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   function restoreContact() {
     if (!C.prefs) return;
     const c = load(SAVED_KEY); if (!c) return;
-    [["fName", c.name], ["fPhone", c.phone], ["fAddr", c.addr], ["fTown", c.town], ["fCar", c.car]].forEach(([id, val]) => { if (val && !$(id).value) $(id).value = String(val).slice(0, 150); });
+    [["fName", c.name], ["fPhone", c.phone], ["fEmail", c.email], ["fAddr", c.addr], ["fTown", c.town], ["fCar", c.car]].forEach(([id, val]) => { if (val && !$(id).value) $(id).value = String(val).slice(0, 150); });
   }
 
   // ---------- reviews ----------
@@ -1609,6 +1743,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       ["What if it rains?", "If rain or freezing temps are in the forecast for an outside detail, Andrew will text you to pick a new time."],
       ["How do I change or cancel?", "Call or text Andrew at " + st.phone + ". The sooner the better, so someone else can take the spot."],
       ["When are you available?", hoursLine() + ". Pick any open time in the booking calendar above."],
+      ["How long does a detail take?", "Each car booking holds a two-hour slot. Two cars get two slots back to back, and a house pressure wash takes the whole day."],
       ["What areas do you cover?", "Orange County, NY, including " + TOWNS.join(", ") + " and nearby towns. Not sure if you're in range? Just text."],
       ["Can kids book?", "Customers of any age are welcome. If you're under 13, a parent or guardian needs to book for you."]
     ];
@@ -1726,13 +1861,38 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 
   document.querySelectorAll("[data-copy-phone]").forEach(b => b.addEventListener("click", () => copyText(S.settings.phone, "Number copied")));
   document.querySelectorAll("[data-service]").forEach(a => a.addEventListener("click", () => setService(a.dataset.service)));
-  // Only one reel plays at a time, so their soundtracks never talk over each other.
+  // Only one reel plays with sound at a time, so their soundtracks never talk over each other.
   const reels = [...document.querySelectorAll("#results video")];
-  reels.forEach(v => v.addEventListener("play", () => reels.forEach(o => { if (o !== v) o.pause(); })));
+  reels.forEach(v => v.addEventListener("play", () => { if (!v.muted) reels.forEach(o => { if (o !== v && !o.muted) o.pause(); }); }));
   document.querySelectorAll("#results .play").forEach(b => b.addEventListener("click", () => {
     const vid = b.parentElement.querySelector("video");
-    b.hidden = true; vid.controls = true; vid.preload = "auto"; vid.play().catch(() => {}); vid.focus({ preventScroll: true });
+    // Tapping takes over: from the start, with sound and the player's own controls (including pause).
+    b.hidden = true; vid.muted = false; vid.loop = false; vid.currentTime = 0;
+    vid.controls = true; vid.preload = "auto"; vid.play().catch(() => {}); vid.focus({ preventScroll: true });
   }));
+  // With motion allowed and no data saver or slow connection, each reel plays muted while it's on screen and stops when
+  // it leaves. Its button then offers sound (the Sonata) or a start-over with controls, which also gives a way to pause.
+  const conn = navigator.connection || {};
+  if (!reduceMotion && !conn.saveData && !/2g|3g/.test(conn.effectiveType || "") && "IntersectionObserver" in window) {
+    const reelIO = new IntersectionObserver((ents) => ents.forEach(en => {
+      const v = en.target;
+      if (v.controls) return;
+      if (en.isIntersecting) { v.muted = true; v.loop = true; v.preload = "auto"; v.play().catch(() => {}); }
+      else v.pause();
+    }), { threshold: 0.4 });
+    reels.forEach(v => {
+      reelIO.observe(v);
+      const b = v.parentElement.querySelector(".play"), name = b.getAttribute("aria-label").replace(/^Play the /, "");
+      b.classList.add("live");
+      if (v.hasAttribute("data-sound")) {
+        b.setAttribute("aria-label", "Sound on, from the start: " + name);
+        b.querySelector("path").setAttribute("d", "M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12");
+        b.querySelector("path").setAttribute("fill", "none");
+        b.querySelector("path").setAttribute("stroke", "currentColor");
+        b.querySelector("path").setAttribute("stroke-width", "2");
+      } else b.setAttribute("aria-label", "Watch from the start, with controls: " + name);
+    });
+  }
   $("bookBtn").addEventListener("click", submitBooking);
   $("bookForm").addEventListener("submit", (e) => { e.preventDefault(); submitBooking(); });
   $("bookForm").addEventListener("input", (e) => { if (e.target.getAttribute("aria-invalid") === "true") markInvalid(e.target.id, false); renderSummary(); });
@@ -1778,10 +1938,10 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 })();
 </script>
 <script>
-// Motion (js/motion.js on GSAP) loads only when the device allows motion: at once on wide screens, where it raises the
+// Motion (js/motion.js on GSAP and Lenis) loads only when the device allows motion: at once on wide screens, where it raises the
 // hero name, and after the page has loaded on phones, so it never competes with the hero photo for a slow connection.
 if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
-  const loadMotion = () => ["vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/SplitText.min.js", "js/motion.js"]
+  const loadMotion = () => ["vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/SplitText.min.js", "vendor/lenis.min.js", "js/motion.js"]
     .forEach(src => document.body.append(Object.assign(document.createElement("script"), { src, async: false })));
   if (matchMedia("(min-width: 901px)").matches || document.readyState === "complete") loadMotion();
   else addEventListener("load", loadMotion, { once: true });

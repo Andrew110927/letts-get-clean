@@ -1,7 +1,8 @@
-// Foam over the hero film: soap bubbles drift up the driveway, lean away from the pointer and pop when clicked.
+// Foam over the hero film: soap bubbles drift up the driveway, lean away from the pointer and pop when clicked, around one
+// big water droplet that bends the film behind it like a lens, follows the pointer and pops into foam when clicked.
 // Three.js r172 from vendor/. js/motion.js loads this only on wide screens with motion allowed and data saver off,
 // and it sleeps whenever the hero is off screen or the tab is hidden. Purely decorative: hidden from screen readers.
-import { WebGLRenderer, Scene, PerspectiveCamera, IcosahedronGeometry, ShaderMaterial, InstancedMesh, InstancedBufferAttribute, Object3D, Vector3, DynamicDrawUsage } from "../vendor/three.module.min.js";
+import { WebGLRenderer, Scene, PerspectiveCamera, IcosahedronGeometry, ShaderMaterial, InstancedMesh, InstancedBufferAttribute, Object3D, Vector2, Vector3, Vector4, DynamicDrawUsage, Mesh, TextureLoader, VideoTexture } from "../vendor/three.module.min.js";
 
 const COUNT = 24;
 const FOV = 35, CAM_Z = 10;
@@ -49,6 +50,47 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
+// The droplet samples the hero film at its own place on screen, bent by its surface, so it reads as a glass lens over the
+// real footage. The film texture holds raw sRGB values and the shader writes them straight out, so colours match the video.
+const dropVertex = /* glsl */ `
+  varying vec3 vNormal;
+  varying vec3 vView;
+  void main() {
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vNormal = normalize(mat3(modelMatrix) * normal);
+    vView = normalize(cameraPosition - world.xyz);
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`;
+const dropFragment = /* glsl */ `
+  uniform sampler2D uFilm;
+  uniform vec2 uRes;
+  uniform vec4 uCrop;
+  uniform float uTime;
+  uniform float uFade;
+  uniform vec3 uTint;
+  varying vec3 vNormal;
+  varying vec3 vView;
+  // Screen position to film texture position, matching the video's object-fit: cover and object-position 50% 38%.
+  vec2 filmUv(vec2 s) { return uCrop.xy + clamp(s, 0.0, 1.0) * uCrop.zw; }
+  void main() {
+    vec3 n = normalize(vNormal), v = normalize(vView);
+    float facing = clamp(dot(n, v), 0.0, 1.0);
+    float rim = pow(1.0 - facing, 1.6);
+    vec2 s = gl_FragCoord.xy / uRes;
+    // A water lens: the film behind bends outward toward the edge, and the edge mirrors a squeezed copy of the scene.
+    vec3 through = texture2D(uFilm, filmUv(s - n.xy * (0.06 + 0.1 * rim))).rgb;
+    vec3 mirror = texture2D(uFilm, filmUv(vec2(s.x, 1.0 - s.y) + n.xy * 0.2)).rgb;
+    float swirl = facing * 2.4 + n.y * 0.8 + uTime * 0.08;
+    vec3 film = 0.55 + 0.45 * cos(6.28318 * (swirl + vec3(0.0, 0.33, 0.67)));
+    float spec = pow(max(dot(n, normalize(normalize(vec3(-0.45, 0.65, 0.6)) + v)), 0.0), 140.0) * 1.4
+               + pow(max(dot(n, normalize(normalize(vec3(0.6, -0.4, 0.7)) + v)), 0.0), 40.0) * 0.25;
+    vec3 col = mix(through * 1.06, mirror * 0.6, rim * 0.35);
+    col = mix(col, mix(film, uTint, 0.25), rim * 0.55) + spec;
+    gl_FragColor = vec4(min(col, vec3(1.0)), uFade);
+  }
+`;
+
 // Returns a function that stops the foam and frees everything it made.
 export function start(hero) {
   const renderer = new WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
@@ -79,6 +121,31 @@ export function start(hero) {
   foam.frustumCulled = false; // the bubbles move every frame, so one stale bounding sphere would cull them wrongly
   scene.add(foam);
 
+  // The droplet: drawn first (renderOrder) and writing depth, so foam behind it hides and foam in front of it shows.
+  const film = document.getElementById("heroVid");
+  const poster = new TextureLoader().load("media/hero_poster.webp", (t) => { if (dropMat.uniforms.uFilm.value === t) updateCrop(); });
+  const filmTex = film ? new VideoTexture(film) : null;
+  const dropGeo = new IcosahedronGeometry(1, 6);
+  const dropMat = new ShaderMaterial({
+    vertexShader: dropVertex, fragmentShader: dropFragment, transparent: true,
+    uniforms: { uFilm: { value: poster }, uRes: { value: new Vector2(1, 1) }, uCrop: { value: new Vector4(0, 0, 1, 1) }, uTime: { value: 0 }, uFade: { value: 1 }, uTint: material.uniforms.uTint },
+  });
+  const drop = new Mesh(dropGeo, dropMat);
+  drop.renderOrder = -1;
+  scene.add(drop);
+  const D = { x: 0, y: 0.1, z: 0.6, r: 1.15, fx: 0, fy: 0, pop: 0, grow: 1 };
+  const buf = new Vector2();
+  // Which part of the film shows on screen, the way the browser crops the video (cover, 50% 38%).
+  function updateCrop() {
+    const tex = dropMat.uniforms.uFilm.value, img = tex && tex.image;
+    const sw = (img && (img.videoWidth || img.naturalWidth || img.width)) || 16, sh = (img && (img.videoHeight || img.naturalHeight || img.height)) || 9;
+    const screen = aspect, src = sw / sh;
+    const sx = screen > src ? 1 : screen / src, sy = screen > src ? src / screen : 1;
+    dropMat.uniforms.uCrop.value.set(0.5 * (1 - sx), 1 - 0.38 * (1 - sy) - sy, sx, sy);
+    renderer.getDrawingBufferSize(buf);
+    dropMat.uniforms.uRes.value.copy(buf);
+  }
+
   // Bubble state lives in plain arrays; nothing is allocated per frame.
   const B = Array.from({ length: COUNT }, (_, i) => ({ x: 0, y: 0, z: 0, r: 0, rise: 0, phase: 0, freq: 0, ox: 0, oy: 0, vx: 0, vy: 0, pop: 0, seed: (seeds[i] = Math.random()) }));
   let aspect = 1;
@@ -102,6 +169,8 @@ export function start(hero) {
     camera.aspect = aspect;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h, false);
+    D.x = halfH(D.z) * aspect * 0.5;
+    if (typeof updateCrop === "function") updateCrop();
   }
   resize();
   B.forEach(b => spawn(b, true));
@@ -119,6 +188,19 @@ export function start(hero) {
   const onDown = (e) => {
     if (e.button !== 0 || e.target.closest("a,button,input,label,select,textarea")) return;
     onMove(e);
+    // The droplet sits in front, so it gets the click first: it pops into a burst of foam and forms again a moment later.
+    projected.set(D.x + D.fx, D.y + D.fy, D.z).project(camera);
+    const ddx = (projected.x - pointer.x) * aspect, ddy = projected.y - pointer.y, dr = (D.r * D.grow) / halfH(D.z);
+    if (!D.pop && D.grow >= 1 && ddx * ddx + ddy * ddy < dr * dr) {
+      D.pop = 0.0001;
+      for (let i = 0; i < 10; i++) {
+        const b = B[i], a = (i / 10) * Math.PI * 2;
+        spawn(b, true);
+        b.z = D.z; b.x = D.x + D.fx + Math.cos(a) * D.r * 0.6; b.y = D.y + D.fy + Math.sin(a) * D.r * 0.6;
+        b.r = 0.1 + Math.random() * 0.18; b.vx = Math.cos(a) * 2.2; b.vy = Math.sin(a) * 2.2;
+      }
+      return;
+    }
     let hit = null, hitZ = -Infinity;
     for (const b of B) {
       if (b.pop) continue;
@@ -134,7 +216,7 @@ export function start(hero) {
   hero.addEventListener("pointerdown", onDown);
 
   const dummy = new Object3D();
-  let last = 0, time = 0;
+  let last = 0, time = 0, lastScroll = window.scrollY;
   function frame(now) {
     const dt = Math.min((now - (last || now)) / 1000, 0.05); // a long pause (tab away) resumes smoothly, not with a jump
     last = now;
@@ -170,6 +252,31 @@ export function start(hero) {
     }
     foam.instanceMatrix.needsUpdate = true;
     fadeAttr.needsUpdate = true;
+
+    // The droplet bobs, breathes, drifts a little toward the pointer, and swirls faster while the page is scrolling.
+    if (filmTex && dropMat.uniforms.uFilm.value !== filmTex && film.readyState >= 2) { dropMat.uniforms.uFilm.value = filmTex; updateCrop(); }
+    const sy = window.scrollY, spin = Math.min(Math.abs(sy - lastScroll) * 0.01, 1.5);
+    lastScroll = sy;
+    dropMat.uniforms.uTime.value += dt * (1 + spin * 6);
+    const near = pointer.x < 5, k = 1 - Math.exp(-2.5 * dt);
+    D.fx += ((near ? pointer.x * halfH(D.z) * aspect * 0.18 : 0) - D.fx) * k;
+    D.fy += ((near ? pointer.y * halfH(D.z) * 0.14 : 0) - D.fy) * k;
+    let dropFade = 1, dropSwell = 1;
+    if (D.pop) {
+      D.pop += dt / POP_TIME;
+      const p = Math.min(D.pop, 1);
+      dropSwell = 1 + 0.25 * p; dropFade = 1 - p;
+      if (D.pop >= 1) { D.pop = 0; D.grow = 0; dropFade = 0; }
+    } else if (D.grow < 1) {
+      D.grow = Math.min(1, D.grow + dt / 2.5);
+      dropSwell = D.grow < 0.6 ? 0.001 : (D.grow - 0.6) / 0.4; // rests unseen for a beat, then forms again
+      dropFade = dropSwell;
+    }
+    const breathe = Math.sin(time * 1.3) * 0.015, rr = D.r * dropSwell;
+    drop.position.set(D.x + D.fx, D.y + D.fy + Math.sin(time * 0.8) * 0.12, D.z);
+    drop.scale.set(rr * (1 + breathe), rr * (1 - breathe), rr);
+    drop.visible = dropFade > 0.01;
+    dropMat.uniforms.uFade.value = dropFade;
     renderer.render(scene, camera);
     if (!canvas.classList.contains("on")) canvas.classList.add("on");
   }
@@ -196,7 +303,9 @@ export function start(hero) {
     hero.removeEventListener("pointerleave", onLeave);
     hero.removeEventListener("pointerdown", onDown);
     canvas.removeEventListener("webglcontextlost", lost);
-    geometry.dispose(); material.dispose(); foam.dispose(); renderer.dispose();
+    geometry.dispose(); material.dispose(); foam.dispose();
+    dropGeo.dispose(); dropMat.dispose(); poster.dispose(); if (filmTex) filmTex.dispose();
+    renderer.dispose();
     canvas.remove();
   }
   // Build the shader before the first frame so the film never hitches when the foam appears.
