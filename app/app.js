@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const CFG = window.APP_CONFIG;
-  const VERSION = "1.7.0";
+  const VERSION = "1.8.0";
   const CACHE_KEY = "lgcpro.cache.v1", SEEN_KEY = "lgcpro.seen.v1", BACKUP_KEY = "lgcpro.lastBackup.v1";
   const STATUSES = ["Requested", "Confirmed", "Done", "Cancelled"];
   const $ = (id) => document.getElementById(id);
@@ -324,6 +324,8 @@
       const { id, phone_key, created_at, ...rest } = c;
       return id ? q(sb.from("customers").update(rest).eq("id", id).select().single()) : q(sb.from("customers").insert(rest).select().single());
     },
+    // Privacy requests: forget_customer() blanks their details everywhere and keeps each job's date, service and amount.
+    async forgetCustomer(id) { needLive(); const { error } = await sb.rpc("forget_customer", { cid: id }); if (error) throw sbErr(error); },
     async saveVehicle(v) {
       needLive();
       const { id, created_at, ...rest } = v;
@@ -499,6 +501,18 @@
         if (c.id) { const x = find("customers", c.id); Object.assign(x, c); x.phone_key = LGC.phoneKey(x.phone); return clone(x); }
         const x = { email: null, address: null, town: null, notes: null, archived: false, ...c, id: uid(), created_at: new Date().toISOString(), phone_key: LGC.phoneKey(c.phone) };
         db.customers.push(x); return clone(x);
+      },
+      // Same as forget_customer() in the database.
+      async forgetCustomer(id) {
+        await wait();
+        const c = find("customers", id), key = c.phone_key;
+        db.bookings.filter(b => b.customer_id === id || (key && LGC.phoneKey(b.phone) === key))
+          .forEach(b => Object.assign(b, { name: "Deleted customer", phone: "0000000000", address: null, town: null, car: null, notes: null }));
+        db.vehicles.filter(v => v.customer_id === id).forEach(v => Object.assign(v, { year: null, make: null, model: "Deleted vehicle", color: null, notes: null, archived: true }));
+        const invs = db.invoices.filter(i => i.customer_id === id && i.state !== "void");
+        invs.forEach(i => { i.notes = null; });
+        db.payments.filter(pay => !pay.voided_at && invs.some(i => i.id === pay.invoice_id)).forEach(pay => { pay.note = null; });
+        Object.assign(c, { name: "Deleted customer", phone: null, phone_key: null, email: null, address: null, town: null, notes: null, archived: true });
       },
       async saveVehicle(v) {
         await wait();
@@ -1259,7 +1273,15 @@
       body.append(c.archived
         ? h("button", { class: "btn btn-ghost btn-block", type: "button", onclick: (e) => archiveCustomer(c, false, e.currentTarget) }, icon("refresh", 18), "Show in client list again")
         : sureBtn("btn btn-ghost btn-block", "Hide this customer", "Tap again to hide", (b) => archiveCustomer(c, true, b)));
+      if (c.name !== "Deleted customer") body.append(
+        h("div", { class: "note" }, h("b", {}, "Asked to delete their data?"),
+          h("span", {}, "This erases their name, phone, email, address, cars and notes everywhere. Each job's date, service and amount stay for your taxes. It can't be undone.")),
+        sureBtn("btn btn-ghost btn-block", "Forget this customer", "Tap again to erase their details for good", (b) => forgetCustomer(c, b)));
     };
+  }
+  async function forgetCustomer(c, btn) {
+    const ok = await run(btn, () => api.forgetCustomer(c.id));
+    if (ok) { toast("Forgotten · each job's date and amount are kept"); closeSheet(); await refresh(); }
   }
   async function archiveCustomer(c, archived, btn) {
     const ok = await run(btn, async () => { replaceIn(S.customers, await api.saveCustomer({ id: c.id, archived })); });

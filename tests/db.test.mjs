@@ -68,6 +68,7 @@ before(async () => {
   await db.exec(await sql("20261026_invoices"));
   await db.exec(await sql("20261026_booking_discounts"));
   await db.exec(await sql("20261029_trash_cans"));
+  await db.exec(await sql("20261031_privacy"));
 });
 
 test("existing bookings become one customer per phone, skipping cancelled-only people", async () => {
@@ -269,4 +270,47 @@ test("two cars are saved together or not at all: if one slot is taken, neither i
   await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'Someone Else', '(845) 555-0181')`, [future(63)]));
   await assert.rejects(twoCars(future(63)), /bookings_slot_unique/);
   assert.equal((await one(`select count(*)::int as n from public.bookings where date = $1 and "time" = '15:00'`, [future(63)])).n, 0);
+});
+
+test("a website booking records which terms it agreed to, timed by the database, not the visitor", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, terms_version, terms_agreed_at)
+    values ($1, '15:00', 'Terms Tess', '(845) 555-0190', '2026-10-31', '2020-01-01')`, [future(70)]));
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'No Terms', '(845) 555-0191')`, [future(70)]));
+  const got = await rows(`select name, terms_version, terms_agreed_at > now() - interval '1 minute' as fresh from public.bookings where date = $1 order by name`, [future(70)]);
+  assert.deepEqual(got, [{ name: "No Terms", terms_version: null, fresh: null }, { name: "Terms Tess", terms_version: "2026-10-31", fresh: true }]);
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, terms_version) values ($1, '15:00', 'X', '(845) 555-0192', $2)`, [future(71), "x".repeat(21)])));
+});
+
+test("only the owner can forget a customer", async () => {
+  const c = await one("select id from public.customers where phone_key = '8455550102'");
+  await assert.rejects(as("anon", () => db.query("select public.forget_customer($1)", [c.id])), /permission denied/);
+  await assert.rejects(as("stranger", () => db.query("select public.forget_customer($1)", [c.id])), /Only the owner/);
+  await assert.rejects(as("owner", () => db.query("select public.forget_customer($1)", ["33333333-3333-4333-8333-333333333333"])), /wasn't found/);
+  assert.equal((await one("select name from public.customers where id = $1", [c.id])).name, "Frank Damato");
+});
+
+test("forgetting a customer blanks their details everywhere but keeps every job's date, service and amount", async () => {
+  // Zed books on the website, then Andrew files a job, an invoice with a note and a payment with a note.
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, address, town, car, package, total, notes)
+    values ($1, '15:00', 'Zed Quill', '(845) 555-0199', '9 Hidden Ln', 'Goshen', 'Mazda 3', 'The Full Detail', 50, 'Gate code 1234')`, [future(72)]));
+  const c = await one("select id from public.customers where phone_key = '8455550199'");
+  const inv = await as("owner", async () => {
+    const i = await invoice({ customer_id: c.id });
+    await db.query("update public.invoices set notes = 'Dog in the yard, side gate' where id = $1", [i.id]);
+    const pd = await pay(i.id, 5000);
+    await db.query("update public.payments set note = 'Venmo from Zed Q' where id = $1", [pd.id]);
+    return i;
+  });
+  const moneyBefore = await one("select (select sum(total_cents) from public.invoices)::int as inv, (select sum(amount_cents) from public.payments where voided_at is null)::int as paid");
+  await as("owner", () => db.query("select public.forget_customer($1)", [c.id]));
+
+  assert.deepEqual(await one("select name, phone, email, address, town, notes, archived from public.customers where id = $1", [c.id]),
+    { name: "Deleted customer", phone: null, email: null, address: null, town: null, notes: null, archived: true });
+  assert.deepEqual(await one("select name, phone, address, town, car, notes, date::text, package, total from public.bookings where date = $1", [future(72)]),
+    { name: "Deleted customer", phone: "0000000000", address: null, town: null, car: null, notes: null, date: future(72), package: "The Full Detail", total: 50 });
+  assert.deepEqual(await one("select model, make, archived from public.vehicles where customer_id = $1", [c.id]), { model: "Deleted vehicle", make: null, archived: true });
+  assert.deepEqual(await one("select notes, total_cents, issued_on is not null as dated from public.invoices where id = $1", [inv.id]), { notes: null, total_cents: 5000, dated: true });
+  assert.equal((await one("select note from public.payments where invoice_id = $1", [inv.id])).note, null);
+  assert.deepEqual(await one("select (select sum(total_cents) from public.invoices)::int as inv, (select sum(amount_cents) from public.payments where voided_at is null)::int as paid"), moneyBefore);
+  assert.equal((await one("select count(*)::int as n from public.bookings where name = 'Zed Quill' or public.phone_key(phone) = '8455550199'")).n, 0, "no booking still carries Zed's name or number");
 });

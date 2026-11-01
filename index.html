@@ -575,7 +575,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     <h2 class="reveal" id="resH">Real cars, real driveways</h2>
     <div class="band reveal" style="--d:80ms">
       <figure class="panel has-title" style="--g:5;margin:0">
-        <video src="media/reel_web.mp4" poster="media/reel_poster.webp" playsinline preload="none" aria-label="Hyundai Sonata before and after video"></video>
+        <video src="media/reel_web.mp4" poster="media/reel_poster.webp" playsinline preload="none" aria-label="Hyundai Sonata before and after video"><track kind="captions" src="media/reel_web.vtt" srclang="en" label="English"></video>
         <figcaption><p class="title">Hyundai Sonata</p><p class="sub">The reveal · 0:28</p></figcaption>
         <button class="play" type="button" aria-label="Play the Hyundai Sonata video"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
       </figure>
@@ -812,6 +812,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   const SB_URL = "https://fisenrazdvnobzjpihti.supabase.co/rest/v1/";
   const SB_KEY = "sb_publishable_mSuKlYGK-2I2aVj4IaFVoQ_2Jm7b0th"; // publishable: visitors can add bookings/reviews, never read customer data
   const SAVED_KEY = "lgc.contact.v1";
+  const TERMS_VERSION = "2026-10-31"; // the effective date on terms.html; change both together
 
   const SOC = [
     { k: "instagram", label: "Instagram", d: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>' },
@@ -1333,13 +1334,17 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       withDiscount(booking, q.split ? q.split[0] : 0); withDiscount(second, q.split ? q.split[1] : 0);
       rows.push(second);
     }
+    rows.forEach(r => { r.terms_version = TERMS_VERSION; });
     const btn = $("bookBtn"); btn.disabled = true; btn.textContent = "Booking…";
     let result = "fail";
     if ($("hp1").value) result = "ok"; // spam trap: pretend it worked
     else {
       try {
         // Two cars go in one request, so they're saved together or not at all (no half-booked visit).
-        const r = await sb("bookings", { method: "POST", body: rows.length > 1 ? rows : booking, prefer: "return=minimal" });
+        const send = () => sb("bookings", { method: "POST", body: rows.length > 1 ? rows : booking, prefer: "return=minimal" });
+        let r = await send();
+        // Before the privacy migration is live the terms column doesn't exist yet: save the booking without it rather than lose it.
+        if (r.status === 400 && /terms_version/.test(await r.clone().text())) { rows.forEach(x => { delete x.terms_version; }); r = await send(); }
         result = r.status === 409 ? "taken" : r.ok ? "ok" : "fail";
       } catch (e) { result = "fail"; }
     }
