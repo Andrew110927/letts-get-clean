@@ -57,11 +57,18 @@ No sixth size. The footer's cropped name (28vw, 34vw on phones) repeats the monu
 
 ## 6. Motion
 
+Personality: energetic but disciplined. One signature ease (`power3.out`, fast in and soft out), three durations (0.2s / 0.5s / 0.9s), staggers that finish inside 0.5s, and three layers: the name is primary, copy and prices are secondary, the foam is ambient. Scroll scenes live in `js/motion.js` (GSAP 3.13 with ScrollTrigger and SplitText); the foam is `js/bubbles.js` (Three.js r172). Both are self-hosted in `vendor/`. See `docs/adr/0001-gsap-and-threejs.md` for why.
+
+- **Load (wide screens):** the name rises letter by letter from behind its baseline, then the sentence arrives. Phones keep the CSS version, where the two lines rise.
+- **Foam (wide screens):** about two dozen iridescent soap bubbles drift up over the hero film, lean away from the pointer and pop when clicked. Not loaded on phones, with data saver, on low-memory devices, or with reduced motion. It sleeps when the hero is off screen or the tab is hidden.
+- **How a detail goes:** the receipt feeds up out of a printer's mouth in 12 mechanical steps, header first and torn edge last. It plays once; nothing is pinned or scroll-jacked.
+- **Prices:** the three package tiles grow up from a shared floor like the bar chart they are, and the prices count up from $0. The vehicle switch rolls each price to its new amount.
+- **Rates and reels:** the rate rows arrive in a quick cascade; the four reel panels open like a shutter while each picture settles.
 - **Signature:** the Sonata photo in the services section slowly crossfades from before to after, outside then inside (1.6s fades, 5.6s holds). It pauses off screen or when the tab is hidden.
-- **Load:** the name's two lines rise from behind their baselines, and the sentence and film settle, all within about 1.2s.
-- **Scroll:** the hero film sinks and dims as it leaves while the name lifts away (scroll-driven, Chrome and Edge). Each section's parts rise 24px once, staggered 80ms.
-- **Feedback:** every button, tile strip, rate row, panel and control has a hover, press and focus state.
-- **Reduced motion:** everything is simply there: no travel, no autoplay, and the crossfade stays on the first photo.
+- **Scroll:** the hero film sinks and dims as it leaves while the name lifts away (scroll-driven, Chrome and Edge). The footer's cropped name rises as the page reaches its end. Other parts rise 24px once, staggered 80ms.
+- **Feedback:** every button, tile strip, rate row, panel and control has a hover, press and focus state. With a mouse, the main Book buttons lean slightly toward the pointer.
+- **Loading rule:** motion never competes with the first paint. Phones fetch GSAP only after the page has loaded; wide screens fetch it at once (deferred) and load Three.js when the page is idle. If either fails to load, the CSS entrances play and the page works the same.
+- **Reduced motion:** nothing extra is downloaded and everything is simply there: no travel, no autoplay, no foam, and the crossfade stays on the first photo.
 
 ## 7. Imagery
 

@@ -46,6 +46,8 @@
   "sameAs": ["https://www.instagram.com/lettsgetclean", "https://www.tiktok.com/@lettsgetclean"]
 }
 </script>
+<!-- On wide screens with motion allowed, the hero name waits (2.5s at most) for js/motion.js to raise it letter by letter. -->
+<script>if (matchMedia("(prefers-reduced-motion: no-preference) and (min-width: 901px)").matches) { document.documentElement.classList.add("motion-wait"); setTimeout(() => document.documentElement.classList.remove("motion-wait"), 2500); }</script>
 <style>
 /* Direction: "the name as a monument". The business name is the headline, set across the bottom of a real
    driveway; everything else stays small and calm so the contrast holds. Brand colours and faces are kept
@@ -129,6 +131,9 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
 .hero::after{bottom:0;height:48%;background:linear-gradient(rgba(7,8,11,0),rgba(7,8,11,.88) 70%)} /* taste-skill-ignore: neutral scrim under the name on the film */
 .hero-foot{position:relative;z-index:1;padding:0 var(--m) 30px}
 .hero-dim{position:absolute;inset:0;background:var(--bg);opacity:0;pointer-events:none}
+/* The foam canvas (js/bubbles.js) floats over the film and under the name; it fades in once it has drawn. */
+.foam{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .9s var(--ease)}
+.foam.on{opacity:1}
 .hero-line{max-width:44ch;font-size:clamp(18px,1.4vw,20px);font-weight:500;line-height:1.45;margin-bottom:clamp(12px,1.4vw,22px)}
 .hero h1{font-size:var(--t-mono);line-height:.8;letter-spacing:-.01em;white-space:nowrap;margin:0 -.02em}
 .hero h1 .line{display:inline-block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em;vertical-align:bottom}
@@ -138,6 +143,10 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
   .js .hero [data-load]{opacity:0;transform:translateY(12px);animation:load-rise .55s var(--ease) forwards;animation-delay:var(--d)}
   .js .hero-media video{animation:settle 1.6s var(--ease) both}
 }
+/* js/motion.js owns these entrances once it runs, so the CSS versions stand down (and play as before if it can't load). */
+.motion-wait #heroName,.motion-wait #heroLine{visibility:hidden}
+html.gsap-hero .hero h1 [data-line],html.gsap-hero .hero [data-load]{animation:none;transform:none;opacity:1}
+html.gsap-on .slip.reveal,html.gsap-on .tile.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{opacity:1;transform:none;transition:none}
 @keyframes line-up{to{transform:none}}
 @keyframes load-rise{to{opacity:1;transform:none}}
 @keyframes settle{from{transform:scale(1.06)}}
@@ -159,7 +168,10 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
 .how{padding-block:var(--gap)}
 .how-copy{grid-column:1/6;display:grid;gap:22px;align-content:start}
 .how-copy p{max-width:32ch;font-size:var(--t-lead);line-height:1.4}
-.how .slip{grid-column:7/12;max-width:480px;width:100%;padding:30px 32px 62px;justify-self:start}
+/* The slip rises out of a printer's mouth, header first and torn edge last, like a real receipt. */
+.how .printer{grid-column:7/12;max-width:480px;width:100%;justify-self:start;overflow:hidden}
+.printer::after{content:"";display:block;position:relative;z-index:1;height:10px;border-radius:5px;background:var(--surface-3)}
+.how .slip{padding:30px 32px 62px;margin-inline:6px}
 .slip h3{font-family:var(--body);text-transform:none;font-weight:800;font-size:var(--t-body);letter-spacing:0;line-height:1.3;margin:28px 0 8px}
 .slip h3:first-child{margin-top:0}
 .slip .row{display:flex;align-items:baseline;gap:8px;padding:5px 0}
@@ -434,7 +446,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 
 @media (max-width:1100px){
   nav.links a:nth-child(n+5){display:none}
-  .how .slip{grid-column:7/13}
+  .how .printer{grid-column:7/13}
   .rates{grid-column:7/13}.rates-word{display:none}
 }
 @media (max-width:900px){
@@ -446,8 +458,9 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   /* On phones the panel takes its own place above the hero instead of floating over the sentence and the name. */
   .consent{position:relative;top:auto;right:auto;width:auto;margin:84px var(--m) 0}
   .hero-line{font-size:18px}
-  .how-copy,.how .slip{grid-column:1/-1}
-  .how .slip{margin-top:40px;max-width:none;padding-inline:22px}
+  .how-copy,.how .printer{grid-column:1/-1}
+  .how .printer{margin-top:40px;max-width:none}
+  .how .slip{padding-inline:22px}
   .slip .row.end{margin-inline:-22px;padding-inline:22px}
   .tiles{grid-template-columns:1fr;grid-template-rows:none}
   .tiles-head,.tile:nth-child(n){grid-column:1;grid-row:auto;min-height:0}
@@ -557,6 +570,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       <h2 class="reveal" id="howH">How a detail goes</h2>
       <p class="reveal" style="--d:80ms">You book online in about a minute and see the exact price first. Andrew brings the soap, towels and gear. You just need an outdoor outlet and a hose.</p>
     </div>
+    <div class="printer">
     <div class="slip reveal" style="--d:160ms" role="group" aria-label="What happens, step by step">
       <h3>Online</h3>
       <div class="row"><span class="what">Pick what we clean</span><span class="dots" aria-hidden="true"></span><span class="val">car, bike, cans, house</span></div>
@@ -570,6 +584,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       <div class="row"><span class="what">Foam bath, hand wash, wheels</span><span class="dots" aria-hidden="true"></span><span class="val">outside</span></div>
       <div class="row"><span class="what">Vacuum, wipe-down, mats</span><span class="dots" aria-hidden="true"></span><span class="val">inside</span></div>
       <div class="row end"><span class="what">Pay after the job</span><span class="dots" aria-hidden="true"></span><span class="val">cash, Cash App, Venmo</span></div>
+    </div>
     </div>
   </section>
 
@@ -998,6 +1013,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     renderPromo();
     renderPackages(); renderServices(); renderSocials(); renderChoices(); renderDays(); renderSummary(); renderNext(); renderFaq();
     $("ctaLine").textContent = deal ? "Launch prices end " + fmtDate(st.dealEnds, { month: "long", day: "numeric" }) + ". Book online in a minute, or call or text Andrew." : "Book online in a minute, or call or text Andrew.";
+    document.dispatchEvent(new Event("lgc:render"));
   }
 
   // The promo bar shows the first holiday promo Andrew switched on whose dates include today
@@ -1018,7 +1034,11 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     if (!st.sizes.some(s => s.id === sel.size)) sel.size = st.sizes[0].id;
     const size = st.sizes.find(s => s.id === sel.size) || st.sizes[0];
     $("sizeSwitch").replaceChildren(h("legend", {}, "Your vehicle"), ...st.sizes.map(s => h("label", {},
-      h("input", { type: "radio", name: "sizeSwitch", value: s.id, checked: s.id === size.id, onchange: () => { sel.size = s.id; renderPackages(); renderChoices(); renderSummary(); } }),
+      h("input", { type: "radio", name: "sizeSwitch", value: s.id, checked: s.id === size.id, onchange: () => {
+        const was = [...g.querySelectorAll(".tile .price")].map(p => p.textContent);
+        sel.size = s.id; renderPackages(); renderChoices(); renderSummary();
+        document.dispatchEvent(new CustomEvent("lgc:prices", { detail: { was } }));
+      } }),
       h("span", {}, s.label, s.price ? h("small", {}, "+" + money(s.price)) : null))));
     g.querySelectorAll(".tile").forEach(t => t.remove());
     st.packages.forEach((p, i) => {
@@ -1756,6 +1776,16 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     renderReviews();
   }).catch(() => { S.reviewsOn = false; renderReviews(); });
 })();
+</script>
+<script>
+// Motion (js/motion.js on GSAP) loads only when the device allows motion: at once on wide screens, where it raises the
+// hero name, and after the page has loaded on phones, so it never competes with the hero photo for a slow connection.
+if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+  const loadMotion = () => ["vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/SplitText.min.js", "js/motion.js"]
+    .forEach(src => document.body.append(Object.assign(document.createElement("script"), { src, async: false })));
+  if (matchMedia("(min-width: 901px)").matches || document.readyState === "complete") loadMotion();
+  else addEventListener("load", loadMotion, { once: true });
+}
 </script>
 </body>
 </html>

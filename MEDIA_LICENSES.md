@@ -14,6 +14,8 @@ Every image, video, icon and font on the public site, with where it came from. C
 | Inline SVG icons in `index.html` (arrows, play, check, calendar, message, social marks) | Interface icons | Hand-written paths | Owned (if any were copied from Lucide or Feather: ISC/MIT, no attribution needed) | ✅ |
 | `fonts/anton-latin.woff2` + `fonts/OFL-Anton.txt` | Anton typeface | Google Fonts (The Anton Project Authors) | SIL Open Font License 1.1, license included | ✅ |
 | `fonts/inter-latin.woff2` + `fonts/OFL-Inter.txt` | Inter typeface | Google Fonts (The Inter Project Authors) | SIL Open Font License 1.1, license included | ✅ |
+| `vendor/gsap.min.js`, `vendor/ScrollTrigger.min.js`, `vendor/SplitText.min.js` | GSAP 3.13.0 animation library and plugins (site motion) | gsap.com (GreenSock, now part of Webflow) | GSAP Standard "no charge" license, which allows commercial sites; the license header is kept in each file | ✅ |
+| `vendor/three.module.min.js`, `vendor/three.core.min.js` + `vendor/LICENSE-three.txt` | Three.js r172 3D library (the hero foam) | threejs.org (Three.js Authors) | MIT, license included | ✅ |
 | `design/brand-board.png`, `design/phone-flow.png`, `design/phone-*.png`, `design/board-site.jpg` | Brand board and phone flow (not on the public site) | Rendered from the site and the files above | Same as their sources | ✅ (internal) |
 
 **Rules for new media:**

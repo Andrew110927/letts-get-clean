@@ -64,6 +64,9 @@ for whoever works on the code.
   second car; a percent discount comes off each car.
 - **Fully booked**: when no online time is left, the hero chip turns into "Fully booked · join the waitlist", which
   opens a pre-filled text to Andrew.
+- **Motion**: `js/motion.js` (GSAP, scroll scenes) and `js/bubbles.js` (Three.js, the hero foam), with the libraries
+  self-hosted in `vendor/`. Both are extras: with reduced motion nothing loads, and if they fail the page works as before.
+  `DESIGN.md` section 6 lists every scene; `docs/adr/0001-gsap-and-threejs.md` says why these libraries.
 - **Search engines**: the `<head>` has the business details (no street address). The FAQ and price list are added
   as structured data from the same live settings the page shows, so they stay current when prices change.
 

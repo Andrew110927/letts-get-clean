@@ -35,6 +35,37 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 - **Kept, unchanged in behaviour:** booking with live open times, two-car booking, military and holiday discounts, the house wash whole-day rule, the waitlist, QR `?src=` tags, booking alerts, the review form, FAQ structured data.
 - **Pictures:** only Letts Get Clean's own photos and footage. Nothing found or stock.
 
+## The motion phase ("way better and cooler", October 31, built on this branch, not yet live)
+
+Built with the newly added skills: gsap-scrolltrigger, motion-design, threejs-performance, plus design-taste-frontend's inspector and the agent-skills ADR format. Every scene is listed in `DESIGN.md` section 6; the library choice is in `docs/adr/0001-gsap-and-threejs.md`.
+
+- **What's new:**
+  - the name rises letter by letter (wide screens);
+  - iridescent soap bubbles over the hero film that lean away from the pointer and pop on click (wide screens);
+  - the receipt prints out of a printer's mouth in 12 steps;
+  - the price tiles grow like a bar chart while the prices count up, and the vehicle switch rolls them to the new amount;
+  - the rate rows cascade in; the reels open like a shutter;
+  - the footer name rises as the page ends;
+  - the Book buttons lean toward a mouse.
+- **Compliance:**
+  - Both libraries are self-hosted in `vendor/`, so the CSP is unchanged and there are no new third parties, cookies or storage. Nothing needs a consent category.
+  - Licenses are in `MEDIA_LICENSES.md` (GSAP Standard no-charge license; Three.js MIT).
+  - With reduced motion nothing extra loads. The foam is hidden from screen readers. The split heading keeps its name ("Letts Get Clean").
+- **Checks (10-31):**
+  - axe 0 violations with motion on (1440 and 390) and off (all six pages, 1440 and 390).
+  - Lighthouse: desktop 99 / 100 / 100 / 100 (performance, accessibility, best practices, SEO); phone 85 / 100 / 100 / 100. The phone score is within the run-to-run range of the live version (66–86) on the uncompressed local server. A throttled phone shows the same largest paint as before, the hero sentence at about 0.65 s.
+  - Playwright:
+    - booking dry run reaches the confirmation;
+    - the terms version is sent, and the old-database fallback still works;
+    - SUV re-prices to $35, $40 and $60, and back to $25, $30 and $50;
+    - every consent and cookie check above still passes;
+    - jumping straight to `#contact`, the bottom, or loading `#book` still reveals every section;
+    - 33 clicks and sweeps across the hero throw no errors.
+  - Design inspector (with motion forced on): 2 FAIL, down from 3 FAIL + 1 WARN on the live version.
+    - One FAIL is past the inspector's 11-screen limit.
+    - The other is the tablet first visit, where the consent panel pushes the name just below the first screen until a choice is made (an existing trade-off from the phone consent fix).
+  - Database tests: 99 of 99 pass.
+
 ## How it was checked
 
 - **design-taste-frontend inspector:** before, 15 FAIL and 8 WARN; after, desktop sizes went from 27 to 7.
