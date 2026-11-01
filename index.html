@@ -254,8 +254,9 @@ html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{o
    The negative margin pulls the first screen up over the stage so the car and the words arrive together. */
 .wash{position:relative}
 .wash-stage{position:sticky;top:0;height:100svh;margin-bottom:-100svh;overflow:hidden;pointer-events:none}
-.wash-stage canvas,.wash-still{position:absolute;inset:0;width:100%;height:100%}
-.wash-still{object-fit:contain;object-position:70% 55%;opacity:1;transition:opacity .6s var(--ease)}
+.wash-stage canvas{position:absolute;inset:0;width:100%;height:100%}
+/* The stand-in (first frame of the walk-around) sits where the live picture frame draws: the right half on wide screens. */
+.wash-still{position:absolute;top:10%;right:4%;width:52%;height:80%;object-fit:cover;opacity:1;transition:opacity .6s var(--ease)}
 .wash-on .wash-still{opacity:0}
 .wash-load{position:absolute;left:var(--m);bottom:24px;margin:0;font-weight:700;font-size:var(--t-small);color:var(--page-muted);font-variant-numeric:tabular-nums;transition:opacity .4s}
 .wash-load:empty,.wash-on .wash-load{opacity:0}
@@ -554,7 +555,7 @@ html.consent-ask #consent{display:grid!important}
   .pk-head h2,.pk-head #pkgNote,.pk-head .deal,.pk-head fieldset{grid-column:1/-1;grid-row:auto;justify-self:start}
   .pk{grid-template-columns:1fr;min-height:100svh;align-content:end;padding:0 var(--m) 48px}
   .pk-copy,.pk:nth-child(even) .pk-copy{grid-column:1;justify-self:stretch;width:auto;background:color-mix(in srgb,var(--page-bg) 80%,transparent);padding:18px 16px 20px;margin-inline:-8px}
-  .wash-still{object-position:50% 22%}
+  .wash-still{top:0;right:0;width:100%;height:56%}
   .pk-pic img{height:auto;width:100%}
   .pk-pic img+img{left:auto;right:-4%;width:42%}
   .services h2{text-indent:0;margin-bottom:48px}
@@ -598,7 +599,7 @@ html.consent-ask #consent{display:grid!important}
 }
 @media (prefers-reduced-motion:reduce){
   .wash-stage{position:relative;height:min(60svh,520px);margin-bottom:0}
-  .wash-still{object-position:50% 50%}
+  .wash-still{inset:0;width:100%;height:100%}
   .pk{min-height:0;padding-block:64px}
   html{scroll-behavior:auto}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
@@ -696,7 +697,7 @@ html.consent-ask #consent{display:grid!important}
     </div>
     <div class="wash" id="wash">
       <div class="wash-stage" aria-hidden="true">
-        <picture><source media="(orientation: portrait)" srcset="media/wash_still-tall.webp" width="900" height="1300"><img class="wash-still" src="media/wash_still.webp" width="1600" height="1000" alt="" loading="lazy" decoding="async"></picture>
+        <img class="wash-still" src="media/turn/f001.webp" width="960" height="540" alt="" loading="lazy" decoding="async">
         <p class="wash-load"></p>
       </div>
       <div id="pkGrid"></div>
@@ -2006,14 +2007,14 @@ if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
     .forEach(src => document.body.append(Object.assign(document.createElement("script"), { src, async: false })));
   if (matchMedia("(min-width: 901px)").matches || document.readyState === "complete") loadMotion();
   else addEventListener("load", loadMotion, { once: true });
-  // The wash (js/wash.js, Three.js) arrives when its stage is about a screen and a half away, after the page has loaded.
+  // The wash (js/scrub.js: the real before/after photos and the walk-around film, driven by scroll) arrives when its
+  // stage is about a screen and a half away, after the page has loaded.
   const stage = document.querySelector(".wash-stage");
-  const webgl = () => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } };
-  if (stage && "IntersectionObserver" in window && webgl()) {
+  if (stage && "IntersectionObserver" in window) {
     const near = new IntersectionObserver((ents) => {
       if (!ents.some(e => e.isIntersecting)) return;
       near.disconnect();
-      const go = () => { stage.querySelector(".wash-load").textContent = "0%"; import("./js/wash.js").then(m => m.start(stage)).catch(() => { stage.querySelector(".wash-load").textContent = ""; }); };
+      const go = () => { stage.querySelector(".wash-load").textContent = "0%"; import("./js/scrub.js").then(m => m.start(stage)).catch(() => { stage.querySelector(".wash-load").textContent = ""; }); };
       if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
     }, { rootMargin: "150% 0px" });
     near.observe(stage);

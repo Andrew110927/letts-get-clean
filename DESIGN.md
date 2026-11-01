@@ -73,7 +73,7 @@ Personality: energetic but disciplined. One signature ease (`power3.out`, fast i
   - Each package is a full screen with its own palette: rinse blue, leather, and bright showroom white.
   - As a package crosses the middle of the screen the whole page takes its colours. The background fades evenly over 600ms and the text flips at the halfway point, so it never goes grey on grey.
   - The name, price and list rise in, and the price counts up from $0. The vehicle switch rolls prices to the new amounts.
-- **The wash (packages):** behind the three package screens a 3D car (`js/wash.js` loads `media/car.glb`, a CC0 model from grab3d.com repainted white by the shader; a car drawn in code stands in until it arrives) sits on a floor that takes the page's colour. Scrolling drives it: a foam line sweeps the body front to back and leaves gloss and water beads (Exterior); the camera moves round to the cabin and the inside lights up (Interior); the beads dry to a showroom shine, the lamps come on and the car turns slowly (The Full Detail). Mist flies off the wash line, more when the page scrolls fast. The camera leans a little toward the pointer (or the phone's tilt). It loads only when the stage is near, after the page has loaded, caps pixel ratio at 1.5, uses fewer particles on phones, and sleeps off screen. Without WebGL, before it is ready, or with reduced motion, `media/wash_still.webp` (a rendered frame of the clean car) stands in.
+- **The wash (packages):** behind the three package screens one picture frame of the real car (`js/scrub.js`, a 2D canvas, no 3D). Exterior: the Sonata's dusty front end is wiped clean by a foam line that moves with the scroll (the real before and after photos). Interior: the same with the front seats. The Full Detail: the driveway walk-around film, cut into frames and scrubbed by scroll, so the clean car turns as you move. It loads when the stage is near, after the page has loaded, photos first and frames progressively, and sleeps off screen. The first frame stands in before it is ready and for reduced motion.
 - **Package builder:** in the booking form, the chosen package lights up the part of a drawn car it cleans (outside, inside, or both), with what's included and the live price.
 - **Reels:** play muted while on screen and stop when they leave. A tap restarts one with sound and controls.
 - **Rates and reels:** the rate rows arrive in a quick cascade; the four reel panels open like a shutter while each picture settles.
@@ -86,7 +86,7 @@ Personality: energetic but disciplined. One signature ease (`power3.out`, fast i
 
 ## 7. Imagery
 
-Only Letts Get Clean's own work in photographs and film: the driveway film, the Sonata before and after photos, and the reels. License plates are always blurred. Square corners, `object-fit: cover`, one dominant picture per screen. No stock photographs. The one found asset is the public-domain 3D car model behind the packages, listed in `MEDIA_LICENSES.md`; it is a drawing of a car, never shown as a customer's.
+Only Letts Get Clean's own work: the driveway film (also cut into frames for the wash), the Sonata before and after photos, and the reels. License plates are always blurred. Square corners, `object-fit: cover`, one dominant picture per screen. Nothing found or stock.
 
 ## 8. Do and don't
 
