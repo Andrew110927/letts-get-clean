@@ -1,0 +1,8 @@
+# Search engines read robots.txt only at the root of a domain. While the site lives at
+# andrew110927.github.io/letts-get-clean/, this file sits one folder down and is ignored, so the sitemap is
+# submitted in Google Search Console instead. It starts working as-is once the site has its own domain
+# (then change the Sitemap line to the new address). The owner app is kept out of search by its own noindex tag.
+User-agent: *
+Allow: /
+
+Sitemap: https://andrew110927.github.io/letts-get-clean/sitemap.xml

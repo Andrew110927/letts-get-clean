@@ -6,8 +6,8 @@
 <!-- Only this site, its Supabase project and its own files may load; inline script and style stay allowed because the page is one file. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; font-src 'self'; connect-src 'self' https://fisenrazdvnobzjpihti.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>Letts Get Clean · Mobile Car Detailing in Orange County, NY</title>
-<meta name="description" content="Mobile car detailing in Orange County, NY. Exterior, interior and full details in your driveway or drop-off in Newburgh, $20 bike and e-bike details, trash can cleaning ($15 a can), and full house pressure washing. Instant quote, book online, pay after the job.">
+<title>Mobile Car Detailing in Newburgh, NY · Letts Get Clean</title>
+<meta name="description" content="Mobile car detailing in Newburgh and across Orange County, NY. Exterior, interior and full details in your driveway. Book online and pay after the job.">
 <link rel="canonical" href="https://andrew110927.github.io/letts-get-clean/">
 <meta property="og:title" content="Letts Get Clean · Mobile Car Detailing">
 <meta property="og:description" content="Dirty car? Not for long. Hand wash and deep interior cleaning in your driveway. Book online in Orange County, NY.">
@@ -20,15 +20,28 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#07080B">
 <link rel="icon" type="image/png" sizes="64x64" href="media/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="media/icon-192.png">
 <link rel="apple-touch-icon" href="media/icon-180.png">
-<!-- The hero photo is the first big thing phones paint (they skip the video), so fetch it before anything else. -->
-<link rel="preload" as="image" href="media/hero_poster.webp" type="image/webp" fetchpriority="high">
+<link rel="manifest" href="site.webmanifest">
+<!-- The hero photo is the first big thing phones paint (they skip the video), so fetch it before anything else.
+     Upright phones and tablets only ever see the middle of the wide photo, so they get just that middle (40 KB, not 129). -->
+<link rel="preload" as="image" href="media/hero_poster-tall.webp" type="image/webp" fetchpriority="high" media="(max-width: 900px) and (orientation: portrait)">
+<link rel="preload" as="image" href="media/hero_poster.webp" type="image/webp" fetchpriority="high" media="(min-width: 901px), (orientation: landscape)">
 <!-- Fonts are served from this site, so no visitor's IP address goes to a font service. -->
 <link rel="preload" as="font" href="fonts/anton-latin.woff2" type="font/woff2" crossorigin>
 <link rel="preload" as="font" href="fonts/inter-latin.woff2" type="font/woff2" crossorigin>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
+  "@graph": [
+  {
+  "@type": "WebSite",
+  "@id": "https://andrew110927.github.io/letts-get-clean/#website",
+  "name": "Letts Get Clean",
+  "url": "https://andrew110927.github.io/letts-get-clean/",
+  "publisher": { "@id": "https://andrew110927.github.io/letts-get-clean/#business" }
+  },
+  {
   "@type": "AutoWash",
   "@id": "https://andrew110927.github.io/letts-get-clean/#business",
   "name": "Letts Get Clean",
@@ -44,8 +57,14 @@
   "address": { "@type": "PostalAddress", "addressLocality": "Newburgh", "addressRegion": "NY", "addressCountry": "US" },
   "areaServed": ["Newburgh, NY", "New Windsor, NY", "Middletown, NY", "Goshen, NY", "Warwick, NY", "Monroe, NY", "Orange County, NY"],
   "sameAs": ["https://www.instagram.com/lettsgetclean", "https://www.tiktok.com/@lettsgetclean"]
+  }
+  ]
 }
 </script>
+<!-- The cookie panel's first-visit question is settled here, before the first paint, so on phones the panel is in place
+     from the start instead of pushing the page down when the script runs. Same rule as readConsent(): a choice under a
+     year old, or a Global Privacy Control signal, means don't ask. -->
+<script>{ let c = null; try { c = JSON.parse(localStorage.getItem("lgc.consent.v1") || "null"); } catch (e) {} if (!(c && typeof c.prefs === "boolean" && Date.now() - Date.parse(c.at || 0) < 365 * 864e5) && navigator.globalPrivacyControl !== true) document.documentElement.classList.add("consent-ask"); }</script>
 <!-- On wide screens with motion allowed, the hero name waits (2.5s at most) for js/motion.js to raise it letter by letter. -->
 <script>if (matchMedia("(prefers-reduced-motion: no-preference) and (min-width: 901px)").matches) { const r = document.documentElement; r.classList.add("motion-wait", "hero-mask-on"); setTimeout(() => { r.classList.remove("motion-wait"); if (!r.classList.contains("gsap-on")) r.classList.remove("hero-mask-on"); }, 2500); }</script>
 <style>
@@ -142,7 +161,8 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
 /* hero: film title on the bottom edge */
 .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:#000}
 .hero-media{position:absolute;inset:0}
-.hero-media video{width:100%;height:100%;object-fit:cover;object-position:50% 38%}
+/* The still sits under the video: phones only ever see the still, and desktops see it until the film's first frame. */
+.hero-media video,.hero-still{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 38%}
 /* Neutral scrims only under text: a short one under the bar, a taller one under the name. */
 .hero::before,.hero::after{content:"";position:absolute;left:0;right:0;pointer-events:none}
 .hero::before{top:0;height:200px;background:linear-gradient(rgba(7,8,11,.88),rgba(7,8,11,.5) 45%,rgba(7,8,11,0))} /* taste-skill-ignore: neutral scrim under the bar on the film */
@@ -171,7 +191,7 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
 @media (prefers-reduced-motion:no-preference){
   .js .hero h1 [data-line]{transform:translateY(105%);animation:line-up .9s var(--ease) forwards;animation-delay:calc(var(--i) * 120ms + 150ms)}
   .js .hero [data-load]{opacity:0;transform:translateY(12px);animation:load-rise .55s var(--ease) forwards;animation-delay:var(--d)}
-  .js .hero-media video{animation:settle 1.6s var(--ease) both}
+  .js .hero-media video,.js .hero-still{animation:settle 1.6s var(--ease) both}
 }
 /* js/motion.js owns these entrances once it runs, so the CSS versions stand down (and play as before if it can't load). */
 .motion-wait #heroName,.motion-wait .hero-foot{visibility:hidden}
@@ -484,6 +504,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 .giant span{color:#1786B3}
 
 /* consent: sits over the film under the bar and scrolls away with the hero; ignoring it stores nothing optional */
+html.consent-ask #consent{display:grid!important}
 .consent{position:absolute;top:calc(72px + 16px);right:var(--m);z-index:40;width:min(440px,calc(100vw - 2 * var(--m)));background:var(--surface-2);color:var(--ink);border-radius:6px;padding:20px 22px;display:grid;gap:12px}
 .consent h2{font-size:var(--t-lead);line-height:1.1}
 .consent p{font-size:var(--t-small)}
@@ -619,7 +640,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 
 <main id="main" tabindex="-1">
   <section class="hero" id="top" aria-labelledby="heroName">
-    <div class="hero-media"><video id="heroVid" muted loop playsinline preload="none" poster="media/hero_poster.webp" aria-label="A freshly washed white Hyundai Sonata in a driveway"></video></div>
+    <div class="hero-media"><picture><source media="(max-width: 900px) and (orientation: portrait)" srcset="media/hero_poster-tall.webp" width="540" height="720"><img class="hero-still" src="media/hero_poster.webp" width="1280" height="720" alt="" fetchpriority="high"></picture><video id="heroVid" muted loop playsinline preload="none" aria-label="A freshly washed white Hyundai Sonata in a driveway"></video></div>
     <div class="hero-dim" aria-hidden="true"></div>
     <div class="hero-foot">
       <p class="hero-line" id="heroLine" data-load style="--d:520ms">Dirty car? Not for long. Hand wash and interior detailing, done in your Orange County driveway.</p>
@@ -669,10 +690,10 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     <h2 class="reveal" id="svcH">Bikes, trash cans, whole houses too</h2>
     <figure class="fade reveal" id="fade">
       <div class="frame">
-        <img class="on" src="media/ext_before.webp" width="900" height="1125" loading="lazy" alt="Before: the white Hyundai Sonata's front end, dusty">
-        <img src="media/ext_after.webp" width="900" height="1125" loading="lazy" alt="After: the same Sonata, washed and shining">
-        <img src="media/int_before.webp" width="900" height="1125" loading="lazy" alt="Before: the Sonata's front seats and console">
-        <img src="media/int_after.webp" width="900" height="1125" loading="lazy" alt="After: the same seats and console, cleaned">
+        <img class="on" src="media/ext_before.webp" srcset="media/ext_before-480.webp 480w, media/ext_before-720.webp 720w, media/ext_before.webp 900w" sizes="(max-width:900px) 75vw, 440px" width="900" height="1125" loading="lazy" alt="Before: the white Hyundai Sonata's front end, dusty">
+        <img src="media/ext_after.webp" srcset="media/ext_after-480.webp 480w, media/ext_after-720.webp 720w, media/ext_after.webp 900w" sizes="(max-width:900px) 75vw, 440px" width="900" height="1125" loading="lazy" alt="After: the same Sonata, washed and shining">
+        <img src="media/int_before.webp" srcset="media/int_before-480.webp 480w, media/int_before-720.webp 720w, media/int_before.webp 900w" sizes="(max-width:900px) 75vw, 440px" width="900" height="1125" loading="lazy" alt="Before: the Sonata's front seats and console">
+        <img src="media/int_after.webp" srcset="media/int_after-480.webp 480w, media/int_after-720.webp 720w, media/int_after.webp 900w" sizes="(max-width:900px) 75vw, 440px" width="900" height="1125" loading="lazy" alt="After: the same seats and console, cleaned">
       </div>
       <figcaption>Hyundai Sonata, before and after</figcaption>
     </figure>
@@ -684,19 +705,19 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     <h2 class="reveal" id="resH">Real cars, real driveways</h2>
     <div class="band reveal" style="--d:80ms">
       <figure class="panel has-title" style="--g:5;margin:0">
-        <video src="media/reel_web.mp4" poster="media/reel_poster.webp" playsinline preload="none" data-sound aria-label="Hyundai Sonata before and after video"><track kind="captions" src="media/reel_web.vtt" srclang="en" label="English"></video>
+        <video src="media/reel_web.mp4" data-poster="media/reel_poster.webp" playsinline preload="none" data-sound aria-label="Hyundai Sonata before and after video"><track kind="captions" src="media/reel_web.vtt" srclang="en" label="English"></video>
         <figcaption><p class="title">Hyundai Sonata</p><p class="sub">The reveal · 0:28</p></figcaption>
         <button class="play" type="button" aria-label="Play the Hyundai Sonata video"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
       </figure>
       <figure class="panel" style="--g:2;margin:0">
-        <img src="media/ext_after.webp" width="900" height="1125" loading="lazy" alt="The white Sonata after its exterior detail">
+        <img src="media/ext_after.webp" srcset="media/ext_after-480.webp 480w, media/ext_after-720.webp 720w, media/ext_after.webp 900w" sizes="(max-width:900px) 34vh, 55vh" width="900" height="1125" loading="lazy" alt="The white Sonata after its exterior detail">
       </figure>
       <figure class="panel" style="--g:3;margin:0">
-        <video src="media/reel2_web.mp4" poster="media/reel2_poster.webp" playsinline preload="none" aria-label="Subaru Outback before and after video, inside and out"></video>
+        <video src="media/reel2_web.mp4" data-poster="media/reel2_poster.webp" playsinline preload="none" aria-label="Subaru Outback before and after video, inside and out"></video>
         <button class="play" type="button" aria-label="Play the Subaru Outback video, inside and out, 43 seconds"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
       </figure>
       <figure class="panel" style="--g:2;margin:0">
-        <video src="media/reel3_web.mp4" poster="media/reel3_poster.webp" playsinline preload="none" aria-label="Chevy Silverado before and after video, interior and wheels"></video>
+        <video src="media/reel3_web.mp4" data-poster="media/reel3_poster.webp" playsinline preload="none" aria-label="Chevy Silverado before and after video, interior and wheels"></video>
         <button class="play" type="button" aria-label="Play the Chevy Silverado video, interior and wheels, 26 seconds"><span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></span></button>
       </figure>
     </div>
@@ -879,7 +900,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   <div class="legal">
     <span>© <span id="year">2026</span> Letts Get Clean · Andrew Letts · Newburgh, NY</span>
     <nav aria-label="Policies">
-      <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="cookies.html">Cookies</a><a href="#cookie-settings" data-consent>Cookie settings</a><a href="accessibility.html">Accessibility</a><a href="privacy.html#request">Privacy request</a><a href="app/" rel="nofollow">Owner login</a>
+      <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="cookies.html">Cookies</a><a href="cookies.html#settings" data-consent>Cookie settings</a><a href="accessibility.html">Accessibility</a><a href="privacy.html#request">Privacy request</a><a href="app/" rel="nofollow">Owner login</a>
     </nav>
   </div>
   <p class="giant" aria-hidden="true">Letts <span>Get Clean</span></p>
@@ -1111,6 +1132,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   // One full-screen section per package, each repainting the page in its own colours as it crosses the middle of the
   // screen (watchPackageColours). The vehicle switch above them re-prices all three and carries into the booking form.
   const PK_LOOK = ["exterior", "interior", "full"];
+  const widths = (src) => src.replace(".webp", "-480.webp") + " 480w, " + src.replace(".webp", "-720.webp") + " 720w, " + src + " 900w";
   const PK_PICS = {
     exterior: [["media/ext_after.webp", "The white Hyundai Sonata after an exterior detail, washed and shining"]],
     interior: [["media/int_after.webp", "The Sonata's front seats and console after an interior detail"]],
@@ -1142,7 +1164,9 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
           deal && save > 0 ? h("p", { class: "after" }, money(later) + " after " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + (i === st.packages.length - 1 ? ", so you save " + money(save) : "")) : null,
           h("ul", {}, p.items.map(t => h("li", {}, t))),
           h("a", { class: "btn pk-cta", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)),
-        h("figure", { class: "pk-pic" }, ...PK_PICS[look].map(([src, alt]) => h("img", { src, alt, width: "900", height: "1125", loading: "lazy", decoding: "async" }))));
+        h("figure", { class: "pk-pic" }, ...PK_PICS[look].map(([src, alt], i) => h("img", { src, srcset: widths(src),
+          sizes: i ? "(max-width:900px) min(220px, 42vw), min(28vh, 250px)" : "(max-width:900px) min(520px, calc(100vw - 32px)), min(59vh, 544px)",
+          alt, width: "900", height: "1125", loading: "lazy", decoding: "async" }))));
     }));
     $("pkExtras").textContent = (st.addons.length ? "Extras from " + money(Math.min(...st.addons.map(a => a.price))) + " are added in your quote, only if you pick them. " : "") + "No deposit: you pay after the job.";
     observeReveals();
@@ -1200,8 +1224,8 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   function slider(p, i) {
     const range = h("input", { type: "range", min: "0", max: "100", value: "50", "aria-label": "Compare before and after: " + p.title });
     const fig = h("figure", { class: "ba" },
-      h("img", { class: "after", src: p.after, alt: "After: " + p.title + ", " + p.caption, loading: "lazy", width: "900", height: "1125" }),
-      h("img", { class: "before", src: p.before, alt: "Before: " + p.title + ", " + p.caption, loading: "lazy", width: "900", height: "1125" }),
+      h("img", { class: "after", src: p.after, srcset: widths(p.after), sizes: "(max-width:900px) 50vw, 32vw", alt: "After: " + p.title + ", " + p.caption, loading: "lazy", width: "900", height: "1125" }),
+      h("img", { class: "before", src: p.before, srcset: widths(p.before), sizes: "(max-width:900px) 50vw, 32vw", alt: "Before: " + p.title + ", " + p.caption, loading: "lazy", width: "900", height: "1125" }),
       h("span", { class: "line" }, h("span", { class: "knob" }, icon(ICON.arrows, "#04131A", 22, 2.8))),
       h("span", { class: "lbl b" }, "Before"), h("span", { class: "lbl a" }, "After"), range);
     const set = (v) => { v = Math.max(0, Math.min(100, v)); fig.style.setProperty("--pos", v + "%"); range.value = v; };
@@ -1756,10 +1780,19 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   // to the business described in the static block in <head>.
   function renderSchema(qa) {
     const st = S.settings, url = "https://andrew110927.github.io/letts-get-clean/";
+    // Search engines get open hours from the same booking times: the first slot opens the day and the last slot's
+    // two hours close it (the FAQ's "two-hour slot").
+    const span = (slots) => {
+      const s = slots.slice().sort(); if (!s.length) return null;
+      const [hh, mm] = s[s.length - 1].split(":").map(Number);
+      return { opens: s[0], closes: String(Math.min(hh + 2, 23)).padStart(2, "0") + ":" + String(mm).padStart(2, "0") };
+    };
+    const hours = [[["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], st.slotsWeekday], [["Saturday", "Sunday"], st.slotsWeekend]]
+      .map(([dayOfWeek, slots]) => { const t = span(slots); return t && { "@type": "OpeningHoursSpecification", dayOfWeek, ...t }; }).filter(Boolean);
     const offer = (name, price, description) => ({ "@type": "Offer", price: String(price), priceCurrency: "USD", itemOffered: { "@type": "Service", name, ...(description ? { description } : {}) } });
     const data = [
       { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: qa.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) },
-      { "@context": "https://schema.org", "@type": "AutoWash", "@id": url + "#business", hasOfferCatalog: { "@type": "OfferCatalog", name: "Detailing and washing",
+      { "@context": "https://schema.org", "@type": "AutoWash", "@id": url + "#business", openingHoursSpecification: hours, hasOfferCatalog: { "@type": "OfferCatalog", name: "Detailing and washing",
         itemListElement: [...st.packages.map(p => offer(p.name + " car detail", priceOf(p), p.items.join(", "))), offer("Bike or e-bike detail", st.bike.price),
           offer("Trash can cleaning", st.trash.price, "Price per can, cleaned at your house"), offer("House pressure wash", st.house.price)] } }
     ];
@@ -1830,6 +1863,8 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     $("cCustom").addEventListener("click", () => { const open = $("cPanel").hidden; $("cPanel").hidden = !open; $("cCustom").setAttribute("aria-expanded", String(open)); });
     document.querySelectorAll("[data-consent]").forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); showConsent(true); }));
     if (location.hash === "#cookie-settings") showConsent(true); else if (!C.decided) showConsent(false);
+    // From here the panel's own hidden attribute is in charge (the head script only covered the first paint).
+    document.documentElement.classList.remove("consent-ask");
   }
 
   // The bar sits clear over the film, then turns solid once the hero has scrolled away.
@@ -1855,7 +1890,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     const vid = $("heroVid");
     const saveData = navigator.connection && navigator.connection.saveData;
     if (reduceMotion || saveData || matchMedia("(max-width: 900px)").matches) return;
-    vid.src = "media/hero_loop.mp4"; vid.preload = "auto"; vid.autoplay = true;
+    vid.poster = "media/hero_poster.webp"; vid.src = "media/hero_loop.mp4"; vid.preload = "auto"; vid.autoplay = true;
     vid.play().catch(() => {});
   }
 
@@ -1863,6 +1898,11 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   document.querySelectorAll("[data-service]").forEach(a => a.addEventListener("click", () => setService(a.dataset.service)));
   // Only one reel plays with sound at a time, so their soundtracks never talk over each other.
   const reels = [...document.querySelectorAll("#results video")];
+  // Their poster pictures load only once the reels are within about a screen, so phones spend the first seconds on the first screen.
+  const posterIO = "IntersectionObserver" in window && new IntersectionObserver((ents) => ents.forEach(en => {
+    if (en.isIntersecting) { en.target.poster = en.target.dataset.poster; posterIO.unobserve(en.target); }
+  }), { rootMargin: "900px 0px" });
+  reels.forEach(v => posterIO ? posterIO.observe(v) : (v.poster = v.dataset.poster));
   reels.forEach(v => v.addEventListener("play", () => { if (!v.muted) reels.forEach(o => { if (o !== v && !o.muted) o.pause(); }); }));
   document.querySelectorAll("#results .play").forEach(b => b.addEventListener("click", () => {
     const vid = b.parentElement.querySelector("video");

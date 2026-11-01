@@ -67,8 +67,17 @@ for whoever works on the code.
 - **Motion**: `js/motion.js` (GSAP scroll scenes and Lenis smooth scrolling) and `js/bubbles.js` (Three.js: the hero foam and the lens droplet), with the libraries
   self-hosted in `vendor/`. Both are extras: with reduced motion nothing loads, and if they fail the page works as before.
   `DESIGN.md` section 6 lists every scene; `docs/adr/0001-gsap-and-threejs.md` says why these libraries.
-- **Search engines**: the `<head>` has the business details (no street address). The FAQ and price list are added
-  as structured data from the same live settings the page shows, so they stay current when prices change.
+- **Search engines**: the `<head>` has the business details (no street address) and the site name. The FAQ, price
+  list and open hours are added as structured data from the same live settings the page shows, so they stay current
+  when prices or booking times change (hours run from the first slot to two hours after the last).
+  - `sitemap.xml` lists the public pages; update its `lastmod` dates when a page changes.
+  - `robots.txt` only works at the root of a domain, so on github.io it's ignored and the sitemap goes to Google Search
+    Console instead. It starts working as-is with a custom domain (change its Sitemap line then).
+  - `404.html` is what GitHub Pages shows for any missing address. Its links start with `/letts-get-clean/`, so drop
+    that prefix if the site moves to its own domain.
+- **Images**: each before/after photo comes at 480, 720 and 900 wide (`media/*-480.webp`, `*-720.webp`) and the
+  browser picks the smallest that fits. Upright phones get `media/hero_poster-tall.webp`, just the middle of the hero
+  photo. Reel posters load once the reels are about a screen away.
 
 `supabase/migrations/` has the SQL for every table and policy. `supabase/functions/` has the Edge Functions.
 

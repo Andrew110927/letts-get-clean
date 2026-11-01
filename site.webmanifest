@@ -1,0 +1,13 @@
+{
+  "name": "Letts Get Clean",
+  "short_name": "Letts Get Clean",
+  "description": "Mobile car detailing in Newburgh and across Orange County, NY.",
+  "start_url": "./",
+  "display": "browser",
+  "background_color": "#07080B",
+  "theme_color": "#07080B",
+  "icons": [
+    { "src": "media/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "media/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
