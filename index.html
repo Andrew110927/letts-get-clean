@@ -410,6 +410,17 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 .giant{font-family:var(--display);text-transform:uppercase;font-size:28vw;line-height:.8;white-space:nowrap;margin:16px 0 0 calc(var(--m) - .03em);transform:translateY(30%);color:var(--paper-ink);pointer-events:none;user-select:none}
 .giant span{color:#1786B3}
 
+/* consent: sits over the film under the bar and scrolls away with the hero; ignoring it stores nothing optional */
+.consent{position:absolute;top:calc(72px + 16px);right:var(--m);z-index:40;width:min(440px,calc(100vw - 2 * var(--m)));background:var(--surface-2);color:var(--ink);border-radius:6px;padding:20px 22px;display:grid;gap:12px}
+.consent h2{font-size:var(--t-lead);line-height:1.1}
+.consent p{font-size:var(--t-small)}
+.consent .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.consent .row .btn{width:100%}
+.linkbtn{background:none;border:0;padding:6px 0;color:var(--ink);font:inherit;font-size:var(--t-small);font-weight:700;text-decoration:underline;cursor:pointer;justify-self:start;min-height:24px}
+.consent .tog{display:flex;gap:10px;align-items:flex-start;font-size:var(--t-small)}
+.consent .tog input{width:20px;height:20px;accent-color:var(--accent);margin:1px 0 0;flex-shrink:0}
+.consent a{color:var(--ink)}
+#rememberOff{font-size:var(--t-small);color:var(--muted)}
 /* the toast is the only thing that floats */
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:70;background:var(--paper);color:var(--paper-ink);font-weight:700;padding:12px 18px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:calc(100vw - 32px)} /* taste-skill-ignore: the toast really floats over the page */
 
@@ -485,6 +496,19 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 </head>
 <body>
 <a class="skip" href="#main">Skip to main content</a>
+<section class="consent" id="consent" aria-labelledby="consentH" hidden>
+  <h2 id="consentH">Your choice</h2>
+  <p>No ads, analytics or tracking on this site. With your OK, this browser can remember your booking details and the flyer or sign you scanned, so the form fills itself in next time.</p>
+  <div class="row"><button class="btn btn-ghost" type="button" id="cAccept">Accept all</button><button class="btn btn-ghost" type="button" id="cReject">Reject all</button></div>
+  <button class="linkbtn" type="button" id="cCustom" aria-expanded="false" aria-controls="cPanel">Customize</button>
+  <div id="cPanel" hidden style="display:grid;gap:10px">
+    <label class="tog"><input type="checkbox" checked disabled><span><b>Strictly necessary</b> (always on): remembers this choice and loads prices and open times.</span></label>
+    <label class="tog"><input type="checkbox" id="cPrefs"><span><b>Preferences</b>: remember my booking details and the QR code I scanned, on this device only.</span></label>
+    <p class="muted">Analytics and marketing: not used on this site.</p>
+    <button class="btn btn-ghost" type="button" id="cSave">Save my choices</button>
+  </div>
+  <p><a href="cookies.html">Cookie policy</a></p>
+</section>
 
 <header class="top" id="topbar">
   <div class="promo-bar" id="promoBar" role="region" aria-label="Current deal" hidden></div>
@@ -514,7 +538,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   <div class="row"><a class="btn" data-tel href="tel:+18452829387">Call</a><a class="btn btn-ghost" data-sms href="sms:+18452829387">Text</a></div>
 </div>
 
-<main id="main">
+<main id="main" tabindex="-1">
   <section class="hero" id="top" aria-labelledby="heroName">
     <div class="hero-media"><video id="heroVid" muted loop playsinline preload="none" poster="media/hero_poster.webp" aria-label="A freshly washed white Hyundai Sonata in a driveway"></video></div>
     <div class="hero-dim" aria-hidden="true"></div>
@@ -655,7 +679,8 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
             <div class="field"><label for="fNotes">Anything we should know? <small>(optional)</small></label><textarea id="fNotes" placeholder="Stains, pet hair, gate code, where to park…"></textarea></div>
             <label class="check" id="hookRow"><input type="checkbox" id="fHook"><span><b>I have an outdoor outlet and a hose spigot we can use. <span class="req" aria-hidden="true">*</span></b><br><span class="muted">Needed for at-home appointments.</span></span></label>
             <label class="check" id="milRow" hidden><input type="checkbox" id="fMilitary"><span><b>I'm active military, a veteran, or a first responder</b><br><span class="muted" id="milSub">Please have your ID ready at the appointment.</span></span></label>
-            <label class="check light"><input type="checkbox" id="fRemember"><span>Remember my details on this device for next time</span></label>
+            <label class="check light" id="rememberRow" hidden><input type="checkbox" id="fRemember"><span>Remember my details on this device for next time</span></label>
+            <p id="rememberOff">Want this form to remember you next time? Allow "Preferences" in <button class="linkbtn" type="button" data-consent>cookie settings</button>.</p>
           </div>
         </form>
         <div class="summary slip" role="region" aria-label="Your quote" aria-live="polite">
@@ -752,7 +777,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   <div class="legal">
     <span>© <span id="year">2026</span> Letts Get Clean · Andrew Letts · Newburgh, NY</span>
     <nav aria-label="Policies">
-      <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="cookies.html">Cookies</a><a href="cookies.html#settings">Cookie settings</a><a href="accessibility.html">Accessibility</a><a href="privacy.html#request">Privacy request</a><a href="app/" rel="nofollow">Owner login</a>
+      <a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="cookies.html">Cookies</a><a href="#cookie-settings" data-consent>Cookie settings</a><a href="accessibility.html">Accessibility</a><a href="privacy.html#request">Privacy request</a><a href="app/" rel="nofollow">Owner login</a>
     </nav>
   </div>
   <p class="giant" aria-hidden="true">Letts <span>Get Clean</span></p>
@@ -813,6 +838,10 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   const SB_KEY = "sb_publishable_mSuKlYGK-2I2aVj4IaFVoQ_2Jm7b0th"; // publishable: visitors can add bookings/reviews, never read customer data
   const SAVED_KEY = "lgc.contact.v1";
   const TERMS_VERSION = "2026-10-31"; // the effective date on terms.html; change both together
+  // The visitor's cookie choice (kept for a year). Storing the choice itself is strictly necessary; the only optional
+  // storage is "Preferences": remembered booking details (localStorage) and the QR code tag (sessionStorage).
+  const CONSENT_KEY = "lgc.consent.v1", CONSENT_DAYS = 365, SRC_KEY = "lgc.src";
+  const C = { prefs: false, decided: false };
 
   const SOC = [
     { k: "instagram", label: "Instagram", d: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>' },
@@ -1006,8 +1035,8 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   function renderServices() {
     const st = S.settings, ds = st.discounts;
     const row = (k, name, sub, val, svc) => {
-      const kids = [h("span", { class: "k" }, k), h("span", { class: "n" }, name, sub ? h("small", {}, sub) : null), h("span", { class: "v" }, val, svc ? icon(ICON.arrowR, "currentColor", 16, 2.6) : null)];
-      return svc ? h("a", { class: "rate", href: "#book", "aria-label": "Book " + name.toLowerCase() + ", " + val, onclick: () => setService(svc) }, ...kids) : h("div", { class: "rate" }, ...kids);
+      const kids = [h("span", { class: "k", "aria-hidden": "true" }, k), h("span", { class: "n" }, name, sub ? h("small", {}, sub) : null), h("span", { class: "v" }, val, svc ? icon(ICON.arrowR, "currentColor", 16, 2.6) : null)];
+      return svc ? h("a", { class: "rate", href: "#book", onclick: () => setService(svc) }, ...kids) : h("div", { class: "rate" }, ...kids);
     };
     const group = (rows) => { if (rows[0]) rows[0].classList.add("first"); return rows; };
     const services = [
@@ -1162,7 +1191,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       const full = house ? !wholeDayFree(key) : !freeSlots(key).some(t => canStart(key, t));
       if (full && sel.date === key) { sel.date = null; sel.time = null; }
       if (house && sel.date === key) sel.time = slotsFor(key)[0];
-      box.append(h("button", { type: "button", class: "day", disabled: full, "aria-pressed": String(sel.date === key), "aria-label": fmtDate(key, { weekday: "long", month: "long", day: "numeric" }) + (full ? house ? ", not free all day" : ", fully booked" : ""),
+      box.append(h("button", { type: "button", class: "day", disabled: full, "aria-pressed": String(sel.date === key),
         onclick: () => { sel.date = key; sel.time = house ? slotsFor(key)[0] : null; renderDays(); renderSummary(); } },
         h("small", {}, d.toLocaleDateString(undefined, { weekday: "short" })), h("b", {}, d.getDate()),
         full ? h("small", { class: "full" }, house ? "Busy" : "Full") : h("small", {}, d.toLocaleDateString(undefined, { month: "short" }))));
@@ -1182,7 +1211,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       const booked = S.busy.has(busyKey(sel.date, t)), past = !avail.includes(t), noPair = twoCars() && !booked && !past && !canStart(sel.date, t), taken = booked || past || noPair;
       if (taken && sel.time === t) sel.time = null;
       const why = booked ? "Booked" : past ? "Too soon" : noPair ? "No room for 2" : "";
-      box.append(h("button", { type: "button", class: "slot", disabled: taken, "aria-pressed": String(sel.time === t), "aria-label": fmtTime(t) + (why ? " (" + why.toLowerCase() + ")" : ""),
+      box.append(h("button", { type: "button", class: "slot", disabled: taken, "aria-pressed": String(sel.time === t),
         onclick: () => { sel.time = t; renderSlots(); renderSummary(); } }, fmtTime(t), taken ? h("small", {}, why) : null));
     }
   }
@@ -1361,7 +1390,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
       if (house) S.busyDays.add(sel.date);
       renderNext();
     }
-    store(SAVED_KEY, $("fRemember").checked ? { name: v("fName"), phone: fmtPhone(v("fPhone")), addr: v("fAddr"), town: v("fTown"), car: v("fCar") } : null);
+    store(SAVED_KEY, C.prefs && $("fRemember").checked ? { name: v("fName"), phone: fmtPhone(v("fPhone")), addr: v("fAddr"), town: v("fTown"), car: v("fCar") } : null);
     showDone(booking, q, result === "ok");
   }
 
@@ -1452,12 +1481,17 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     facebook: "Facebook", fb: "Facebook", google: "Google", nextdoor: "Nextdoor", popup: "Car show/pop-up", carshow: "Car show/pop-up" };
   function applySourceTag() {
     let tag = null;
-    try { tag = new URLSearchParams(location.search).get("src"); if (tag) sessionStorage.setItem("lgc.src", tag); else tag = sessionStorage.getItem("lgc.src"); } catch (e) {}
+    try {
+      tag = new URLSearchParams(location.search).get("src");
+      // Only kept for the rest of the visit when Preferences are allowed; otherwise it fills in this page only.
+      if (C.prefs) { if (tag) sessionStorage.setItem(SRC_KEY, tag); else tag = sessionStorage.getItem(SRC_KEY); }
+    } catch (e) {}
     const label = SOURCE_TAGS[String(tag || "").toLowerCase()];
     if (label && !$("fSource").value) $("fSource").value = label;
   }
   function waitlistText() { return "Hi Andrew! Please add me to the Letts Get Clean waitlist.\nName: \nWhat I need cleaned: \nBest days: "; }
   function restoreContact() {
+    if (!C.prefs) return;
     const c = load(SAVED_KEY); if (!c) return;
     [["fName", c.name], ["fPhone", c.phone], ["fAddr", c.addr], ["fTown", c.town], ["fCar", c.car]].forEach(([id, val]) => { if (val && !$(id).value) $(id).value = String(val).slice(0, 150); });
   }
@@ -1591,6 +1625,52 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
     menu.addEventListener("click", (e) => { if (e.target.closest("a")) open(false); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menu.hidden) open(false); });
   }
+  // ---------- consent ----------
+  function readConsent() {
+    const c = load(CONSENT_KEY);
+    if (c && typeof c.prefs === "boolean" && Date.now() - Date.parse(c.at || 0) < CONSENT_DAYS * 864e5) { C.prefs = c.prefs; C.decided = true; }
+    // A Global Privacy Control signal is an opt-out, honored without asking.
+    else if (navigator.globalPrivacyControl === true) saveConsent(false, true);
+    applyConsent();
+  }
+  function saveConsent(prefs, gpc) {
+    C.prefs = prefs; C.decided = true;
+    store(CONSENT_KEY, { prefs, at: new Date().toISOString(), gpc: !!gpc });
+    try {
+      if (!prefs) { store(SAVED_KEY, null); sessionStorage.removeItem(SRC_KEY); }
+      // Someone who came from a QR code and then says yes keeps that tag for the rest of the visit.
+      else { const tag = new URLSearchParams(location.search).get("src"); if (tag) sessionStorage.setItem(SRC_KEY, tag); }
+    } catch (e) {}
+    applyConsent();
+  }
+  function applyConsent() {
+    $("rememberRow").hidden = !C.prefs; $("rememberOff").hidden = C.prefs;
+    if (!C.prefs) $("fRemember").checked = false;
+    $("cPrefs").checked = C.prefs;
+  }
+  function showConsent(custom) {
+    const box = $("consent");
+    box.hidden = false;
+    $("cPanel").hidden = !custom; $("cCustom").setAttribute("aria-expanded", String(!!custom));
+    if (custom) { box.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" }); $("cPrefs").focus({ preventScroll: true }); }
+  }
+  function decided(prefs) {
+    const hadFocus = $("consent").contains(document.activeElement);
+    saveConsent(prefs); $("consent").hidden = true;
+    toast(prefs ? "Saved: this browser can remember you" : "Saved: nothing optional is stored");
+    // Keyboard users carry on from the main content instead of losing their place.
+    if (hadFocus) $("main").focus({ preventScroll: true });
+  }
+  function setupConsent() {
+    readConsent();
+    $("cAccept").addEventListener("click", () => decided(true));
+    $("cReject").addEventListener("click", () => decided(false));
+    $("cSave").addEventListener("click", () => decided($("cPrefs").checked));
+    $("cCustom").addEventListener("click", () => { const open = $("cPanel").hidden; $("cPanel").hidden = !open; $("cCustom").setAttribute("aria-expanded", String(open)); });
+    document.querySelectorAll("[data-consent]").forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); showConsent(true); }));
+    if (location.hash === "#cookie-settings") showConsent(true); else if (!C.decided) showConsent(false);
+  }
+
   // The bar sits clear over the film, then turns solid once the hero has scrolled away.
   function setupHeader() {
     const bar = $("topbar");
@@ -1642,7 +1722,7 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
   document.querySelectorAll('a[href="#review"]').forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); openReviewForm(); }));
 
   setupMenu(); setupHeroVideo(); setupHeader(); setupFade();
-  restoreContact(); applySourceTag();
+  setupConsent(); restoreContact(); applySourceTag();
   renderPublic(); renderGallery(); renderStarPick(); renderReviews(); observeReveals();
   painted = true;
   if (location.hash === "#review") setTimeout(openReviewForm, 300);

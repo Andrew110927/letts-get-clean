@@ -10,7 +10,7 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 | 2 | Terms of service | ✅ | `terms.html`: booking, prices and payment, cancelling, what we need from you, the condition check and existing damage, photos of the work, reviews, site use and IP, liability limits, New York law, Orange County courts |
 | 3 | Refund and cancellation | ✅ | `refund-policy.html`: no deposit, free cancelling, weather, if you're not happy, when and how refunds happen, card holds |
 | 4 | Cookie policy | ✅ | `cookies.html`: no cookies; table of the two browser-storage items; working "Clear my saved details" and "Forget the QR code tag" buttons (`#settings`) |
-| 5 | Consent banner | ✅ Not needed (decided) | Nothing optional loads, so there's nothing to consent to. Google Fonts was the only third party on page load, and it's now self-hosted. The cookie page explains this and how a banner would work if trackers are ever added |
+| 5 | Consent banner | ✅ | A small "Your choice" panel (`index.html`) with **Accept all** and **Reject all** at the same size and style, plus **Customize** with per-category switches: Strictly necessary is always on and labelled; Preferences covers remembered booking details and the QR code tag; analytics and marketing aren't used. Nothing optional is stored until someone says yes, and the code checks the choice before every optional write. The choice lasts 12 months. A Global Privacy Control signal counts as Reject, with no panel. "Cookie settings" in every footer reopens it, and `cookies.html#settings` manages the same choice. The panel sits over the hero film and scrolls away, so it never covers the name or the content, and it doesn't trap focus |
 | 6 | Form consents | ✅ | `index.html`: required unticked terms box with links; text-message notice under the phone field; privacy link under the Book button; "Remember my details" unticked by default; required fields marked visibly (*) and in code. Each booking sends the terms version; the database stamps the time with its own clock (`20261031_privacy.sql`, **not applied yet**). Until it's applied, the site saves bookings without it, so nothing breaks |
 | 7 | Collect only needed data | ✅ | "How did you hear about us?" is optional. Everything else is needed for a mobile job |
 | 8 | Third parties and security | ✅ | Fonts self-hosted (`fonts/`); a CSP and referrer policy `<meta>` on every page; `noreferrer` on links that open new tabs. No npm packages ship. *GitHub Pages can't send nosniff or Permissions-Policy headers: remaining risk* |
@@ -48,6 +48,14 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
   - An empty booking lists every missing field; the terms box is enforced.
   - A booking dry run with the database call stubbed reaches the confirmation.
   - Nothing is saved locally unless Remember is ticked; the cookie settings clear both items; no console errors.
+- **Lighthouse 12.2.1:** Accessibility 100, Best Practices 100, SEO 100 on all six pages, with no failing audits after letting the visible text name the calendar days and rate rows (label in name).
+- **Consent checks (Playwright, fresh browser profiles):**
+  - First visit stores nothing optional.
+  - The tab order is skip link, then Accept all, then Reject all, and both buttons measure 194 × 50 with the same colour and weight.
+  - Reject moves focus to the main content and bookings then store nothing.
+  - Accept keeps the details and the QR tag.
+  - The footer link reopens the switches; turning Preferences off clears what was saved; the cookie page shows the same choice.
+  - A GPC browser gets no panel and a stored "reject".
 - **Tests:** `node --test "tests/*.test.mjs"`: 99 of 99 pass, including the new privacy tests (terms timed by the database; only the owner can forget; forgetting keeps every money total).
 - **Playwright, round 2:**
   - A booking against a database that already has the terms column sends version 2026-10-31.
@@ -92,7 +100,7 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 ## Maintenance checklist (every 3–6 months, or when adding a tool, form or price)
 
 - [ ] Prices in `site_settings`, print files and social posts all match.
-- [ ] No new script, embed or tracker. If one is added, build the consent banner first and update `cookies.html`.
+- [ ] No new script, embed or tracker. If one is added, give it a category in the consent panel, keep it off until allowed, and add it to the table in `cookies.html`.
 - [ ] New photos and videos: plates blurred, licenses noted in `MEDIA_LICENSES.md`.
 - [ ] Every new form: unticked boxes, minimal fields, policy links.
 - [ ] Re-run axe, the design inspector and the tests.

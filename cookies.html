@@ -32,29 +32,35 @@
     <h2>The short version</h2>
     <ul>
       <li>This site sets no cookies and runs no analytics, ads or trackers.</li>
-      <li>It can save your booking details in your own browser, but only if you tick "Remember my details".</li>
-      <li>You can clear that any time in <a href="#settings">cookie settings</a> below.</li>
+      <li>It only remembers your booking details, or the flyer you scanned, if you allow "Preferences".</li>
+      <li>Change your choice or clear what's saved any time in <a href="#settings">cookie settings</a> below.</li>
     </ul>
   </div>
 
   <h2>What this site stores</h2>
-  <p>Instead of cookies, the site uses your browser's own storage for two small things. Neither is sent to anyone on its own.</p>
+  <p>Instead of cookies, the site uses your browser's own storage for three small things. None of them is sent to anyone on its own.</p>
   <table>
     <thead><tr><th scope="col">Name</th><th scope="col">Provider</th><th scope="col">Purpose</th><th scope="col">Category</th><th scope="col">Kept for</th></tr></thead>
     <tbody>
-      <tr><td data-h="Name">lgc.contact.v1</td><td data-h="Provider">This site (local storage)</td><td data-h="Purpose">Fills in your name, phone, address, town and car next time you book, only if you tick "Remember my details"</td><td data-h="Category">Preferences</td><td data-h="Kept for">Until you clear it</td></tr>
-      <tr><td data-h="Name">lgc.src</td><td data-h="Provider">This site (session storage)</td><td data-h="Purpose">Remembers which QR code you scanned (flyer, card, magnet or sign) to fill in "How did you hear about us?"</td><td data-h="Category">Preferences</td><td data-h="Kept for">Until you close the tab</td></tr>
+      <tr><td data-h="Name">lgc.consent.v1</td><td data-h="Provider">This site (local storage)</td><td data-h="Purpose">Remembers your cookie choice so the site doesn't ask again</td><td data-h="Category">Strictly necessary</td><td data-h="Kept for">12 months, then the site asks again</td></tr>
+      <tr><td data-h="Name">lgc.contact.v1</td><td data-h="Provider">This site (local storage)</td><td data-h="Purpose">Fills in your name, phone, address, town and car next time you book. Only saved if you allow Preferences and tick "Remember my details"</td><td data-h="Category">Preferences</td><td data-h="Kept for">Until you clear it</td></tr>
+      <tr><td data-h="Name">lgc.src</td><td data-h="Provider">This site (session storage)</td><td data-h="Purpose">Remembers which QR code you scanned (flyer, card, magnet or sign) to fill in "How did you hear about us?" Only kept if you allow Preferences</td><td data-h="Category">Preferences</td><td data-h="Kept for">Until you close the tab</td></tr>
     </tbody>
   </table>
   <p>The site also talks to our database service, Supabase, to load prices, open times and reviews and to save bookings. Those requests set no cookies and store nothing in your browser. The owner's sign-in page (the "Owner login" link) keeps Andrew signed in on his own devices; customers never use it.</p>
 
-  <h2>Why there's no cookie banner</h2>
-  <p>A cookie banner asks for permission before a site uses optional tracking. This site doesn't use any, and the one optional item above is only saved when you tick the box yourself. If we ever add analytics, embedded maps or videos, or anything else that sets cookies, we'll ask first with "Accept" and "Reject" buttons of equal size, and nothing will load until you choose. Global Privacy Control signals are honored by default.</p>
+  <h2>Your choice</h2>
+  <p>The first time you visit, a small panel asks whether this browser may keep Preferences. "Accept all" and "Reject all" are the same size, and "Customize" lets you choose each category. Until you choose, nothing optional is stored, so ignoring the panel is the same as saying no. Your choice is kept for 12 months, and you can change it any time below or with "Cookie settings" at the bottom of every page.</p>
+  <p>If your browser sends a Global Privacy Control signal, we treat it as "Reject all" and don't ask. Analytics and marketing aren't used on this site at all. If we ever add them, or embedded maps or videos that set cookies, they'll stay off until you allow them here.</p>
 
   <h2 id="settings">Cookie settings</h2>
   <p id="status">Checking what this browser has saved…</p>
+  <label style="display:flex;gap:12px;align-items:flex-start;margin:4px 0 8px"><input type="checkbox" checked disabled style="width:22px;height:22px;accent-color:#29C8FF;margin:2px 0 0"><span><strong>Strictly necessary</strong> (always on): remembers your choice and loads prices and open times.</span></label>
+  <label style="display:flex;gap:12px;align-items:flex-start;margin:0 0 8px"><input type="checkbox" id="prefs" style="width:22px;height:22px;accent-color:#29C8FF;margin:2px 0 0"><span><strong>Preferences</strong>: remember my booking details and the QR code I scanned, on this device only.</span></label>
+  <p class="note">Analytics and marketing: not used on this site.</p>
   <div class="actions">
-    <button class="btn" type="button" id="clearSaved">Clear my saved details</button>
+    <button class="btn" type="button" id="saveChoice">Save my choice</button>
+    <button class="btn btn-ghost" type="button" id="clearSaved">Clear my saved details</button>
     <button class="btn btn-ghost" type="button" id="clearSrc">Forget the QR code tag</button>
   </div>
   <p class="done" id="done" role="status" hidden></p>
@@ -82,15 +88,26 @@
   <p class="giant" aria-hidden="true">Letts <span>Get Clean</span></p>
 </footer>
 <script>
-// Cookie settings: shows and clears the two things this site can keep in the browser.
+// Cookie settings: the visitor's choice (same record the home page uses) and the two optional items it covers.
 (() => {
-  const keys = { saved: "lgc.contact.v1", src: "lgc.src" };
+  const keys = { saved: "lgc.contact.v1", src: "lgc.src", consent: "lgc.consent.v1" };
+  const read = () => { try { return JSON.parse(localStorage.getItem(keys.consent) || "null"); } catch (e) { return null; } };
   const has = (store, k) => { try { return store.getItem(k) !== null; } catch (e) { return false; } };
   const status = document.getElementById("status"), done = document.getElementById("done");
   function show() {
-    const saved = has(localStorage, keys.saved), src = has(sessionStorage, keys.src);
-    status.textContent = (saved ? "Your booking details are saved in this browser." : "No booking details are saved in this browser.") + (src ? " A QR code tag is remembered for this visit." : "");
+    const saved = has(localStorage, keys.saved), src = has(sessionStorage, keys.src), c = read();
+    document.getElementById("prefs").checked = !!(c && c.prefs);
+    status.textContent = (c ? (c.prefs ? "You've allowed Preferences." : "You've said no to Preferences" + (c.gpc ? " (your browser's privacy signal)." : ".")) : "You haven't chosen yet, so nothing optional is stored.")
+      + " " + (saved ? "Your booking details are saved in this browser." : "No booking details are saved in this browser.") + (src ? " A QR code tag is remembered for this visit." : "");
   }
+  document.getElementById("saveChoice").addEventListener("click", () => {
+    const prefs = document.getElementById("prefs").checked;
+    try {
+      localStorage.setItem(keys.consent, JSON.stringify({ prefs, at: new Date().toISOString(), gpc: false }));
+      if (!prefs) { localStorage.removeItem(keys.saved); sessionStorage.removeItem(keys.src); }
+    } catch (e) {}
+    done.textContent = prefs ? "Saved. This browser may remember you." : "Saved. Nothing optional is stored."; done.hidden = false; show();
+  });
   function clear(store, k, msg) { try { store.removeItem(k); } catch (e) {} done.textContent = msg; done.hidden = false; show(); }
   document.getElementById("clearSaved").addEventListener("click", () => clear(localStorage, keys.saved, "Done. Your saved details are cleared."));
   document.getElementById("clearSrc").addEventListener("click", () => clear(sessionStorage, keys.src, "Done. The QR code tag is forgotten."));
