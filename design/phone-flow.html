@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Letts Get Clean · phone flow</title>
+<!-- Four real phone screens in one device style at one scale, evenly spaced: home, prices, time, booked. Rendered to phone-flow.png. -->
+<style>
+@font-face{font-family:"Inter";src:url(../fonts/inter-latin.woff2) format("woff2");font-weight:100 900}
+*{box-sizing:border-box}
+html,body{margin:0;width:1600px;height:1000px;background:#0B0D10;font-family:"Inter",sans-serif;color:#F4F5F7}
+.row{display:flex;justify-content:center;gap:48px;padding-top:64px}
+figure{margin:0;display:grid;gap:22px;justify-items:center}
+.phone{width:322px;height:676px;border-radius:52px;background:#1E232C;padding:11px;position:relative}
+.phone::before{content:"";position:absolute;top:22px;left:50%;width:96px;height:26px;margin-left:-48px;border-radius:14px;background:#0B0D10;z-index:2}
+.screen{width:300px;height:654px;border-radius:42px;overflow:hidden;background:#07080B;padding-top:44px}
+.phone img{width:300px;height:610px;object-fit:cover;object-position:top;display:block}
+figcaption{font-size:18px;font-weight:600;color:#C9CED6}
+figcaption b{color:#F4F5F7}
+</style>
+</head>
+<body>
+<div class="row">
+  <figure><div class="phone"><div class="screen"><img src="phone-1-home.png" alt=""></div></div><figcaption><b>Home</b> · price and next opening</figcaption></figure>
+  <figure><div class="phone"><div class="screen"><img src="phone-2-prices.png" alt=""></div></div><figcaption><b>Prices</b> · SUV picked, tiles re-priced</figcaption></figure>
+  <figure><div class="phone"><div class="screen"><img src="phone-3-time.png" alt=""></div></div><figcaption><b>Book</b> · day and time</figcaption></figure>
+  <figure><div class="phone"><div class="screen"><img src="phone-4-booked.png" alt=""></div></div><figcaption><b>Booked</b> · text Andrew, add to calendar</figcaption></figure>
+</div>
+</body>
+</html>

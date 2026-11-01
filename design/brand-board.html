@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Letts Get Clean · brand board</title>
+<!-- A 3 x 3 brand board (brandkit layout) built only from the real assets, rendered to brand-board.png. -->
+<style>
+@font-face{font-family:"Anton";src:url(../fonts/anton-latin.woff2) format("woff2")}
+@font-face{font-family:"Inter";src:url(../fonts/inter-latin.woff2) format("woff2");font-weight:100 900}
+*{box-sizing:border-box}
+html,body{margin:0;width:1600px;height:1000px;background:#0B0D10;font-family:"Inter",sans-serif;color:#F4F5F7;-webkit-font-smoothing:antialiased}
+.board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:16px;padding:16px;width:1600px;height:1000px}
+.p{position:relative;overflow:hidden;border-radius:6px;background:#07080B}
+.lab{position:absolute;left:18px;bottom:14px;font-size:12px;font-weight:600;color:#8A919C;letter-spacing:.2px}
+.lab b{color:#F4F5F7;font-weight:700}
+.num{position:absolute;right:18px;bottom:14px;font-size:12px;color:#5D6572}
+.dark-lab .lab{color:#4A525E}.dark-lab .lab b{color:#07080B}.dark-lab .num{color:#7A828E}
+/* 1 cover */
+.cover{display:grid;place-items:center}
+.cover img{height:250px}
+/* 2 logo in use */
+.uses{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0}
+.uses>div{display:grid;place-items:center}
+.uses .lt{background:#F4F5F7}
+.uses .lab{top:14px;bottom:auto}.uses .num{top:14px;bottom:auto;color:#4A525E}
+.uses .ac{background:#29C8FF}
+.wm{display:flex;align-items:center;gap:10px}
+.wm img{width:40px;height:40px;border-radius:50%}
+.wm b{font-family:"Anton";font-weight:400;font-size:26px;text-transform:uppercase;transform:skewX(-8deg);white-space:nowrap;letter-spacing:.5px}
+.wm b span{color:#29C8FF}
+.lt .wm b{color:#07080B}.lt .wm b span{color:#1786B3}
+.ac .wm b{color:#04131A}.ac .wm b span{color:#F4F5F7}
+/* 3 digital */
+.browser{position:absolute;inset:18px 18px 40px;border-radius:8px;overflow:hidden;background:#12151B;display:flex;flex-direction:column}
+.chrome{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;background:#1A1F28}
+.chrome i{width:9px;height:9px;border-radius:50%;background:#3A4250}
+.chrome span{margin-left:12px;flex:1;height:18px;border-radius:9px;background:#0E1116;font-size:11px;line-height:18px;padding-left:10px;color:#A7AEB8}
+.browser img{flex:1;width:100%;object-fit:cover;object-position:top}
+/* 4 essence */
+.essence{display:flex;flex-direction:column;justify-content:center;padding:0 34px}
+.essence .say{margin:0;font-family:"Anton";text-transform:uppercase;font-size:64px;line-height:.92}
+.essence .say span{display:block;color:#29C8FF}
+/* 5 colour */
+.sw{display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr 1fr;height:100%}
+.sw div{position:relative;padding:16px 12px;font-size:12px;font-weight:600;display:flex;flex-direction:column;justify-content:flex-start;gap:2px}
+.sw small{font-size:11px;font-weight:500;opacity:.8}
+/* 6 type */
+.type{padding:22px 26px;display:grid;gap:10px;align-content:start}
+.type .big{font-family:"Anton";font-size:76px;line-height:.85;text-transform:uppercase}
+.type .row{display:flex;gap:28px;align-items:baseline}
+.type .aa{font-family:"Anton";font-size:44px}
+.type .ai{font-size:44px;font-weight:800}
+.type p{margin:0;font-size:15px;line-height:1.45;color:#C9CED6;max-width:42ch}
+/* 7 print */
+.print{background:#E7EAEE}
+.print img{position:absolute;box-shadow:0 14px 30px rgba(0,0,0,.28)}
+.print .card{width:250px;left:30px;top:34px;transform:rotate(-4deg)}
+.print .magnet{width:250px;right:26px;top:70px;transform:rotate(3deg)}
+/* 8 image */
+.img img{width:100%;height:100%;object-fit:cover}
+.img::after{content:"";position:absolute;inset:auto 0 0;height:55%;background:linear-gradient(rgba(7,8,11,0),rgba(7,8,11,.85))}
+.img .say{position:absolute;left:22px;bottom:40px;z-index:1;margin:0;font-family:"Anton";text-transform:uppercase;font-size:40px;line-height:.9}
+.img .lab,.img .num{z-index:1}
+/* 9 system */
+.sys{padding:22px;display:grid;gap:14px;align-content:start}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border-radius:999px;font-weight:700;font-size:14px;background:#29C8FF;color:#04131A}
+.btn.g{background:#232A35;color:#F4F5F7}.btn.w{background:#F4F5F7;color:#07080B}
+.tilebar{display:flex;justify-content:space-between;align-items:center;height:46px;padding:0 18px;background:#1C9ACB;color:#04131A;font-weight:700;font-size:14px;border-radius:4px}
+.slip{background:#F4F5F7;color:#07080B;padding:12px 16px 26px;width:230px;font-size:12px;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),90% 100%,80% calc(100% - 10px),70% 100%,60% calc(100% - 10px),50% 100%,40% calc(100% - 10px),30% 100%,20% calc(100% - 10px),10% 100%,0 calc(100% - 10px))}
+.slip .t{display:flex;justify-content:space-between;align-items:center;background:#07080B;color:#F4F5F7;margin:8px -16px;padding:4px 16px}
+.slip .t b{font-family:"Anton";font-weight:400;font-size:30px}
+.sysrow{display:flex;gap:14px;align-items:flex-start}
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="p cover"><img src="../media/mascot-lockup.webp" alt=""><p class="lab"><b>Letts Get Clean</b> · the logo</p><p class="num">01</p></div>
+
+  <div class="p uses">
+    <div><div class="wm"><img src="../media/mascot-160.webp" alt=""><b>Letts <span>Get Clean</span></b></div></div>
+    <div class="lt"><div class="wm"><img src="../media/mascot-160.webp" alt=""><b>Letts <span>Get Clean</span></b></div></div>
+    <div class="ac"><div class="wm"><img src="../media/mascot-160.webp" alt=""><b>Letts <span>Get Clean</span></b></div></div>
+    <div><img src="../media/mascot.webp" alt="" style="width:120px"></div>
+    <p class="lab"><b>Wordmark</b> on ground, paper and accent · badge</p><p class="num">02</p>
+  </div>
+
+  <div class="p"><div class="browser"><div class="chrome"><i></i><i></i><i></i><span>andrew110927.github.io/letts-get-clean</span></div><img src="board-site.jpg" alt=""></div><p class="lab"><b>Website</b> · the name as a monument</p><p class="num">03</p></div>
+
+  <div class="p essence"><p class="say">Dirty car? <span>Not for long.</span></p><p class="lab"><b>Voice</b> · plain, local, a little cheeky</p><p class="num">04</p></div>
+
+  <div class="p sw">
+    <div style="background:#07080B">Ground<small>#07080B</small></div>
+    <div style="background:#29C8FF;color:#04131A">Accent<small>#29C8FF</small></div>
+    <div style="background:#F4F5F7;color:#07080B">Paper<small>#F4F5F7</small></div>
+    <div style="background:#1A1F28">Surface<small>#1A1F28</small></div>
+    <div style="background:#1786B3;color:#F4F5F7">Deep<small>#1786B3</small></div>
+    <p class="lab" style="color:#F4F5F7"><b>Colour</b> · one ground, one ink, one accent</p><p class="num">05</p>
+  </div>
+
+  <div class="p type"><div class="big">Letts Get Clean</div><div class="row"><span class="aa">Aa</span><span class="ai">Aa</span></div><p>Anton for the name and headings, always uppercase. Inter for everything people read.</p><p class="lab"><b>Type</b> · Anton + Inter</p><p class="num">06</p></div>
+
+  <div class="p print dark-lab"><img class="card" src="../print/business-card.png" alt=""><img class="magnet" src="../print/car-magnet-12x18.png" alt=""><p class="lab"><b>Print</b> · business card, car magnet</p><p class="num">07</p></div>
+
+  <div class="p img"><img src="../media/hero_poster.webp" alt=""><p class="say">Real cars,<br>real driveways</p><p class="lab"><b>Pictures</b> · only our own work, plates blurred</p><p class="num">08</p></div>
+
+  <div class="p sys">
+    <div class="btns"><span class="btn">Book</span><span class="btn g">Text Andrew</span><span class="btn w">Car / sedan</span></div>
+    <div class="sysrow">
+      <div class="slip">Your quote: The Full Detail<div class="t"><span>Total</span><b>$50</b></div>Pay after the job</div>
+      <div style="flex:1;display:grid;gap:10px"><div class="tilebar">Book The Full Detail <span>›</span></div><div class="tilebar" style="background:#0E1116;color:#F4F5F7">Book Exterior <span>›</span></div></div>
+    </div>
+    <p class="lab"><b>System</b> · round buttons, square slips, flat colour</p><p class="num">09</p>
+  </div>
+</div>
+</body>
+</html>
