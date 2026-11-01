@@ -250,6 +250,16 @@ html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{o
 .sizes input:checked+span{background:var(--ink);color:var(--paper-ink)}
 .sizes input:checked+span small{color:var(--paper-muted)}
 .sizes input:focus-visible+span{outline:3px solid var(--accent);outline-offset:3px}
+/* The wash: a sticky full-screen stage (the drawn car, js/wash.js) with the three package screens scrolling over it.
+   The negative margin pulls the first screen up over the stage so the car and the words arrive together. */
+.wash{position:relative}
+.wash-stage{position:sticky;top:0;height:100svh;margin-bottom:-100svh;overflow:hidden;pointer-events:none}
+.wash-stage canvas,.wash-still{position:absolute;inset:0;width:100%;height:100%}
+.wash-still{object-fit:contain;object-position:70% 55%;opacity:1;transition:opacity .6s var(--ease)}
+.wash-on .wash-still{opacity:0}
+.wash-load{position:absolute;left:var(--m);bottom:24px;margin:0;font-weight:700;font-size:var(--t-small);color:var(--page-muted);font-variant-numeric:tabular-nums;transition:opacity .4s}
+.wash-load:empty,.wash-on .wash-load{opacity:0}
+#pkGrid{position:relative;z-index:1}
 .pk{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col);align-items:center;min-height:100svh;padding:clamp(48px,6vw,96px) var(--m)}
 .pk-copy{grid-column:1/6;display:grid;gap:10px;align-content:center}
 .pk-name{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:clamp(60px,9vw,150px);line-height:.86;letter-spacing:-.005em;margin:0}
@@ -259,13 +269,7 @@ html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{o
 .pk li{font-size:var(--t-lead);line-height:1.35}
 .pk-cta{justify-self:start;margin-top:12px;background:var(--page-cta);color:var(--page-cta-ink)}
 .pk-cta:hover{background:var(--page-cta);filter:brightness(1.12)}
-/* Photos are sized by the screen's height so a whole package (words and picture) fits on one screen. */
-.pk-pic{grid-column:7/13;justify-self:end;margin:0;position:relative}
-.pk-pic img{height:min(74svh,680px);width:auto;max-width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:4px}
-.pk:nth-child(even) .pk-copy{grid-column:8/13;order:2}
-.pk:nth-child(even) .pk-pic{grid-column:1/7;justify-self:start}
-/* The Full Detail shows both halves of the job: the outside large, the inside tucked over its corner. */
-.pk-pic img+img{position:absolute;width:46%;left:-12%;bottom:-8%;border:6px solid var(--page-bg)}
+.pk:nth-child(even) .pk-copy{grid-column:8/13}
 .prices-note{padding:0 var(--m) var(--gap);color:var(--page-muted);font-size:var(--t-small)}
 
 /* services: statement, rates pushed right */
@@ -491,6 +495,11 @@ footer{background:var(--paper);color:var(--paper-ink);overflow:hidden;position:r
 .foot-top{padding-top:clamp(64px,9vw,120px)}
 .signoff{display:flex;align-items:center;gap:12px;margin-top:24px;font-weight:700}
 .signoff img{width:56px;height:56px;border-radius:50%}
+@media (prefers-reduced-motion:no-preference) and (hover:hover){
+  .about img[src*="mascot"],.signoff img{transition:transform .3s var(--ease);transform-origin:50% 85%}
+  .about img[src*="mascot"]:hover,.signoff:hover img{animation:wag .7s var(--ease)}
+}
+@keyframes wag{25%{transform:rotate(-9deg) scale(1.06)}60%{transform:rotate(7deg) scale(1.06)}100%{transform:none}}
 .foot-top h2{grid-column:1/8}
 .foot-top .btn-dark{margin-top:28px}
 .foot-links{grid-column:10/13;display:grid;gap:10px;align-content:start}
@@ -543,9 +552,9 @@ html.consent-ask #consent{display:grid!important}
   .how .slip{padding-inline:22px}
   .slip .row.end{margin-inline:-22px;padding-inline:22px}
   .pk-head h2,.pk-head #pkgNote,.pk-head .deal,.pk-head fieldset{grid-column:1/-1;grid-row:auto;justify-self:start}
-  .pk{grid-template-columns:1fr;min-height:0;row-gap:32px;padding-block:72px}
-  .pk-copy,.pk:nth-child(even) .pk-copy,.pk-pic,.pk:nth-child(even) .pk-pic{grid-column:1;order:0;justify-self:stretch;width:100%}
-  .pk-pic{max-width:520px}
+  .pk{grid-template-columns:1fr;min-height:100svh;align-content:end;padding:0 var(--m) 48px}
+  .pk-copy,.pk:nth-child(even) .pk-copy{grid-column:1;justify-self:stretch;width:auto;background:color-mix(in srgb,var(--page-bg) 80%,transparent);padding:18px 16px 20px;margin-inline:-8px}
+  .wash-still{object-position:50% 22%}
   .pk-pic img{height:auto;width:100%}
   .pk-pic img+img{left:auto;right:-4%;width:42%}
   .services h2{text-indent:0;margin-bottom:48px}
@@ -588,6 +597,8 @@ html.consent-ask #consent{display:grid!important}
   .giant{font-size:34vw}
 }
 @media (prefers-reduced-motion:reduce){
+  .wash-stage{position:static;height:min(60svh,520px);margin-bottom:0}
+  .pk{min-height:0;padding-block:64px}
   html{scroll-behavior:auto}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
   .js .reveal{opacity:1;transform:none}
@@ -682,7 +693,13 @@ html.consent-ask #consent{display:grid!important}
       <p class="reveal muted" style="--d:80ms" id="pkgNote"></p>
       <fieldset class="sizes reveal" style="--d:140ms" id="sizeSwitch"><legend>Your vehicle</legend></fieldset>
     </div>
-    <div id="pkGrid"></div>
+    <div class="wash" id="wash">
+      <div class="wash-stage" aria-hidden="true">
+        <picture><source media="(orientation: portrait)" srcset="media/wash_still-tall.webp" width="900" height="1300"><img class="wash-still" src="media/wash_still.webp" width="1600" height="1000" alt="" loading="lazy" decoding="async"></picture>
+        <p class="wash-load"></p>
+      </div>
+      <div id="pkGrid"></div>
+    </div>
     <p class="prices-note" id="pkExtras"></p>
   </section>
 
@@ -1134,11 +1151,16 @@ html.consent-ask #consent{display:grid!important}
   // screen (watchPackageColours). The vehicle switch above them re-prices all three and carries into the booking form.
   const PK_LOOK = ["exterior", "interior", "full"];
   const widths = (src) => src.replace(".webp", "-480.webp") + " 480w, " + src.replace(".webp", "-720.webp") + " 720w, " + src + " 900w";
-  const PK_PICS = {
-    exterior: [["media/ext_after.webp", "The white Hyundai Sonata after an exterior detail, washed and shining"]],
-    interior: [["media/int_after.webp", "The Sonata's front seats and console after an interior detail"]],
-    full: [["media/ext_after.webp", "The Sonata's outside after the Full Detail"], ["media/int_after.webp", "The Sonata's inside after the Full Detail"]]
-  };
+  // The badge counts to the real end date, because the prices really do go up after it: whole days, then hours and
+  // minutes on the last day. It re-reads the clock every minute.
+  function dealTick() {
+    const st = S.settings, badge = $("dealBadge"), left = dealEnd() - new Date();
+    if (!dealOn() || left <= 0) { badge.hidden = true; return; }
+    const days = Math.ceil(left / 864e5), hrs = Math.floor(left / 36e5), mins = Math.floor(left / 6e4) % 60;
+    badge.textContent = "Launch deal ends " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + " · " +
+      (days > 2 ? days + " days left" : hrs >= 1 ? hrs + "h " + String(mins).padStart(2, "0") + "m left" : mins + " minutes left");
+  }
+  setInterval(() => { if (!$("dealBadge").hidden) dealTick(); }, 6e4);
   function renderPackages() {
     const st = S.settings, deal = dealOn(), g = $("pkGrid");
     if (!st.sizes.some(s => s.id === sel.size)) sel.size = st.sizes[0].id;
@@ -1151,9 +1173,9 @@ html.consent-ask #consent{display:grid!important}
       } }),
       h("span", {}, s.label, s.price ? h("small", {}, "+" + money(s.price)) : null))));
     // The badge counts whole days to the real end date, because the prices really do go up after it.
-    const days = deal ? Math.ceil((dealEnd() - new Date()) / 864e5) : 0, badge = $("dealBadge");
+    const badge = $("dealBadge");
     badge.hidden = !deal;
-    if (deal) badge.textContent = "Launch deal ends " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + " · " + (days <= 1 ? "last day" : days + " days left");
+    if (deal) dealTick();
     g.replaceChildren(...st.packages.map((p, i) => {
       const now = priceOf(p) + (size.price || 0), later = p.regular + (size.price || 0), save = later - now;
       const look = PK_LOOK[i] || "exterior";
@@ -1164,10 +1186,7 @@ html.consent-ask #consent{display:grid!important}
           // A launch price only shows its later price because that is the price it truly goes to after the end date.
           deal && save > 0 ? h("p", { class: "after" }, money(later) + " after " + fmtDate(st.dealEnds, { month: "short", day: "numeric" }) + (i === st.packages.length - 1 ? ", so you save " + money(save) : "")) : null,
           h("ul", {}, p.items.map(t => h("li", {}, t))),
-          h("a", { class: "btn pk-cta", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)),
-        h("figure", { class: "pk-pic" }, ...PK_PICS[look].map(([src, alt], i) => h("img", { src, srcset: widths(src),
-          sizes: i ? "(max-width:900px) min(220px, 42vw), min(28vh, 250px)" : "(max-width:900px) min(520px, calc(100vw - 32px)), min(59vh, 544px)",
-          alt, width: "900", height: "1125", loading: "lazy", decoding: "async" }))));
+          h("a", { class: "btn pk-cta", href: "#book", onclick: () => { sel.pkg = p.id; setService("car"); } }, "Book " + p.name)));
     }));
     $("pkExtras").textContent = (st.addons.length ? "Extras from " + money(Math.min(...st.addons.map(a => a.price))) + " are added in your quote, only if you pick them. " : "") + "No deposit: you pay after the job.";
     observeReveals();
@@ -1986,6 +2005,18 @@ if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
     .forEach(src => document.body.append(Object.assign(document.createElement("script"), { src, async: false })));
   if (matchMedia("(min-width: 901px)").matches || document.readyState === "complete") loadMotion();
   else addEventListener("load", loadMotion, { once: true });
+  // The wash (js/wash.js, Three.js) arrives when its stage is about a screen and a half away, after the page has loaded.
+  const stage = document.querySelector(".wash-stage");
+  const webgl = () => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch (e) { return false; } };
+  if (stage && "IntersectionObserver" in window && webgl()) {
+    const near = new IntersectionObserver((ents) => {
+      if (!ents.some(e => e.isIntersecting)) return;
+      near.disconnect();
+      const go = () => { stage.querySelector(".wash-load").textContent = "0%"; import("./js/wash.js").then(m => m.start(stage)).catch(() => { stage.querySelector(".wash-load").textContent = ""; }); };
+      if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
+    }, { rootMargin: "150% 0px" });
+    near.observe(stage);
+  }
 }
 </script>
 </body>

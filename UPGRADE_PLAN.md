@@ -203,3 +203,8 @@ Andrew adds a "URL prefix" property for `https://andrew110927.github.io/letts-ge
 - OK to apply the database update (email column and daily limit).
 - Real detail times per package, for the FAQ.
 - Optional: installing the website plugins from the plugin reel (vetted first, in a separate session).
+
+## Phase 4: the wash (November 1, 2026, branch `site-3d`, not live)
+
+Andrew asked for an immersive 3D scroll experience with a car that goes from dirty to clean. Built as `js/wash.js` on the existing stack (plain HTML, self-hosted Three.js, GSAP, Lenis): the package section is now a sticky stage with a drawn white sedan behind the three package screens, washed by scroll. Deliberately not done from his prompt, with the reason: a downloaded CC0 car model (somebody else's car and a big download; the drawn one is 0 bytes extra and reads as the Sonata), glass cards, gradient borders and a custom cursor (the design study's markers of a template), a blocking preloader (it would delay the first paint; the stage shows its own 0–100% counter instead), a services marquee (decoration), a drawn county map (an inaccurate map is worse than the town list). Added: a ticking launch-deal badge, stars that pop in on the reviews letter, Mama Letts tilts her head on hover. Stills for reduced motion and no-WebGL: `media/wash_still.webp` and `wash_still-tall.webp`, rendered headlessly from the same code.
+

@@ -108,10 +108,9 @@
     // step, header first and torn edge last. It plays once and stays printed (no pinning, nothing scroll-jacked).
     group(".how .printer", () => [$(".how .slip")], { yPercent: 100 }, { yPercent: 0, duration: 1.2, ease: "steps(12)" }, "top 70%");
 
-    // ---- Packages: each section arrives as it scrolls in. Name, price, list, button and photo rise in turn, the price
-    // counts up from $0 and the photo settles. Selectors go by id because live prices
-    // re-draw the sections.
-    const pkParts = (id) => { const pk = document.getElementById(id); return pk ? [...pk.querySelectorAll(".pk-name, .price, .after, li, .pk-cta, .pk-pic")] : []; };
+    // ---- Packages: each screen's words arrive as it scrolls in over the car (js/wash.js). Name, price, list and button
+    // rise in turn and the price counts up from $0. Selectors go by id because live prices re-draw the screens.
+    const pkParts = (id) => { const pk = document.getElementById(id); return pk ? [...pk.querySelectorAll(".pk-name, .price, .after, li, .pk-cta")] : []; };
     const pkGroups = $$("#pkGrid .pk").map(pk => pk.id).map(id => [id, group("#" + id, () => pkParts(id), { opacity: 0, y: 28 },
       { opacity: 1, y: 0, stagger: 0.06 }, "top 70%", () => {
         const pk = document.getElementById(id);
@@ -119,7 +118,6 @@
         const price = pk.querySelector(".price"), to = amount(price.textContent);
         price.textContent = "$0";
         gsap.delayedCall(0.2, () => countTo(price, 0, to));
-        gsap.from(pk.querySelectorAll(".pk-pic img"), { scale: 1.12, duration: SLOW * 1.4 });
       })]);
     // The vehicle switch: packages already seen roll their prices to the new amounts instead of jumping; the new sections
     // start on the old price (no frame of the new one first). Packages not seen yet stay hidden for their entrance.
@@ -134,6 +132,9 @@
         countTo(el, amount(was[i]), to, STD);
       });
     });
+
+    // ---- Reviews: the stars pop in one after another when the letter arrives.
+    group("#reviews", () => $$("#reviews .stars svg"), { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, stagger: 0.07, ease: "back.out(2.2)", duration: STD }, "top 75%");
 
     // ---- Every other rate: the rows arrive in a quick cascade.
     group("#rates", () => $$("#rates > *"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, stagger: 0.035 });
