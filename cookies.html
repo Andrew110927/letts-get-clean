@@ -1,0 +1,101 @@
+<!doctype html>
+<!-- Template drafted with AI assistance. Not legal advice. Have a qualified attorney review before relying on it. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Cookie policy · Letts Get Clean</title>
+<meta name="description" content="Letts Get Clean sets no cookies or trackers. What the site stores in your browser, why, and how to clear it.">
+<link rel="canonical" href="https://andrew110927.github.io/letts-get-clean/cookies.html">
+<meta name="theme-color" content="#07080B">
+<link rel="icon" type="image/png" sizes="64x64" href="media/favicon-64.png">
+<link rel="apple-touch-icon" href="media/icon-180.png">
+<link rel="preload" as="font" href="fonts/anton-latin.woff2" type="font/woff2" crossorigin>
+<link rel="preload" as="font" href="fonts/inter-latin.woff2" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="legal.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header class="top">
+  <div class="bar">
+    <a class="brand" href="./" aria-label="Letts Get Clean home"><img src="media/mascot-160.webp" width="40" height="40" alt=""><b>Letts <span>Get Clean</span></b></a>
+    <a class="btn" href="./#book">Book a detail</a>
+  </div>
+</header>
+
+<main class="legal" id="main">
+  <h1>Cookie policy</h1>
+  <p class="updated">Effective and last updated October 31, 2026</p>
+  <div class="short">
+    <h2>The short version</h2>
+    <ul>
+      <li>This site sets no cookies and runs no analytics, ads or trackers.</li>
+      <li>It can save your booking details in your own browser, but only if you tick "Remember my details".</li>
+      <li>You can clear that any time in <a href="#settings">cookie settings</a> below.</li>
+    </ul>
+  </div>
+
+  <h2>What this site stores</h2>
+  <p>Instead of cookies, the site uses your browser's own storage for two small things. Neither is sent to anyone on its own.</p>
+  <table>
+    <thead><tr><th scope="col">Name</th><th scope="col">Provider</th><th scope="col">Purpose</th><th scope="col">Category</th><th scope="col">Kept for</th></tr></thead>
+    <tbody>
+      <tr><td data-h="Name">lgc.contact.v1</td><td data-h="Provider">This site (local storage)</td><td data-h="Purpose">Fills in your name, phone, address, town and car next time you book, only if you tick "Remember my details"</td><td data-h="Category">Preferences</td><td data-h="Kept for">Until you clear it</td></tr>
+      <tr><td data-h="Name">lgc.src</td><td data-h="Provider">This site (session storage)</td><td data-h="Purpose">Remembers which QR code you scanned (flyer, card, magnet or sign) to fill in "How did you hear about us?"</td><td data-h="Category">Preferences</td><td data-h="Kept for">Until you close the tab</td></tr>
+    </tbody>
+  </table>
+  <p>The site also talks to our database service, Supabase, to load prices, open times and reviews and to save bookings. Those requests set no cookies and store nothing in your browser. The owner's sign-in page (the "Owner login" link) keeps Andrew signed in on his own devices; customers never use it.</p>
+
+  <h2>Why there's no cookie banner</h2>
+  <p>A cookie banner asks for permission before a site uses optional tracking. This site doesn't use any, and the one optional item above is only saved when you tick the box yourself. If we ever add analytics, embedded maps or videos, or anything else that sets cookies, we'll ask first with "Accept" and "Reject" buttons of equal size, and nothing will load until you choose. Global Privacy Control signals are honored by default.</p>
+
+  <h2 id="settings">Cookie settings</h2>
+  <p id="status">Checking what this browser has saved…</p>
+  <div class="actions">
+    <button class="btn" type="button" id="clearSaved">Clear my saved details</button>
+    <button class="btn btn-ghost" type="button" id="clearSrc">Forget the QR code tag</button>
+  </div>
+  <p class="done" id="done" role="status" hidden></p>
+
+  <h2>Blocking storage in your browser</h2>
+  <p>You can also clear or block site storage in your browser settings, usually under Privacy or Site data. The site still works if you do; the form just won't fill itself in.</p>
+
+  <h2>Contact</h2>
+  <p>Questions? Call or text Andrew at <a href="tel:+18452829387">(845) 282-9387</a>.</p>
+</main>
+
+<footer>
+  <div class="foot-top">
+    <p>Ready for a clean car?</p>
+    <div class="links">
+      <a href="./#book">Book online</a>
+      <a href="tel:+18452829387">Call (845) 282-9387</a>
+      <a href="sms:+18452829387">Text Andrew</a>
+    </div>
+  </div>
+  <div class="legal-row">
+    <span>© 2026 Letts Get Clean · Andrew Letts · Newburgh, NY</span>
+    <nav aria-label="Policies"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="refund-policy.html">Refunds</a><a href="cookies.html" aria-current="page">Cookies</a><a href="accessibility.html">Accessibility</a><a href="cookies.html#settings">Cookie settings</a><a href="privacy.html#request">Privacy request</a></nav>
+  </div>
+  <p class="giant" aria-hidden="true">Letts <span>Get Clean</span></p>
+</footer>
+<script>
+// Cookie settings: shows and clears the two things this site can keep in the browser.
+(() => {
+  const keys = { saved: "lgc.contact.v1", src: "lgc.src" };
+  const has = (store, k) => { try { return store.getItem(k) !== null; } catch (e) { return false; } };
+  const status = document.getElementById("status"), done = document.getElementById("done");
+  function show() {
+    const saved = has(localStorage, keys.saved), src = has(sessionStorage, keys.src);
+    status.textContent = (saved ? "Your booking details are saved in this browser." : "No booking details are saved in this browser.") + (src ? " A QR code tag is remembered for this visit." : "");
+  }
+  function clear(store, k, msg) { try { store.removeItem(k); } catch (e) {} done.textContent = msg; done.hidden = false; show(); }
+  document.getElementById("clearSaved").addEventListener("click", () => clear(localStorage, keys.saved, "Done. Your saved details are cleared."));
+  document.getElementById("clearSrc").addEventListener("click", () => clear(sessionStorage, keys.src, "Done. The QR code tag is forgotten."));
+  show();
+})();
+</script>
+</body>
+</html>
