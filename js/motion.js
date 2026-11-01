@@ -147,10 +147,19 @@
     // ---- The footer: the cropped name rises as the page reaches its end.
     gsap.fromTo(".giant", { yPercent: 80 }, { yPercent: 30, ease: "none", scrollTrigger: { trigger: "footer", start: "top bottom", end: "bottom bottom", scrub: 0.6 } });
 
+    // ---- The reveal: the first screen opens through a rain-beaded windshield that a squeegee clears (js/glass.js),
+    // as soon as the page has loaded. Wide screens only, never on data saver or low-memory devices.
+    let stopGlass = null, glassOff = false;
+    const lite = (navigator.connection && navigator.connection.saveData) || (navigator.deviceMemory && navigator.deviceMemory < 4);
+    if (wide && !lite) {
+      const goGlass = () => { if (!glassOff) import("./glass.js").then(m => { if (!glassOff) stopGlass = m.start($(".hero")); }).catch(() => {}); };
+      if (document.readyState === "complete") goGlass(); else listen(window, "load", goGlass);
+    }
+    off.push(() => { glassOff = true; if (stopGlass) stopGlass(); });
+
     // ---- Ambient: soap bubbles over the hero film, loaded once the page is idle. Wide screens only, and not on
     // data saver or low-memory devices; js/bubbles.js sleeps whenever the hero is off screen.
     let stopFoam = null, foamOff = false;
-    const lite = (navigator.connection && navigator.connection.saveData) || (navigator.deviceMemory && navigator.deviceMemory < 4);
     if (wide && !lite) {
       const go = () => { if (!foamOff) import("./bubbles.js").then(m => { if (!foamOff) stopFoam = m.start($(".hero")); }).catch(() => {}); };
       const whenIdle = () => (window.requestIdleCallback ? requestIdleCallback(go, { timeout: 2500 }) : setTimeout(go, 1200));

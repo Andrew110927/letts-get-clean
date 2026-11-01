@@ -212,3 +212,22 @@ Later on November 1 Andrew rejected the drawn car (boxy) and asked for a real on
 
 Andrew then asked for the real thing rather than any model ("try 2"). The 3D route was removed from the branch (it lives in git at commit 2f41233 with a CC0 model and a loader for any glTF car, should a photoreal model ever arrive). The wash is now real pictures only (`js/scrub.js`): the before/after photos wiped by a foam line, then the walk-around film scrubbed by scroll (64 frames at 960px, 48 at 540px for phones, 4.7 MB / 1.3 MB, loaded progressively near the stage). A continuous dirty-to-clean shot of a real wash, filmed steadily, would make the first two beats footage as well: film one at the next job.
 
+## Phase 5 · the effects pass (2026-11-01, branch `site-fx`)
+
+Andrew pasted a set of effect specs (a 3D soda hero on model-viewer, a dot-and-ring cursor, a glow-ASCII shader, an
+extruded chrome star, a card corridor, a gradient-grain background, an obscure-glass refraction shader) and the Lenis,
+GSAP and React Bits repositories. What was taken, and why:
+
+- **Rain-glass reveal** (`js/glass.js`): the obscure-glass shader's refraction, with its rain pattern, over the hero film,
+  plus a squeegee sweep that clears it. The one effect that says what the business does.
+- **Corridor** (`js/corridor.js`): the card-tunnel renderer, verbatim, fed only our own pictures.
+- **Cursor** (`js/cursor.js`): the dot and ring, to the letter (0.14 follow, 36/6 px, 1.9× over `a, button, input`).
+- **BlurText and ShinyText** from React Bits, as CSS on the headings and the deal badge. Lenis and GSAP were already
+  self-hosted in `vendor/` and drive the page's scroll and scenes.
+
+Left out, on purpose: the soda page itself (another product's layout; its colour morph and floating 3D product were
+already here as the package colour melt and the foam), the glow-ASCII shader (unreadable pictures of a car), the
+gradient-grain background (the palette is the subject's own), and the chrome star (a 3D ornament pinned to three@0.158
+with a bloom chain; the site runs r172 and the reviews need no ornament). Everything new is lazy, sleeps off screen, and
+is absent under reduced motion; phones get only the still corridor.
+
