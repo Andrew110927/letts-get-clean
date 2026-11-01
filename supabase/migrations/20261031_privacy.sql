@@ -1,5 +1,5 @@
 -- Privacy: a record of which terms each website booking agreed to, and a way to honor "delete my data".
--- Written 2026-10-31; NOT applied to the live project until Andrew approves it.
+-- Applied to the live project 2026-10-31 as migration "privacy", with Andrew's OK.
 
 -- Which version of the terms the customer ticked when they booked. The time comes from the database clock,
 -- so a visitor can send the version but can't backdate when they agreed.

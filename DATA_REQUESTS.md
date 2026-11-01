@@ -22,7 +22,7 @@ The internal checklist behind the "Privacy request" section of `privacy.html`. A
 - **Correct it:** edit the customer card (and the booking if it's upcoming).
 - **Delete it:**
   - Remove their **review** (LGC Pro → Reviews → Delete).
-  - Clear their **name, phone, address, car and notes**: open them in LGC Pro → Clients and tap **Forget this customer** twice. It blanks those details on their customer card, vehicles, bookings (including ones matched by their phone number) and the notes on their invoices and payments, and keeps each job's date, service and amount. *Until the privacy database update (`supabase/migrations/20261031_privacy.sql`) is applied, the button shows an error: edit the fields to "Deleted customer" by hand instead.*
+  - Clear their **name, phone, address, car and notes**: open them in LGC Pro → Clients and tap **Forget this customer** twice. It blanks those details on their customer card, vehicles, bookings (including ones matched by their phone number) and the notes on their invoices and payments, and keeps each job's date, service and amount.
   - **Keep** each job's date, service and amount, because tax rules can require those records for up to 7 years. Invoices may keep the amount and date but not the address or notes.
   - Delete the text thread on your phone if nothing open depends on it.
   - **Stripe:** card records stay with Stripe for their legal period. Tell the customer that if it applies.

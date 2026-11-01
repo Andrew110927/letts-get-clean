@@ -81,7 +81,7 @@ Updates arrive by themselves: whenever you open the app with signal, you get the
 
 Every booking is filed under its customer automatically by phone number, along with their car. You can add notes like gate codes or where the hose is. **Hide this customer** takes someone off your list without deleting their history.
 
-**If someone asks you to delete their data** (a privacy request), first make sure it's really them: the text should come from the phone number they booked with. Then open them in Clients, scroll to the bottom, and tap **Forget this customer** twice. It erases their name, phone, email, address, cars and notes everywhere, and keeps each job's date, service and amount for your taxes. It can't be undone. Text them back that it's done. The full checklist is in `DATA_REQUESTS.md`. *(This button works once the privacy database update is applied.)*
+**If someone asks you to delete their data** (a privacy request), first make sure it's really them: the text should come from the phone number they booked with. Then open them in Clients, scroll to the bottom, and tap **Forget this customer** twice. It erases their name, phone, email, address, cars and notes everywhere, and keeps each job's date, service and amount for your taxes. It can't be undone. Text them back that it's done. The full checklist is in `DATA_REQUESTS.md`.
 
 **Reviews:** approve every honest review, good or bad. Only remove spam, abuse or someone's personal details. The website promises that.
 
