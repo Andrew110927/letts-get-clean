@@ -128,7 +128,7 @@ Also: payment, service area and FAQ sections exist. The FAQ gets "How long does 
 - **3D centrepiece:** a giant soap bubble or water droplet, built in code.
 - **Stack:** stays plain HTML, CSS and JavaScript (the prompt's own rule). The React component libraries (Aceternity, Magic UI, shadcn, React Three Fiber) need React, Tailwind and a build step, so their effects are recreated with GSAP and Three.js instead. Lenis is added for smooth scrolling and is turned off with reduced motion.
 
-## Phase 2 status (November 1, built on branch `site-policies`, not live)
+## Phase 2 status (November 1, live since November 1 at `af47073`)
 
 Built and checked:
 - the hero name as a window over the film, growing away on scroll;
@@ -158,7 +158,7 @@ Not done yet:
 - **The database update** `20261101_booking_email_limit.sql` (email column and daily limit) is tested but not applied. It goes live only with Andrew's OK. Until then the site saves bookings without the email.
 - **The FAQ answer** uses the booking slot length (2 hours). Andrew should confirm how long each package really takes.
 
-## Phase 3 status (November 1, built on branch `site-policies`, not live)
+## Phase 3 status (November 1, live since November 1 at `af47073`)
 
 | # | Item | Now |
 |---|---|---|
@@ -168,7 +168,7 @@ Not done yet:
 | 8 | Icons | ✅ 192 and 512 icons and `site.webmanifest` on every page |
 | 9 | Sitemap and robots | ✅ `sitemap.xml` and `robots.txt`. robots.txt is ignored until the site has its own domain (see README), so the sitemap goes to Search Console |
 | 11 | Compression | ✅ Photos at 480/720/900 wide, a 40 KB phone hero instead of 129 KB, reel posters wait until near. Phone first load 606 KB to 313 KB |
-| 12 | Lighthouse | ✅ Phone 97, 98, 99 (three runs); desktop 100. Accessibility, best practices, SEO 100 on both. Measured on a local copy that compresses like GitHub Pages, with a clean browser profile; confirm on the live site after the push |
+| 12 | Lighthouse | ✅ Live site: phone 98, 97, 97 (three runs); desktop 100. Accessibility, best practices, SEO 100 on both |
 | 14 | Mobile | ✅ Re-tested at 375, 768 and 1440: no sideways scroll, axe 0 |
 | 15 | Custom 404 | ✅ `404.html` with Mama Letts, Book, Home and Prices; tested two folders deep |
 | 16 | Broken links | ✅ "Cookie settings" now points at `cookies.html#settings`, so it works with JavaScript off; the cookie page says so when JavaScript is off |
@@ -184,6 +184,10 @@ The FAQ structured data stays: Google stopped showing FAQ rich results in May 20
 2. Andrew picks: count every visit unless the visitor says no (Reject all, or a browser privacy signal), or count only visitors who tap Accept.
 3. Then: load the beacon from `static.cloudflareinsights.com` only when allowed, add it to the page's security policy, add an Analytics line to the cookie panel and cookie page, and update the privacy policy, cookie policy and consent text (they say "no analytics" today). Visitors who already chose get asked again, because the promise changed.
 
+### Infiniti reel (November 1, live at `ae1be41`)
+
+Andrew's Infiniti interior before/after reel (`media/reel4_web.mp4`, 0:35, no audio) took the reels band's second panel, which had repeated the Sonata photo. Checked frame by frame: no plates, faces or addresses.
+
 ### Google Search Console
 
 Andrew adds a "URL prefix" property for `https://andrew110927.github.io/letts-get-clean/`, picks the HTML tag method, and sends the tag (public). Once it's on the live page he clicks Verify and submits `sitemap.xml`.
@@ -198,5 +202,4 @@ Andrew adds a "URL prefix" property for `https://andrew110927.github.io/letts-ge
 - The Search Console tag (above).
 - OK to apply the database update (email column and daily limit).
 - Real detail times per package, for the FAQ.
-- OK to push Phases 2 and 3 live.
 - Optional: installing the website plugins from the plugin reel (vetted first, in a separate session).
