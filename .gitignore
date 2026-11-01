@@ -5,3 +5,5 @@ supabase/.temp/
 local-tools/
 # Secret keys for the Edge Functions (set with `supabase secrets set --env-file`), never committed
 supabase/.env*
+# Design working files (screenshots, direction sheet)
+.taste-skill/
