@@ -8,8 +8,12 @@ import {
   WebGLRenderer, Scene, PerspectiveCamera, Group, Mesh, Points, Shape, ExtrudeGeometry, BoxGeometry, CylinderGeometry,
   TorusGeometry, PlaneGeometry, BufferGeometry, BufferAttribute, MeshPhysicalMaterial, MeshStandardMaterial,
   MeshBasicMaterial, ShaderMaterial, DirectionalLight, PointLight, PMREMGenerator, CanvasTexture, Color, Vector3,
-  DoubleSide, DynamicDrawUsage, ACESFilmicToneMapping, MathUtils
+  DoubleSide, DynamicDrawUsage, ACESFilmicToneMapping, MathUtils, Matrix4, Box3
 } from "../vendor/three.module.min.js";
+
+// A real car model, when Andrew drops one in: media/car.glb (glTF, front facing -Z as glTF models do, any size).
+// Its paint takes the wash shader; glass, lamps and everything else keep their own materials.
+const CAR_URL = new URL("../media/car.glb", import.meta.url).href;
 
 const LENGTH = 4.8, HALF = LENGTH / 2;
 const BODY_WHITE = 0xF1F2F4, DIRT = 0xA89A82, GLASS_DUSTY = 0x7D7F80, GLASS_CLEAR = 0x0B1016;
@@ -44,8 +48,8 @@ function paintMaterial(uniforms) {
   m.onBeforeCompile = (s) => {
     Object.assign(s.uniforms, uniforms);
     s.vertexShader = s.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vObj;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position;");
+      .replace("#include <common>", "#include <common>\nvarying vec3 vObj; uniform mat4 uToCar;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = (uToCar * modelMatrix * vec4(position, 1.0)).xyz;");
     s.fragmentShader = s.fragmentShader
       .replace("#include <common>", `#include <common>
         uniform float uWipe, uBeads, uGloss, uTime; uniform vec3 uDirt; varying vec3 vObj;
@@ -209,6 +213,72 @@ function mist(count) {
   };
 }
 
+// Loads media/car.glb if it exists. Sizes it to the drawn car's length, grounds and centres it, turns its nose to +x,
+// and gives its paint the wash. Materials are told apart by name first, then by looks: glass is transparent, the
+// paint is whatever covers the most of the car.
+async function loadRealCar(paint, glass, interior) {
+  const head = await fetch(CAR_URL, { method: "HEAD" }).catch(() => null);
+  if (!head || !head.ok) return null;
+  const { GLTFLoader } = await import("../vendor/GLTFLoader.js");
+  const loader = new GLTFLoader();
+  const buf = await (await fetch(CAR_URL)).arrayBuffer();
+  if (new TextDecoder().decode(buf.slice(0, 4000)).includes("KHR_draco_mesh_compression")) {
+    const { DRACOLoader } = await import("../vendor/DRACOLoader.js");
+    loader.setDRACOLoader(new DRACOLoader().setDecoderPath(new URL("../vendor/draco/", import.meta.url).href));
+  }
+  const gltf = await loader.parseAsync(buf, "");
+  const root = gltf.scene;
+  root.rotation.y = -Math.PI / 2;
+  root.updateMatrixWorld(true);
+  const box = new Box3().setFromObject(root), size = box.getSize(new Vector3()), centre = box.getCenter(new Vector3());
+  const car = new Group(), inner = new Group();
+  const k = LENGTH / Math.max(size.x, size.z);
+  inner.add(root);
+  inner.scale.setScalar(k);
+  inner.position.set(-centre.x * k, -box.min.y * k, -centre.z * k);
+  car.add(inner);
+  // Which material is the paint: by name, else the one covering the most area (approximated by its meshes' bounds).
+  const area = new Map(), byMat = new Map();
+  root.traverse((m) => {
+    if (!m.isMesh || !m.material) return;
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    m.geometry.computeBoundingBox();
+    const b = m.geometry.boundingBox.getSize(new Vector3()).multiplyScalar(k);
+    const a = 2 * (b.x * b.y + b.y * b.z + b.x * b.z);
+    mats.forEach((mat) => { area.set(mat, (area.get(mat) || 0) + a); if (!byMat.has(mat)) byMat.set(mat, []); byMat.get(mat).push(m); });
+  });
+  const named = (re) => [...byMat.keys()].filter(mat => re.test(mat.name || ""));
+  const isGlass = (mat) => (mat.transparent && mat.opacity < 0.95) || (mat.transmission || 0) > 0.2;
+  let body = named(/body|paint|carpaint|exterior|chassis|shell/i)[0];
+  if (!body) body = [...area.entries()].filter(([mat]) => !isGlass(mat) && !/tire|tyre|wheel|rim|glass|window|light|interior|seat/i.test(mat.name || "")).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const lampMat = named(/head.?light|headlamp|lamp/i)[0], tailMat = named(/tail|brake|rear.?light/i)[0];
+  let lamp = null, tail = null;
+  const swap = (meshes, from, to) => meshes.forEach(m => { m.material = Array.isArray(m.material) ? m.material.map(x => x === from ? to : x) : to; });
+  for (const [mat, meshes] of byMat) {
+    if (mat === body) {
+      const pm = paint.clone();
+      pm.onBeforeCompile = paint.onBeforeCompile; pm.customProgramCacheKey = paint.customProgramCacheKey;
+      // Keep the model's own detail maps; the colour goes white under them, like the Sonata.
+      pm.map = mat.map || null; pm.normalMap = mat.normalMap || null; pm.roughnessMap = mat.roughnessMap || null; pm.metalnessMap = mat.metalnessMap || null;
+      swap(meshes, mat, pm);
+    } else if (isGlass(mat) || /glass|window|windshield|windscreen/i.test(mat.name || "")) {
+      swap(meshes, mat, glass);
+    } else if (mat === lampMat || mat === tailMat) {
+      const lm = mat.clone(); lm.emissive = new Color(mat === lampMat ? 0xBFE4FF : 0xFF2A33); lm.emissiveIntensity = 0;
+      swap(meshes, mat, lm);
+      if (mat === lampMat) lamp = lm; else tail = lm;
+    } else if (/seat|interior|dash|cabin|leather/i.test(mat.name || "") && mat.emissive) {
+      // Interior parts glow with the dome light on the Interior screen.
+      mat.emissive = new Color(0xFFB074); mat.emissiveIntensity = 0;
+      interior.extra.push(mat);
+    }
+  }
+  const blank = new MeshPhysicalMaterial({ visible: false });
+  interior.lamp.position.set(0, 1.0, 0);
+  car.add(interior.lamp);
+  return { car, lamp: lamp || blank, tail: tail || blank };
+}
+
 function pose(p, out) {
   let k = 0;
   while (k < KEYS.length - 2 && p > KEYS[k + 1][0]) k++;
@@ -238,18 +308,30 @@ export function start(stage, opts = {}) {
   const scene = new Scene();
   scene.environment = studio(renderer);
   const camera = new PerspectiveCamera(32, 1, 0.1, 80);
-  const uniforms = { uWipe: { value: 0 }, uBeads: { value: 0 }, uGloss: { value: 0 }, uTime: { value: 0 }, uDirt: { value: new Color(DIRT) } };
+  const uniforms = { uWipe: { value: 0 }, uBeads: { value: 0 }, uGloss: { value: 0 }, uTime: { value: 0 }, uDirt: { value: new Color(DIRT) }, uToCar: { value: new Matrix4() } };
   const paint = paintMaterial(uniforms);
   const glass = new MeshPhysicalMaterial({ color: GLASS_DUSTY, roughness: 0.55, metalness: 0, transparent: true, opacity: 0.94, clearcoat: 0.4 });
   const interior = {
     seat: new MeshStandardMaterial({ color: 0x3A2E25, roughness: 0.8, emissive: 0xFFB074, emissiveIntensity: 0 }),
     dash: new MeshStandardMaterial({ color: 0x1C1A19, roughness: 0.6, emissive: 0x8FD8FF, emissiveIntensity: 0 }),
-    lamp: new PointLight(0xFFC68A, 0, 3.5, 2)
+    lamp: new PointLight(0xFFC68A, 0, 3.5, 2),
+    extra: []
   };
-  const { car, lamp, tail } = buildCar(paint, glass, interior);
-  const mirror = car.clone();
+  let { car, lamp, tail } = buildCar(paint, glass, interior);
+  let mirror = car.clone();
   mirror.scale.y = -1;
   scene.add(car, contactShadow());
+  // Swap in the real model once it arrives; the drawn car shows until then.
+  loadRealCar(paint, glass, interior).then((real) => {
+    if (!real || stopped) return;
+    scene.remove(car, mirror);
+    ({ car, lamp, tail } = real);
+    car.rotation.y = spin;
+    mirror = car.clone(); mirror.scale.y = -1; mirror.rotation.y = spin;
+    scene.add(car); if (!fixed) scene.add(mirror);
+    renderer.compile(scene, camera);
+    if (opts.onModel) opts.onModel();
+  }).catch((e) => { if (opts.onModel) opts.onModel(e); });
   const floor = new Mesh(new PlaneGeometry(60, 60), floorMaterial());
   floor.rotation.x = -Math.PI / 2; floor.renderOrder = 1;
   const fixed = typeof opts.progress === "number";
@@ -264,7 +346,7 @@ export function start(stage, opts = {}) {
   // Scroll position becomes progress (0 at the top of the first package, 1 at the end of the last) and speed.
   const view = { pos: [0, 0, 0], target: [0, 0, 0], side: 0 };
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
-  let progress = 0, speed = 0, lastP = 0, lastT = 0, burst = 0, running = false, raf = 0, visible = false, warm = false, spin = 0;
+  let stopped = false, progress = 0, speed = 0, lastP = 0, lastT = 0, burst = 0, running = false, raf = 0, visible = false, warm = false, spin = 0;
   const floorColor = floor.material.uniforms.uColor.value, pageColor = new Color();
   const dirV = new Vector3(), rightV = new Vector3(), camTarget = new Vector3();
 
@@ -307,11 +389,14 @@ export function start(stage, opts = {}) {
     interior.seat.emissiveIntensity = inside * 0.9;
     interior.dash.emissiveIntensity = inside * 0.5;
     interior.lamp.intensity = inside * 2.6;
+    interior.extra.forEach(m => { m.emissiveIntensity = inside * 0.6; });
     const lampsOn = smooth(0.84, 0.95, p);
     lamp.emissiveIntensity = lampsOn * 1.6;
     tail.emissiveIntensity = lampsOn * 1.2;
     spin = fixed ? (opts.spin || 0) : spin + dt * 0.22 * smooth(0.72, 0.9, p);
     car.rotation.y = mirror.rotation.y = spin;
+    car.updateMatrixWorld();
+    uniforms.uToCar.value.copy(car.matrixWorld).invert();
     // The floor follows the page colour, which melts from package to package underneath.
     if (!fixed) { pageColor.setStyle(getComputedStyle(document.body).backgroundColor); floorColor.lerp(pageColor, Math.min(1, dt * 10)); }
     floor.material.uniforms.uAlpha.value = MathUtils.lerp(0.74, 0.88, smooth(0.6, 0.75, p));
@@ -361,7 +446,7 @@ export function start(stage, opts = {}) {
   run();
 
   return () => {
-    halt(); io.disconnect(); ro.disconnect();
+    stopped = true; halt(); io.disconnect(); ro.disconnect();
     document.removeEventListener("visibilitychange", onHide);
     removeEventListener("pointermove", onMove); removeEventListener("deviceorientation", onTilt);
     stage.classList.remove("wash-on");
