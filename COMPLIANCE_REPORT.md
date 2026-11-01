@@ -35,7 +35,7 @@ Branch `site-policies` (cut from live `main` ee38355). Written October 31, 2026.
 - **Kept, unchanged in behaviour:** booking with live open times, two-car booking, military and holiday discounts, the house wash whole-day rule, the waitlist, QR `?src=` tags, booking alerts, the review form, FAQ structured data.
 - **Pictures:** only Letts Get Clean's own photos and footage. Nothing found or stock.
 
-## The motion phase ("way better and cooler", October 31, built on this branch, not yet live)
+## The motion phase ("way better and cooler", October 31; live since October 31 at main bbb53f7, with Andrew's OK)
 
 Built with the newly added skills: gsap-scrolltrigger, motion-design, threejs-performance, plus design-taste-frontend's inspector and the agent-skills ADR format. Every scene is listed in `DESIGN.md` section 6; the library choice is in `docs/adr/0001-gsap-and-threejs.md`.
 
