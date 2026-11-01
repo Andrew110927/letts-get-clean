@@ -794,7 +794,7 @@ html.consent-ask #consent{display:grid!important}
             <div class="row2">
               <div class="field" id="carField"><label for="fCar" id="fCarLbl">Car <small>(make and model)</small></label><input id="fCar" placeholder="e.g. Hyundai Sonata"></div>
               <div class="field"><label for="fSource">How did you hear about us? <small>(optional)</small></label>
-                <select id="fSource"><option value="">Choose one</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>Google</option><option>Nextdoor</option><option>Flyer</option><option>Business card</option><option>Car magnet</option><option>Yard sign</option><option>Friend or family</option><option>Car show/pop-up</option><option>Other</option></select></div>
+                <select id="fSource"><option value="">Choose one</option><option>Instagram</option><option>TikTok</option><option>Facebook</option><option>Google</option><option>Nextdoor</option><option>Flyer</option><option>Poster</option><option>Door hanger</option><option>Postcard</option><option>Business card</option><option>Car magnet</option><option>Yard sign</option><option>Friend or family</option><option>Car show/pop-up</option><option>Other</option></select></div>
             </div>
             <div class="field" id="car2Field" hidden><label for="fCar2">Second car <small>(make and model)</small></label><input id="fCar2" placeholder="e.g. Honda CR-V"></div>
             <div class="field"><label for="fNotes">Anything we should know? <small>(optional)</small></label><textarea id="fNotes" placeholder="Stains, pet hair, gate code, where to park…"></textarea></div>
@@ -1662,7 +1662,7 @@ html.consent-ask #consent{display:grid!important}
   }
   // Printed QR codes link here with ?src=card (or magnet, yardsign, flyer…), so "How did you hear" fills itself in.
   // It's kept for the visit, in case they look around before booking.
-  const SOURCE_TAGS = { card: "Business card", magnet: "Car magnet", yardsign: "Yard sign", flyer: "Flyer", instagram: "Instagram", ig: "Instagram", tiktok: "TikTok",
+  const SOURCE_TAGS = { card: "Business card", magnet: "Car magnet", yardsign: "Yard sign", flyer: "Flyer", poster: "Poster", doorhanger: "Door hanger", postcard: "Postcard", instagram: "Instagram", ig: "Instagram", tiktok: "TikTok",
     facebook: "Facebook", fb: "Facebook", google: "Google", nextdoor: "Nextdoor", popup: "Car show/pop-up", carshow: "Car show/pop-up" };
   function applySourceTag() {
     let tag = null;

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean poster 11 x 17: the same car</title>
+<style>
+/* 11 wide x 17 tall. Safe area 10.25 x 16.25 in. One punch line over a before/after pair, then prices and the QR on a slip. */
+.head{position:absolute;left:0;right:0;top:.05in}
+.head .mono+.mono{margin-top:.16in}
+.photo{top:calc(var(--bleed) + 4.95in);height:6.7in;width:calc(50% - .03in)}
+.photo.b{left:0}
+.photo.a{right:0}
+.tags{position:absolute;left:0;right:0;top:4.575in}
+.tags .ba{position:absolute;top:0;font-size:24pt;padding:.08in .13in .07in}
+.tags .after{left:calc(5.5in + .03in - var(--safe))}
+.cap{position:absolute;left:0;right:0;top:11.4in;font-size:13pt;color:var(--dim)}
+.slipbg{position:absolute;left:0;right:0;bottom:0;height:calc(var(--bleed) + 4.85in);clip-path:{{zigzag 22 0.16in top}}}
+.prices{position:absolute;left:0;right:0;top:12.1in;display:grid;grid-template-columns:repeat(3,1fr);gap:.14in;color:var(--paper-ink)}
+.prices div{background:#E4E7EB;padding:.13in .16in .12in}
+.prices .full{background:var(--accent);color:var(--ink)}
+.prices h3{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:19pt;line-height:1}
+.prices b{display:block;font-family:var(--display);font-weight:400;font-size:46pt;line-height:1;margin-top:.06in}
+.prices b sup{font-size:.45em;vertical-align:.95em;margin-right:.02em}
+.note{position:absolute;left:0;top:13.47in;width:7.4in;line-height:1.4;font-size:11.5pt;font-weight:600;color:#3B424D}
+.contact{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between;color:var(--paper-ink)}
+.call .lbl{font-size:12pt}
+.call b{display:block;font-family:var(--display);font-weight:400;font-size:66pt;line-height:.95;margin-top:.08in}
+.call p{font-weight:700;font-size:12.5pt;margin-top:.12in}
+.book{width:2.2in;flex:none}
+.book .qr{border-radius:0}
+.book .act{font-family:var(--display);text-transform:uppercase;font-size:17pt;line-height:1;text-align:center;padding:.08in 0 .07in;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="photo b"><img src="{{media int_before.webp}}" alt=""></div>
+  <div class="photo a"><img src="{{media int_after.webp}}" alt=""></div>
+  <div class="slip slipbg"></div>
+  <div class="safe">
+    <div class="head"><span class="mono" data-fit>This is the</span><span class="mono" data-fit>same car.</span></div>
+    <div class="tags"><span class="ba">Before</span><span class="ba after">After</span></div>
+    <p class="cap">The same Hyundai Sonata, before and after a Letts Get Clean detail.</p>
+    <div class="prices">
+      <div><h3>Exterior</h3><b><sup>$</sup>{{price exterior}}</b></div>
+      <div><h3>Interior</h3><b><sup>$</sup>{{price interior}}</b></div>
+      <div class="full"><h3>The Full Detail</h3><b><sup>$</sup>{{price full}}</b></div>
+    </div>
+    <p class="note">Prices for a car or sedan. SUV or truck +${{price suv}}, minivan or 3-row +${{price van}}. We come to your driveway, and you pay after the job.</p>
+    <div class="contact">
+      <div class="call">
+        <p class="lbl">Call or text Andrew</p>
+        <b>{{phone}}</b>
+        <p>{{site}}</p>
+      </div>
+      <div class="book"><div class="qr">{{qr poster}}</div><div class="act">Scan to book</div></div>
+    </div>
+  </div>
+</section>
+{{fit}}
+</body>
+</html>
