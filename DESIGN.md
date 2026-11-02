@@ -2,6 +2,15 @@
 
 The site's design language, so every future change looks like the same site. The structure follows the awesome-design DESIGN.md format, with Tesla's automotive system as the reference for restraint: photography carries the page, one accent for actions, and a bar that turns solid on scroll. The identity is Letts Get Clean's own, kept from the print materials.
 
+> **2026-11-02 · v3 "Showroom glass" (branch `site-v3`).** Andrew called the previous look trash and picked a dark,
+> glossy, premium direction with the car footage big. Now: black ground (#030405), the driveway film full screen on
+> every screen with a pause button (data saver keeps the still), chrome headlines in Inter 800 (Anton retired), smoked
+> glass panels with a hairline edge and 20px corners, the brand blue as the one light and glow. Packages are three glass
+> cards (The Full Detail lit); the wash, the package colour melt, the foam, the rain glass, the corridor and the giant
+> footer name are gone (all in git history). Motion: CSS entrances on the first screen, GSAP reveals below, Lenis, the
+> dot-and-ring pointer. The look layer sits at the end of the stylesheet in index.html ("Showroom glass (v3)").
+> Sections below describe the earlier look where they differ.
+
 ## 1. Direction and idea
 
 - **Direction: the name as a monument** (design-taste-frontend, seed 1429003636). The business name is the headline, set across the bottom of the real driveway film. Everything after the first screen stays calm and small, so the contrast holds.

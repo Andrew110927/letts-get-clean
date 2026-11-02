@@ -65,38 +65,30 @@
      from the start instead of pushing the page down when the script runs. Same rule as readConsent(): a choice under a
      year old, or a Global Privacy Control signal, means don't ask. -->
 <script>{ let c = null; try { c = JSON.parse(localStorage.getItem("lgc.consent.v1") || "null"); } catch (e) {} if (!(c && typeof c.prefs === "boolean" && Date.now() - Date.parse(c.at || 0) < 365 * 864e5) && navigator.globalPrivacyControl !== true) document.documentElement.classList.add("consent-ask"); }</script>
-<!-- On wide screens with motion allowed, the hero name waits (2.5s at most) for js/motion.js to raise it letter by letter. -->
-<script>if (matchMedia("(prefers-reduced-motion: no-preference) and (min-width: 901px)").matches) { const r = document.documentElement; r.classList.add("motion-wait", "hero-mask-on"); setTimeout(() => { r.classList.remove("motion-wait"); if (!r.classList.contains("gsap-on")) r.classList.remove("hero-mask-on"); }, 2500); }</script>
 <style>
-/* Direction: "the name as a monument". The business name is the headline, set across the bottom of a real
-   driveway; everything else stays small and calm so the contrast holds. Brand colours and faces are kept
-   from the print materials (cards, magnets, flyers): ground #07080B, accent #29C8FF, Anton + Inter. */
-@font-face{font-family:"Anton";src:url(fonts/anton-latin.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+/* Direction: "showroom glass". Black ground, the real driveway film full screen, chrome headlines in heavy Inter,
+   smoked-glass panels and the brand blue as the one light. Accent #29C8FF is kept from the print materials. */
 @font-face{font-family:"Inter";src:url(fonts/inter-latin.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 :root{
   color-scheme:dark;
-  --bg:#07080B; --surface:#12151B; --surface-2:#1A1F28; --surface-3:#232A35;
+  --bg:#030405; --surface:#0B0E12; --surface-2:#13171D; --surface-3:#1D232B;
+  --edge:rgba(255,255,255,.10); --edge-hi:rgba(255,255,255,.22); --glass:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  --chrome:linear-gradient(180deg,#FFFFFF 0%,#E9EEF4 38%,#8C96A3 52%,#F2F5F8 66%,#C9D1DA 100%);
   --ink:#F4F5F7; --muted:#A7AEB8;
   --accent:#29C8FF; --accent-hover:#5CD7FF; --accent-deep:#1C9ACB; --accent-ink:#04131A; --accent-soft:rgba(41,200,255,.14);
   --paper:#F4F5F7; --paper-2:#E2E6EB; --paper-ink:#07080B; --paper-muted:#4A525E;
   /* Form field edges: 3.6:1 against the booking panel, so every input's outline is visible (WCAG 1.4.11). */
   --field:#6B7584;
   --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171;
-  --display:"Anton","Impact","Arial Narrow Bold",sans-serif;
+  --display:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   /* Five type steps do all the work: small, body, lead, section heading, and the monument. */
-  --t-small:14px; --t-body:17px; --t-lead:clamp(20px,1.7vw,24px); --t-h2:clamp(40px,5vw,76px); --t-mono:clamp(76px,14.6vw,320px);
+  --t-small:14px; --t-body:17px; --t-lead:clamp(20px,1.7vw,24px); --t-h2:clamp(40px,5.6vw,92px); --t-mono:clamp(76px,14.6vw,320px);
   --m:clamp(16px,2.2vw,32px); --gap:clamp(64px,6.5vw,104px); --col:24px;
   --ease:cubic-bezier(.2,.7,.2,1);
   /* The page's own colours. A package section crossing the middle of the screen swaps these (data-package below). */
   --page-bg:var(--bg); --page-ink:var(--ink); --page-muted:var(--muted); --page-cta:var(--accent); --page-cta-ink:var(--accent-ink);
 }
-/* One palette per package: Exterior is rinse water, Interior is leather, Full Detail is the bright showroom (all AA).
-   The background fades over 600ms but the text flips in one step at the halfway point, so dark-to-light changes never pass
-   through grey text on a grey page. */
-:root[data-package="exterior"]{--page-bg:#061823;--page-ink:#E6F7FF;--page-muted:#9FC3D4;--page-cta:#29C8FF;--page-cta-ink:#04131A}
-:root[data-package="interior"]{--page-bg:#1B120B;--page-ink:#F6E7D3;--page-muted:#CDB59A;--page-cta:#E8A86B;--page-cta-ink:#1B120B}
-:root[data-package="full"]{--page-bg:#F4F5F7;--page-ink:#07080B;--page-muted:#4A525E;--page-cta:#07080B;--page-cta-ink:#F4F5F7}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:88px;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--page-bg);color:var(--page-ink);transition:background-color .6s linear,color .3s steps(1,end);font-family:var(--body);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased}
@@ -158,50 +150,18 @@ nav.links a:hover{background:rgba(244,245,247,.12)}
 .menu .row{display:flex;gap:10px;margin-top:auto;padding-top:24px}
 .menu .row .btn{flex:1}
 
-/* hero: film title on the bottom edge */
-.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:#000}
+/* hero: the driveway film full screen (the look itself is in the Showroom glass layer at the end) */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
 .hero-media{position:absolute;inset:0}
-/* The still sits under the video: phones only ever see the still, and desktops see it until the film's first frame. */
-.hero-media video,.hero-still{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 38%}
-/* Neutral scrims only under text: a short one under the bar, a taller one under the name. */
+/* The still sits under the film until its first frame, and stays when data saver is on. */
+.hero-media video,.hero-still{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hero::before,.hero::after{content:"";position:absolute;left:0;right:0;pointer-events:none}
-.hero::before{top:0;height:200px;background:linear-gradient(rgba(7,8,11,.88),rgba(7,8,11,.5) 45%,rgba(7,8,11,0))} /* taste-skill-ignore: neutral scrim under the bar on the film */
-.hero::after{bottom:0;height:48%;background:linear-gradient(rgba(7,8,11,0),rgba(7,8,11,.88) 70%)} /* taste-skill-ignore: neutral scrim under the name on the film */
-.hero-foot{position:relative;z-index:1;padding:0 var(--m);display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 32px;margin-bottom:clamp(12px,1.4vw,22px)}
-.hero-mask{position:relative;z-index:1;padding:0 var(--m) 30px}
-/* The hero's own Book button only appears after the film reveal (wide screens); elsewhere the header's Book button is always in view. */
-.hero-cta{flex:none;display:none}
-.hero-mask-on .hero-cta{display:inline-flex}
-.hero-tag{display:none}
-.hero-mask-on .hero-tag{display:block;position:absolute;left:0;right:0;bottom:14svh;z-index:3;text-align:center;font-size:var(--t-lead);font-weight:600;color:#fff}
-/* Wide screens with motion: the name starts as a window cut out of black, with the film playing inside the letters
-   (white text multiplied over the film shows the film; black hides it). js/motion.js grows it away on scroll. */
-.hero-mask-on .hero{isolation:isolate}
-.hero-mask-on .hero-mask{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;padding:0;background:#000;color:#fff;mix-blend-mode:multiply}
-.hero-mask-on .hero-mask h1{text-align:center;font-size:clamp(80px,13.6vw,320px)}
-.hero-mask-on .hero-media,.hero-mask-on .hero-dim,.hero-mask-on .hero-foot{animation:none}
-.hero-dim{position:absolute;inset:0;background:var(--bg);opacity:0;pointer-events:none}
-/* The foam canvas (js/bubbles.js) floats over the film and under the name; it fades in once it has drawn. */
-.foam{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .9s var(--ease)}
-.foam.on{opacity:1}
-/* The rain-glass reveal (js/glass.js) sits over the film and under the foam and the name, and removes itself once clear. */
-.rain-glass{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .35s linear}
-.rain-glass.on{opacity:1}
-.hero-line{max-width:44ch;font-size:clamp(18px,1.4vw,20px);font-weight:500;line-height:1.45;margin:0}
-.hero h1{font-size:var(--t-mono);line-height:.8;letter-spacing:-.01em;white-space:nowrap;margin:0 -.02em}
-.hero h1 .line{display:inline-block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em;vertical-align:bottom}
-.hero h1 [data-line]{display:inline-block}
 @media (prefers-reduced-motion:no-preference){
-  .js .hero h1 [data-line]{transform:translateY(105%);animation:line-up .9s var(--ease) forwards;animation-delay:calc(var(--i) * 120ms + 150ms)}
-  .js .hero [data-load]{opacity:0;transform:translateY(12px);animation:load-rise .55s var(--ease) forwards;animation-delay:var(--d)}
+  .js .hero [data-load]{opacity:0;transform:translateY(16px);filter:blur(8px);animation:load-rise .8s var(--ease) forwards;animation-delay:var(--d)}
   .js .hero-media video,.js .hero-still{animation:settle 1.6s var(--ease) both}
 }
-/* js/motion.js owns these entrances once it runs, so the CSS versions stand down (and play as before if it can't load). */
-.motion-wait #heroName,.motion-wait .hero-foot{visibility:hidden}
-html.gsap-hero .hero h1 [data-line],html.gsap-hero .hero [data-load]{animation:none;transform:none;opacity:1}
 html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{opacity:1;transform:none;transition:none}
-@keyframes line-up{to{transform:none}}
-@keyframes load-rise{to{opacity:1;transform:none}}
+@keyframes load-rise{to{opacity:1;transform:none;filter:none}}
 @keyframes settle{from{transform:scale(1.06)}}
 /* As the first screen leaves, the film sinks and darkens while the name lifts away a little faster. */
 @supports (animation-timeline: view()){
@@ -209,12 +169,10 @@ html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{o
     .hero{view-timeline-name:--hero}
     .hero-media{animation:hero-sink linear both;animation-timeline:--hero;animation-range:exit 0% exit 100%}
     .hero-dim{animation:hero-dim linear both;animation-timeline:--hero;animation-range:exit 0% exit 100%}
-    .hero-foot{animation:hero-lift linear both;animation-timeline:--hero;animation-range:exit 0% exit 70%}
   }
 }
 @keyframes hero-sink{to{transform:translateY(8%) scale(1.06)}}
 @keyframes hero-dim{to{opacity:.35}}
-@keyframes hero-lift{to{transform:translateY(-6%);opacity:0}}
 
 /* how it works: the detail printed as a slip */
 .slip{background:var(--paper);color:var(--paper-ink);font-variant-numeric:tabular-nums;clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),95.83% 100%,91.67% calc(100% - 14px),87.5% 100%,83.33% calc(100% - 14px),79.17% 100%,75% calc(100% - 14px),70.83% 100%,66.67% calc(100% - 14px),62.5% 100%,58.33% calc(100% - 14px),54.17% 100%,50% calc(100% - 14px),45.83% 100%,41.67% calc(100% - 14px),37.5% 100%,33.33% calc(100% - 14px),29.17% 100%,25% calc(100% - 14px),20.83% 100%,16.67% calc(100% - 14px),12.5% 100%,8.333% calc(100% - 14px),4.167% 100%,0% calc(100% - 14px))}
@@ -256,16 +214,6 @@ html.gsap-on .slip.reveal,html.gsap-on #rates.reveal,html.gsap-on .band.reveal{o
 .sizes input:checked+span{background:var(--ink);color:var(--paper-ink)}
 .sizes input:checked+span small{color:var(--paper-muted)}
 .sizes input:focus-visible+span{outline:3px solid var(--accent);outline-offset:3px}
-/* The wash: a sticky full-screen stage (the drawn car, js/wash.js) with the three package screens scrolling over it.
-   The negative margin pulls the first screen up over the stage so the car and the words arrive together. */
-.wash{position:relative}
-.wash-stage{position:sticky;top:0;height:100svh;margin-bottom:-100svh;overflow:hidden;pointer-events:none}
-.wash-stage canvas{position:absolute;inset:0;width:100%;height:100%}
-/* The stand-in (first frame of the walk-around) sits where the live picture frame draws: the right half on wide screens. */
-.wash-still{position:absolute;top:10%;right:4%;width:52%;height:80%;object-fit:cover;opacity:1;transition:opacity .6s var(--ease)}
-.wash-on .wash-still{opacity:0}
-.wash-load{position:absolute;left:var(--m);bottom:24px;margin:0;font-weight:700;font-size:var(--t-small);color:var(--page-muted);font-variant-numeric:tabular-nums;transition:opacity .4s}
-.wash-load:empty,.wash-on .wash-load{opacity:0}
 #pkGrid{position:relative;z-index:1}
 .pk{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col);align-items:center;min-height:100svh;padding:clamp(48px,6vw,96px) var(--m)}
 .pk-copy{grid-column:1/6;display:grid;gap:10px;align-content:center}
@@ -313,13 +261,6 @@ a.rate:hover{background:var(--surface);padding-inline:12px}
 .play.live{place-items:end end;padding:16px}
 .play.live span{width:52px;height:52px}
 .band-cap{padding:16px var(--m) 0;font-size:var(--t-body)}
-/* The corridor (js/corridor.js): eight real pictures as a passage you glide through. The box paints the dark behind the cards. */
-.corridor{margin:40px 0 0;padding:0}
-.corridor-box{position:relative;aspect-ratio:16/9;max-height:78svh;background:#0c0b10;overflow:hidden}
-.corridor-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .6s var(--ease)}
-.corridor-box.on canvas{opacity:1}
-html:not(.js) .corridor{display:none}
-@media (max-width:900px){.corridor-box{aspect-ratio:4/3}}
 /* The pointer's dot and ring (js/cursor.js, fine pointers only). Additive: the system cursor stays; difference keeps it visible on any ground. */
 .cursor-ring,.cursor-dot{position:fixed;left:0;top:0;z-index:200;border-radius:50%;pointer-events:none;will-change:transform;opacity:0;mix-blend-mode:difference;transition:opacity .25s linear}
 .cursor-ring{width:36px;height:36px;box-sizing:border-box;border:1.5px solid #fff;background:transparent}
@@ -564,11 +505,8 @@ html.consent-ask #consent{display:grid!important}
   :root{--col:16px}
   nav.links{display:none}
   .menu-btn{display:inline-flex;align-items:center}
-  .hero h1{font-size:22vw;line-height:.84;white-space:normal}
-  .hero h1 .line{display:block}
   /* On phones the panel takes its own place above the hero instead of floating over the sentence and the name. */
   .consent{position:relative;top:auto;right:auto;width:auto;margin:84px var(--m) 0}
-  .hero-line{font-size:18px}
   .how-copy,.how .printer{grid-column:1/-1}
   .how .printer{margin-top:40px;max-width:none}
   .how .slip{padding-inline:22px}
@@ -576,9 +514,6 @@ html.consent-ask #consent{display:grid!important}
   .pk-head h2,.pk-head #pkgNote,.pk-head .deal,.pk-head fieldset{grid-column:1/-1;grid-row:auto;justify-self:start}
   .pk{grid-template-columns:1fr;min-height:100svh;align-content:end;padding:0 var(--m) 48px}
   .pk-copy,.pk:nth-child(even) .pk-copy{grid-column:1;justify-self:stretch;width:auto;background:color-mix(in srgb,var(--page-bg) 80%,transparent);padding:18px 16px 20px;margin-inline:-8px}
-  .wash-still{top:0;right:0;width:100%;height:56%}
-  .pk-pic img{height:auto;width:100%}
-  .pk-pic img+img{left:auto;right:-4%;width:42%}
   .services h2{text-indent:0;margin-bottom:48px}
   .rates{grid-column:1/-1;grid-row:2}
   .rate{grid-template-columns:minmax(0,1fr) auto}
@@ -619,12 +554,170 @@ html.consent-ask #consent{display:grid!important}
   .giant{font-size:34vw}
 }
 @media (prefers-reduced-motion:reduce){
-  .wash-stage{position:relative;height:min(60svh,520px);margin-bottom:0}
-  .wash-still{inset:0;width:100%;height:100%}
   .pk{min-height:0;padding-block:64px}
   html{scroll-behavior:auto}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
   .js .reveal{opacity:1;transform:none}
+}
+
+/* ================= Showroom glass (v3) =================
+   The new look, layered last so it wins over the base rules above without touching the classes the booking script
+   renders. Black ground, chrome headlines, smoked glass with a hairline edge, the brand blue as the only light. */
+body::after{display:none}
+h1,h2,h3{font-weight:800;text-transform:none;letter-spacing:-.035em;line-height:.98}
+h2{background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.06em}
+.chrome{background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* A highlight sweeps across the chrome now and then (motion only). */
+.sweep{position:relative;display:inline-block}
+.sweep::after{content:attr(data-text);position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%);background-size:250% 100%;background-position:150% 0;-webkit-background-clip:text;background-clip:text;color:transparent;pointer-events:none}
+@media (prefers-reduced-motion:no-preference){.sweep::after{animation:sweep 5.5s var(--ease) 1.6s infinite}}
+@keyframes sweep{0%{background-position:150% 0}35%,100%{background-position:-60% 0}}
+.pk-name,.pk .price,.build-copy .price,.day b,.summary .total b,.done-card h3,.contact .rowx,.giant,.menu a.m,.panel .title{font-weight:800;text-transform:none;letter-spacing:-.035em}
+
+/* Buttons: the blue one glows, the second one is glass. */
+.btn{box-shadow:0 0 0 1px rgba(41,200,255,.4),0 8px 30px -6px rgba(41,200,255,.55),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn:hover{box-shadow:0 0 0 1px rgba(41,200,255,.6),0 14px 44px -6px rgba(41,200,255,.75),inset 0 1px 0 rgba(255,255,255,.55)}
+.btn-ghost,.btn-glass{background:rgba(255,255,255,.07);color:var(--ink);box-shadow:inset 0 0 0 1px var(--edge-hi);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.btn-ghost:hover,.btn-glass:hover{background:rgba(255,255,255,.13);box-shadow:inset 0 0 0 1px var(--edge-hi)}
+.btn-dark{background:var(--accent);color:var(--accent-ink)}
+.btn-dark:hover{background:var(--accent-hover)}
+
+/* Header: a glass pill floating over the film, firmer once the film is behind you. */
+.top{inset:12px var(--m) auto}
+.top.solid{background:transparent}
+.bar{min-height:62px;padding:0 10px 0 12px;border-radius:999px;background:rgba(10,12,15,.38);border:1px solid var(--edge);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);transition:background-color .3s}
+.top.solid .bar{background:rgba(10,12,15,.8)}
+.promo-bar{border-radius:999px;margin-bottom:8px}
+.brand img{width:36px;height:36px}
+.brand b{font-family:var(--body);font-weight:800;font-size:18px;letter-spacing:-.02em;text-transform:none;transform:none}
+nav.links a{color:var(--muted)}
+nav.links a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.menu-btn{background:rgba(255,255,255,.08)}
+.menu{background:rgba(3,4,5,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.consent{top:88px;border-radius:22px;background:rgba(14,17,22,.88);border:1px solid var(--edge);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+
+/* Hero: the driveway film full screen, falling to black, the words on the darker left. */
+.hero{background:var(--bg);justify-content:flex-end;padding:0 var(--m) clamp(40px,8svh,96px)}
+.hero-media video,.hero-still{object-position:50% 40%}
+.hero::before{display:none}
+.hero::after{inset:0;height:auto;background:linear-gradient(180deg,rgba(3,4,5,.5) 0%,rgba(3,4,5,0) 20%,rgba(3,4,5,0) 48%,rgba(3,4,5,.82) 78%,var(--bg) 100%),linear-gradient(90deg,rgba(3,4,5,.55),rgba(3,4,5,0) 55%)}
+.hero-in{position:relative;z-index:1;display:grid;justify-items:start}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#D6DCE3;padding:8px 14px 8px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--edge);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin-bottom:22px}
+.eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.hero h1{font-size:clamp(50px,7.2vw,124px);white-space:normal;max-width:11ch;line-height:.95;margin:0}
+.hero-line{max-width:46ch;font-size:clamp(17px,1.4vw,20px);color:#C9D0D8;margin:24px 0 28px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+.hero-pause{position:absolute;z-index:2;right:var(--m);bottom:clamp(40px,8svh,96px);width:44px;height:44px;border-radius:50%;border:1px solid var(--edge-hi);background:rgba(10,12,15,.45);color:var(--ink);display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hero-pause .i-play,.hero-pause[aria-pressed="true"] .i-pause{display:none}
+.hero-pause[aria-pressed="true"] .i-play{display:block}
+
+/* Shared glass panel. */
+.slip,.summary,.done-card,.builder,.pk,.faq details[open],.note,.check,.choice .face,.day,.slot,.consent,.rv-ask{border-radius:20px}
+.slip{background:var(--glass);color:var(--ink);border:1px solid var(--edge);clip-path:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.slip .row .dots{color:#333B45}
+.slip .row .val{color:var(--muted)}
+.slip .row.end{background:rgba(41,200,255,.12);color:var(--ink);border-radius:0 0 20px 20px;margin-bottom:-62px;min-height:62px}
+.slip .row.end .val{color:var(--accent)}
+.slip .row.end .dots{color:#2A6A86}
+.printer::after{display:none}
+.how .slip{padding-bottom:62px}
+
+/* Packages: three panes of smoked glass; the Full Detail is lit. */
+.prices{padding-top:var(--gap)}
+#pkGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:0 var(--m)}
+.pk{display:flex;min-height:0;padding:32px 28px 30px;background:var(--glass);border:1px solid var(--edge);position:relative;overflow:hidden;transition:transform .35s var(--ease),border-color .35s}
+.pk::before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent)}
+.pk:hover{transform:translateY(-6px);border-color:var(--edge-hi)}
+.pk:last-child{border-color:rgba(41,200,255,.55);background:linear-gradient(180deg,rgba(41,200,255,.12),rgba(41,200,255,.02));box-shadow:0 30px 80px -30px rgba(41,200,255,.45)}
+.pk-copy,.pk:nth-child(even) .pk-copy{grid-column:auto;display:flex;flex-direction:column;gap:14px;width:100%}
+.pk-name{font-size:30px;line-height:1}
+.pk .price{font-size:clamp(56px,5vw,76px);letter-spacing:-.05em;margin-top:6px;color:var(--ink)}
+.pk .after{color:var(--muted);font-size:var(--t-small)}
+.pk ul{margin:8px 0 6px;gap:12px}
+.pk li{font-size:16px;line-height:1.4;display:flex;gap:12px;color:#D3D9E0}
+.pk li::before{content:"";flex:none;width:18px;height:18px;margin-top:2px;border-radius:50%;background:rgba(41,200,255,.16) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%2329C8FF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat}
+.pk-cta{margin-top:auto;align-self:stretch;justify-self:stretch;background:rgba(255,255,255,.07);color:var(--ink);box-shadow:inset 0 0 0 1px var(--edge-hi)}
+.pk-cta:hover{background:rgba(255,255,255,.13);filter:none}
+.pk:last-child .pk-cta{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 30px -6px rgba(41,200,255,.55)}
+.pk-head .deal{box-shadow:0 0 24px -4px rgba(41,200,255,.6)}
+.sizes span{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--edge)}
+.sizes input:checked+span{background:var(--accent);color:var(--accent-ink)}
+.sizes input:checked+span small{color:var(--accent-ink)}
+.prices-note{padding:22px var(--m) var(--gap);color:var(--muted)}
+
+.services h2{text-indent:0}
+/* Pictures: rounded, edged, never flat rectangles. */
+.fade .frame,.ba,.panel{border-radius:22px;border:1px solid var(--edge)}
+.ba .line{background:#fff;box-shadow:0 0 20px rgba(41,200,255,.8)}
+.ba .knob{background:rgba(10,12,15,.55);color:#fff;border:1px solid rgba(255,255,255,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ba .lbl{background:rgba(10,12,15,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.band{gap:10px;padding:0 var(--m);background:transparent}
+.panel .title,.panel .sub{color:#fff}
+.play span{background:rgba(10,12,15,.5);color:#fff;border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+a.rate:hover{background:rgba(255,255,255,.04)}
+
+/* Booking: a glass field under a blue glow; the quote is a lit panel, not paper. */
+.book{background:radial-gradient(60% 40% at 50% 0%,rgba(41,200,255,.10),transparent 70%),var(--bg);border-top:1px solid var(--edge)}
+.builder{background:var(--glass);border:1px solid var(--edge)}
+.choice .face,.day,.slot,.check,.note{background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px var(--edge)}
+.choice:hover .face,.day:hover:not(:disabled),.slot:hover:not(:disabled){background:rgba(255,255,255,.08)}
+.choice input:checked+.face{background:rgba(41,200,255,.12);outline-color:var(--accent)}
+.day[aria-pressed="true"],.slot[aria-pressed="true"]{background:var(--accent);box-shadow:0 8px 24px -8px rgba(41,200,255,.7)}
+.field input,.field select,.field textarea{border-radius:14px;background:rgba(255,255,255,.035);border-width:1px}
+.summary{background:var(--glass);border:1px solid var(--edge);padding-bottom:28px}
+.summary .total{background:rgba(41,200,255,.12);color:var(--ink);border-block:1px solid rgba(41,200,255,.35)}
+.summary .line.save{color:var(--ok)}
+.summary .progress .bar{background:var(--surface-3)}
+.summary #progText,.summary .fine{color:var(--muted)}
+.summary .check{background:rgba(255,255,255,.045);color:var(--ink)}
+.summary .check a{color:var(--ink)}
+.summary .check.bad{outline-color:var(--bad)}
+.summary .err{color:var(--bad)}
+.done-card{background:var(--glass);border:1px solid var(--edge);padding-bottom:32px}
+.done-card .recap{background:rgba(255,255,255,.045);border-radius:14px}
+.done-card .muted,.done-card .recap .muted{color:var(--muted)}
+.done-card .btn-ghost{background:rgba(255,255,255,.07);color:var(--ink)}
+.done-card .err{color:var(--warn)}
+
+/* Reviews, FAQ, contact: glass where something opens, hairlines where things list. */
+.rv-form .field input,.rv-form .field textarea{background:rgba(255,255,255,.035)}
+.star-pick button{color:var(--surface-3)}
+.faq details{border-bottom:1px solid var(--edge);border-radius:0}
+.faq details[open]{background:var(--glass);border:1px solid var(--edge);border-radius:20px}
+.faq details[open] summary{margin-inline:0}
+.faq details[open] p{padding-inline:24px}
+.contact .rowx,.contact .rowx:nth-child(even){background:transparent;border-top:1px solid var(--edge)}
+.contact .rowx{font-size:clamp(28px,3.4vw,52px);min-height:112px;align-items:center;padding-block:20px}
+.contact .go{width:56px;height:56px;margin-left:20px}
+.contact h2.rowx{background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Footer: still black, the cropped name in chrome. */
+footer{background:var(--bg);color:var(--ink);border-top:1px solid var(--edge)}
+.foot-links a,.foot-links span,.legal a{color:var(--ink)}
+.legal{color:var(--muted)}
+/* The cropped giant name was the old look's sign-off; the footer now ends on its links. */
+.giant{display:none}
+footer{min-height:0;padding-bottom:40px}
+.toast{background:rgba(14,17,22,.92);color:var(--ink);border:1px solid var(--edge-hi);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+
+@media (max-width:1100px){#pkGrid{grid-template-columns:1fr 1fr}.pk:last-child{grid-column:1/-1}}
+@media (max-width:900px){
+  .top{inset:10px 10px auto}
+  .bar{min-height:58px}
+  .hero h1{font-size:clamp(46px,14vw,96px);line-height:.95;white-space:normal}
+  /* On a phone the words sit over the white hood, so the film darkens further up. */
+  .hero::after{background:linear-gradient(180deg,rgba(3,4,5,.45) 0%,rgba(3,4,5,.1) 18%,rgba(3,4,5,.55) 42%,rgba(3,4,5,.88) 66%,var(--bg) 100%)}
+  .eyebrow{background:rgba(3,4,5,.55)}
+  .consent{top:auto;margin-top:84px}
+  #pkGrid{grid-template-columns:1fr}
+  .pk{min-height:0;align-content:start;padding:28px 22px 24px}
+  .pk-copy,.pk:nth-child(even) .pk-copy{background:none;padding:0;margin:0}
+  .band{gap:8px}
+  .panel:nth-child(1),.panel:nth-child(4){width:calc(64% - 4px)}
+  .panel:nth-child(2),.panel:nth-child(3){width:calc(36% - 4px)}
+  .panel{height:calc(50% - 4px)}
+  .contact .rowx{font-size:clamp(28px,8vw,44px)}
+  .faq details[open]{margin-inline:0;padding-inline:0;border-radius:20px}
 }
 </style>
 </head>
@@ -675,15 +768,13 @@ html.consent-ask #consent{display:grid!important}
 <main id="main" tabindex="-1">
   <section class="hero" id="top" aria-labelledby="heroName">
     <div class="hero-media"><picture><source media="(max-width: 900px) and (orientation: portrait)" srcset="media/hero_poster-tall.webp" width="540" height="720"><img class="hero-still" src="media/hero_poster.webp" width="1280" height="720" alt="" fetchpriority="high"></picture><video id="heroVid" muted loop playsinline preload="none" aria-label="A freshly washed white Hyundai Sonata in a driveway"></video></div>
-    <div class="hero-dim" aria-hidden="true"></div>
-    <div class="hero-foot">
-      <p class="hero-line" id="heroLine" data-load style="--d:520ms">Dirty car? Not for long. Hand wash and interior detailing, done in your Orange County driveway.</p>
-      <a class="btn hero-cta" href="#book" data-load style="--d:620ms">Book now</a>
+    <div class="hero-in">
+      <p class="eyebrow" data-load style="--d:120ms"><i aria-hidden="true"></i>Mobile car detailing · Orange County, NY</p>
+      <h1 id="heroName" data-load style="--d:200ms"><span class="chrome sweep" data-text="Showroom shine. Your driveway.">Showroom shine. Your driveway.</span></h1>
+      <p class="hero-line" id="heroLine" data-load style="--d:320ms">Dirty car? Not for long. Hand wash and interior detailing, done in your Orange County driveway.</p>
+      <div class="hero-actions" data-load style="--d:420ms"><a class="btn" href="#book">Book a detail</a><a class="btn btn-glass" href="#packages">See prices</a></div>
     </div>
-    <p class="hero-tag" aria-hidden="true">Mobile car detailing in your Orange County driveway</p>
-    <div class="hero-mask">
-      <h1 id="heroName"><span class="line"><span data-line style="--i:0">Letts</span></span> <span class="line"><span data-line style="--i:1">Get Clean</span></span></h1>
-    </div>
+    <button class="hero-pause" id="heroPause" type="button" aria-label="Pause the background video" aria-pressed="false"><svg class="i-pause" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/></svg><svg class="i-play" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l12 7-12 7z" fill="currentColor"/></svg></button>
   </section>
 
   <section class="how grid" id="how" aria-labelledby="howH">
@@ -711,18 +802,12 @@ html.consent-ask #consent{display:grid!important}
 
   <section class="prices" id="packages" aria-labelledby="pkgH">
     <div class="pk-head grid">
-      <h2 class="reveal" id="pkgH">Pick your package</h2>
+      <h2 class="reveal" id="pkgH">Pick your shine</h2>
       <p class="deal reveal" id="dealBadge" hidden></p>
       <p class="reveal muted" style="--d:80ms" id="pkgNote"></p>
       <fieldset class="sizes reveal" style="--d:140ms" id="sizeSwitch"><legend>Your vehicle</legend></fieldset>
     </div>
-    <div class="wash" id="wash">
-      <div class="wash-stage" aria-hidden="true">
-        <img class="wash-still" src="media/turn/f001.webp" width="960" height="540" alt="" loading="lazy" decoding="async">
-        <p class="wash-load"></p>
-      </div>
-      <div id="pkGrid"></div>
-    </div>
+    <div id="pkGrid"></div>
     <p class="prices-note" id="pkExtras"></p>
   </section>
 
@@ -763,10 +848,6 @@ html.consent-ask #consent{display:grid!important}
       </figure>
     </div>
     <p class="band-cap">Four real details: a Hyundai Sonata, an Infiniti, a Subaru Outback and a Chevy Silverado.</p>
-    <figure class="corridor reveal" style="--d:120ms" aria-label="A corridor built from eight pictures of those four cars, before and after">
-      <div class="corridor-box"><canvas aria-hidden="true"></canvas></div>
-      <figcaption class="band-cap">The same four cars as a corridor: the reels' first frames and the Sonata's before and after, inside and out.</figcaption>
-    </figure>
   </section>
 
   <section class="compare grid" id="compare" aria-labelledby="cmpH">
@@ -1217,7 +1298,6 @@ html.consent-ask #consent{display:grid!important}
     }));
     $("pkExtras").textContent = (st.addons.length ? "Extras from " + money(Math.min(...st.addons.map(a => a.price))) + " are added in your quote, only if you pick them. " : "") + "No deposit: you pay after the job.";
     observeReveals();
-    watchPackageColours();
   }
 
   // As a package section crosses the middle of the screen the whole page takes its colours (body transitions them over
@@ -1933,12 +2013,18 @@ html.consent-ask #consent{display:grid!important}
     }, 5600);
   }
   function setupHeroVideo() {
-    // Phones and data-saver get the still image; desktops get the looping video.
-    const vid = $("heroVid");
-    const saveData = navigator.connection && navigator.connection.saveData;
-    if (reduceMotion || saveData || matchMedia("(max-width: 900px)").matches) return;
-    vid.poster = "media/hero_poster.webp"; vid.src = "media/hero_loop.mp4"; vid.preload = "auto"; vid.autoplay = true;
-    vid.play().catch(() => {});
+    // The driveway film plays muted on every screen, with a pause button (WCAG 2.2.2); data saver keeps the still.
+    // Phones fetch it only once the page has loaded, so it never competes with the first paint.
+    const vid = $("heroVid"), pause = $("heroPause");
+    if (navigator.connection && navigator.connection.saveData) { pause.hidden = true; return; }
+    const start = () => { vid.poster = "media/hero_poster.webp"; vid.src = "media/hero_loop.mp4"; vid.preload = "auto"; vid.autoplay = true; vid.play().catch(() => {}); };
+    if (!matchMedia("(max-width: 900px)").matches || document.readyState === "complete") start(); else addEventListener("load", start, { once: true });
+    pause.addEventListener("click", () => {
+      const stop = !vid.paused;
+      if (stop) vid.pause(); else vid.play().catch(() => {});
+      pause.setAttribute("aria-pressed", String(stop));
+      pause.setAttribute("aria-label", stop ? "Play the background video" : "Pause the background video");
+    });
   }
 
   document.querySelectorAll("[data-copy-phone]").forEach(b => b.addEventListener("click", () => copyText(S.settings.phone, "Number copied")));
@@ -2028,33 +2114,10 @@ html.consent-ask #consent{display:grid!important}
 // Motion (js/motion.js on GSAP and Lenis) loads only when the device allows motion: at once on wide screens, where it raises the
 // hero name, and after the page has loaded on phones, so it never competes with the hero photo for a slow connection.
 if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
-  const loadMotion = () => ["vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/SplitText.min.js", "vendor/lenis.min.js", "js/motion.js"]
+  const loadMotion = () => ["vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/lenis.min.js", "js/motion.js"]
     .forEach(src => document.body.append(Object.assign(document.createElement("script"), { src, async: false })));
   if (matchMedia("(min-width: 901px)").matches || document.readyState === "complete") loadMotion();
   else addEventListener("load", loadMotion, { once: true });
-  // The wash (js/scrub.js: the real before/after photos and the walk-around film, driven by scroll) arrives when its
-  // stage is about a screen and a half away, after the page has loaded.
-  const stage = document.querySelector(".wash-stage");
-  if (stage && "IntersectionObserver" in window) {
-    const near = new IntersectionObserver((ents) => {
-      if (!ents.some(e => e.isIntersecting)) return;
-      near.disconnect();
-      const go = () => { stage.querySelector(".wash-load").textContent = "0%"; import("./js/scrub.js").then(m => m.start(stage)).catch(() => { stage.querySelector(".wash-load").textContent = ""; }); };
-      if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
-    }, { rootMargin: "150% 0px" });
-    near.observe(stage);
-  }
-  // The corridor (js/corridor.js) arrives the same way: when its band is about a screen away, after the page has loaded.
-  const corridor = document.querySelector(".corridor-box");
-  if (corridor && "IntersectionObserver" in window) {
-    const nearC = new IntersectionObserver((ents) => {
-      if (!ents.some(e => e.isIntersecting)) return;
-      nearC.disconnect();
-      const go = () => import("./js/corridor.js").then(m => m.start(corridor)).catch(() => {});
-      if (document.readyState === "complete") go(); else addEventListener("load", go, { once: true });
-    }, { rootMargin: "100% 0px" });
-    nearC.observe(corridor);
-  }
   // The pointer's dot and ring (js/cursor.js): fine pointers that can hover, after the page has loaded.
   if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
     const goCursor = () => import("./js/cursor.js").then(m => m.start()).catch(() => {});
