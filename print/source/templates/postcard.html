@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean postcard</title>
+<style>
+/* 6 x 4 in, two sides. Safe area 5.625 x 3.625 in. Front: the site's hero, the name across the driveway photo. */
+.front .photo{inset:0}
+.front .photo img{object-position:50% 50%}
+.front .eyebrow2{position:absolute;left:0;right:0;bottom:1.2in;font-weight:800;font-size:8.5pt;letter-spacing:.02em}
+.front .name{position:absolute;left:0;right:0;bottom:.3in}
+.front .sub{position:absolute;left:0;right:0;bottom:0;font-weight:700;font-size:9pt;color:var(--dim)}
+
+.back .left{position:absolute;left:0;top:0;bottom:0;width:3.3in;display:flex;flex-direction:column;justify-content:space-between}
+.back h2{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:30pt;line-height:.9}
+.back .lead{font-size:8.6pt;font-weight:600;line-height:1.42;margin-top:.08in}
+.back .facts{display:grid;gap:.05in;margin-top:.1in}
+.back .facts li{display:flex;align-items:center;gap:.05in;font-weight:800;font-size:8.6pt}
+.back .prices{display:grid;grid-template-columns:repeat(3,1fr);gap:.06in}
+.back .prices div{background:var(--surface2);padding:.06in .07in .05in}
+.back .prices .full{background:var(--accent);color:var(--ink)}
+.back .prices h3{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:8pt;line-height:1;white-space:nowrap}
+.back .prices b{display:block;font-family:var(--display);font-weight:400;font-size:21pt;line-height:1;margin-top:.03in}
+.back .note{font-size:6.6pt;color:var(--dim);line-height:1.4;margin-top:.06in}
+.back .slipbg{position:absolute;top:0;right:calc(var(--bleed) + var(--safe));width:2.05in;height:calc(var(--bleed) + var(--safe) + 3.3in);clip-path:{{zigzag 9 0.07in bottom}}}
+.back .book{position:absolute;right:0;top:0;width:2.05in;padding:.16in .2in 0;color:var(--paper-ink);text-align:center}
+.back .book .qr{border-radius:0}
+.back .book .act{font-family:var(--display);text-transform:uppercase;font-size:11pt;line-height:1;padding:.05in 0 .04in;letter-spacing:.05em}
+.back .book .lbl{font-size:5.6pt;margin-top:.1in}
+.back .book b{display:block;font-family:var(--display);font-weight:400;font-size:16.5pt;line-height:1;margin-top:.03in}
+</style>
+</head>
+<body>
+<section class="page front">
+  <div class="photo"><img src="{{media hero_poster.jpg 340 30 1260 670 fade=0.5}}" alt=""></div>
+  <div class="safe">
+    <p class="eyebrow2">Mobile car detailing · Orange County, NY</p>
+    <div class="name"><span class="mono" data-fit>Letts Get Clean</span></div>
+    <p class="sub">We come to your driveway. You pay after the job.</p>
+  </div>
+</section>
+<section class="page back">
+  <div class="slip slipbg"></div>
+  <div class="safe">
+    <div class="left">
+      <div>
+        <h2>We come to you.</h2>
+        <p class="lead">Hand wash and deep interior cleaning, right in your driveway.</p>
+        <ul class="facts"><li>{{check}}Book online in a minute</li><li>{{check}}Pay after the job. No deposit.</li><li>{{check}}Cash, Cash App or Venmo</li></ul>
+      </div>
+      <div>
+        <div class="prices">
+          <div><h3>Exterior</h3><b>${{price exterior}}</b></div>
+          <div><h3>Interior</h3><b>${{price interior}}</b></div>
+          <div class="full"><h3>The Full Detail</h3><b>${{price full}}</b></div>
+        </div>
+        <p class="note">Car or sedan. SUV or truck +${{price suv}}, minivan +${{price van}}.<br>Also bikes ${{price bike}}, trash cans ${{price trash}} a can, house pressure wash ${{price house}}.</p>
+      </div>
+    </div>
+    <div class="book">
+      <div class="qr">{{qr postcard}}</div>
+      <div class="act">Scan to book</div>
+      <p class="lbl">Or call or text Andrew</p>
+      <b>{{phone}}</b>
+    </div>
+  </div>
+</section>
+{{fit}}
+</body>
+</html>

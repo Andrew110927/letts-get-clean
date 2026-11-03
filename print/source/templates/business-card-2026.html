@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean business card, 2026 look</title>
+<style>
+/* 3.5 x 2 in, two sides. Safe area 3.25 x 1.75 in. Front: the name as a monument. Back: before/after and the QR. */
+.front .eyebrow2{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;font-weight:700;font-size:6.4pt;color:var(--dim)}
+.front .name{position:absolute;left:0;right:0;top:.33in}
+.front .call{position:absolute;left:0;bottom:0}
+.front .call .lbl{font-size:5.2pt;color:var(--accent)}
+.front .call b{display:block;font-family:var(--display);font-weight:400;font-size:17pt;line-height:1;margin-top:.03in;letter-spacing:.01em}
+.front .call p{font-weight:700;font-size:6.2pt;margin-top:.04in}
+.front .mascot{position:absolute;right:0;bottom:0;width:.62in;height:.62in}
+
+.back .photo{top:0;bottom:0;width:calc(var(--bleed) + 1.02in)}
+.back .photo.b{left:0}
+.back .photo.a{left:calc(var(--bleed) + 1.05in)}
+.back .slipbg{position:absolute;top:0;bottom:0;right:0;left:calc(var(--bleed) + 2.07in)}
+.back .tags .ba{position:absolute;bottom:0;font-size:6.5pt;padding:.025in .045in .02in}
+.back .tags .after{left:calc(1.05in - var(--safe))}
+.back .book{position:absolute;right:0;top:0;bottom:0;width:1.08in;display:flex;flex-direction:column;justify-content:center;color:var(--paper-ink)}
+.back .book .qr{border-radius:0}
+.back .book .act{font-family:var(--display);text-transform:uppercase;font-size:8.5pt;line-height:1;text-align:center;padding:.035in 0 .03in;letter-spacing:.05em}
+.back .book p{font-weight:700;font-size:5.6pt;text-align:center;margin-top:.06in;line-height:1.3}
+</style>
+</head>
+<body>
+<section class="page front">
+  <div class="safe">
+    <p class="eyebrow2"><span>Mobile car detailing</span><span>Orange County, NY</span></p>
+    <div class="name"><span class="mono" data-fit>Letts Get Clean</span></div>
+    <div class="call">
+      <p class="lbl">Call or text Andrew</p>
+      <b>{{phone}}</b>
+      <p>@lettsgetclean on Instagram &amp; TikTok</p>
+    </div>
+    <img class="mascot" src="{{mascot}}" alt="">
+  </div>
+</section>
+<section class="page back">
+  <div class="photo b"><img src="{{media int_before.webp}}" alt=""></div>
+  <div class="photo a"><img src="{{media int_after.webp}}" alt=""></div>
+  <div class="slip slipbg"></div>
+  <div class="safe">
+    <div class="tags"><span class="ba">Before</span><span class="ba after">After</span></div>
+    <div class="book">
+      <div class="qr">{{qr card}}</div>
+      <div class="act">Scan to book</div>
+      <p>We come to you.<br>Pay after the job.</p>
+    </div>
+  </div>
+</section>
+{{fit}}
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head}}
+<title>Letts Get Clean tear-off flyer</title>
+<style>
+/* 8.5 x 11, for bulletin boards. Safe area 8 x 10.5 in. The bottom strip is eight tabs to cut apart and tear off. */
+.head{position:absolute;left:0;right:0;top:.02in}
+.photo{top:calc(var(--bleed) + 1.45in);height:2.85in;width:calc(50% - .03in)}
+.photo.b{left:0}
+.photo.a{right:0}
+.photo img{object-position:50% 55%}
+.tags{position:absolute;left:0;right:0;top:1.2in}
+.tags .ba{position:absolute;top:0;font-size:15pt;padding:.06in .1in .05in}
+.tags .after{left:calc(4.25in + .03in - var(--safe))}
+.lead{position:absolute;left:0;right:0;top:4.32in;font-size:14.5pt;font-weight:600;line-height:1.4}
+.lead b{font-weight:800}
+.prices{position:absolute;left:0;right:0;top:5.08in;display:flex;gap:.1in}
+.prices div{flex:1;background:var(--surface2);padding:.09in .12in .08in;display:flex;justify-content:space-between;align-items:center}
+.prices .full{background:var(--accent);color:var(--ink)}
+.prices h3{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:14pt;line-height:1}
+.prices b{font-family:var(--display);font-weight:400;font-size:28pt;line-height:1}
+.note{position:absolute;left:0;right:0;top:5.68in;font-size:9.5pt;color:var(--dim);line-height:1.4}
+.contact{position:absolute;left:0;right:0;top:6.2in;display:flex;justify-content:space-between;align-items:center}
+.call .lbl{font-size:9pt;color:var(--accent)}
+.call b{display:block;font-family:var(--display);font-weight:400;font-size:44pt;line-height:1;margin-top:.04in}
+.call p{font-weight:700;font-size:10pt;margin-top:.06in}
+.book{width:1.2in;flex:none}
+.book .qr{border-radius:0}
+.book .act{font-family:var(--display);text-transform:uppercase;font-size:11.5pt;line-height:1;text-align:center;padding:.06in 0 .05in;letter-spacing:.04em}
+.take{position:absolute;left:0;right:0;top:8.08in;font-family:var(--display);text-transform:uppercase;font-size:15pt;line-height:1;letter-spacing:.06em;display:flex;align-items:center;gap:.1in}
+.take svg{width:.16in;height:.16in;fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+/* The tabs: paper strips with dashed cut lines; the text reads bottom to top. */
+.tabsbg{position:absolute;left:0;right:0;bottom:0;height:calc(var(--bleed) + 2.4in);background:var(--paper)}
+.cuts{position:absolute;left:0;right:0;bottom:0;height:calc(var(--bleed) + 2.4in);border-top:1.2pt dashed #8A929E}
+.cuts i{position:absolute;top:0;bottom:0;border-left:1.2pt dashed #8A929E}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:2.15in;display:grid;grid-template-columns:repeat(8,1fr);color:var(--paper-ink)}
+.tabs div{display:flex;justify-content:center;align-items:center}
+.tabs p{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;white-space:nowrap}
+.tabs b{display:block;font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:14pt;line-height:1.05}
+.tabs span{display:block;font-weight:800;font-size:11.5pt;line-height:1.2}
+.tabs small{display:block;font-weight:600;font-size:7.5pt;line-height:1.3;color:#3B424D}
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="photo b"><img src="{{media int_before.webp}}" alt=""></div>
+  <div class="photo a"><img src="{{media int_after.webp}}" alt=""></div>
+  <div class="tabsbg"></div>
+  <div class="cuts"><i style="left:calc(var(--bleed) + var(--safe) + 1in)"></i><i style="left:calc(var(--bleed) + var(--safe) + 2in)"></i><i style="left:calc(var(--bleed) + var(--safe) + 3in)"></i><i style="left:calc(var(--bleed) + var(--safe) + 4in)"></i><i style="left:calc(var(--bleed) + var(--safe) + 5in)"></i><i style="left:calc(var(--bleed) + var(--safe) + 6in)"></i><i style="left:calc(var(--bleed) + var(--safe) + 7in)"></i></div>
+  <div class="safe">
+    <div class="head"><span class="mono" data-fit>Need a clean car?</span></div>
+    <div class="tags"><span class="ba">Before</span><span class="ba after">After</span></div>
+    <p class="lead"><b>Andrew comes to your driveway</b> for a hand wash and a deep interior clean. Book online in a minute and pay after the job.</p>
+    <div class="prices">
+      <div><h3>Exterior</h3><b>${{price exterior}}</b></div>
+      <div><h3>Interior</h3><b>${{price interior}}</b></div>
+      <div class="full"><h3>The Full Detail</h3><b>${{price full}}</b></div>
+    </div>
+    <p class="note">Car or sedan. SUV or truck +${{price suv}}, minivan +${{price van}}. Also bikes ${{price bike}}, trash cans ${{price trash}} a can, and a house pressure wash ${{price house}}.<br>Pay with cash, Cash App or Venmo. No deposit.</p>
+    <div class="contact">
+      <div class="call">
+        <p class="lbl">Call or text Andrew</p>
+        <b>{{phone}}</b>
+        <p>{{site}}</p>
+      </div>
+      <div class="book"><div class="qr">{{qr poster}}</div><div class="act">Scan to book</div></div>
+    </div>
+    <p class="take"><svg viewBox="0 0 24 24"><path d="M12 4v15M5 12l7 7 7-7"/></svg>Take a number<svg viewBox="0 0 24 24"><path d="M12 4v15M5 12l7 7 7-7"/></svg></p>
+    <div class="tabs">
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+      <div><p><b>Letts Get Clean</b><span>{{phone}}</span><small>Car detailing at your house</small></p></div>
+    </div>
+  </div>
+</section>
+{{fit}}
+</body>
+</html>

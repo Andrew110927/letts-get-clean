@@ -29,3 +29,17 @@ ul{list-style:none}
 .mascot{display:block}
 .ico{display:inline-block;width:1em;height:1em;flex:none;fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .star{display:inline-block;width:.75em;height:.75em;fill:currentColor}
+
+/* The 2026 set follows the redesigned site (DESIGN.md): the name as a monument over real photos,
+   paper slips with a torn edge, tone steps instead of lines, and blue only where you act. */
+:root{--paper:#F4F5F7;--paper-ink:#07080B;--surface:#12151B;--surface2:#1A1F28;--surface3:#232A35}
+.mono{font-family:var(--display);font-weight:400;text-transform:uppercase;line-height:.8;letter-spacing:-.005em;white-space:nowrap}
+[data-fit]{display:block;width:max-content}
+.photo{position:absolute;overflow:hidden;background:var(--surface)}
+.photo img{display:block;width:100%;height:100%;object-fit:cover}
+/* Before / After labels are square tags: the design system rules out pill badges. */
+.ba{display:inline-block;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;line-height:1;background:var(--bg);color:var(--fg)}
+.ba.after{background:var(--accent);color:var(--ink)}
+.slip{background:var(--paper);color:var(--paper-ink)}
+.act{background:var(--accent);color:var(--ink)}
+.lbl{font-weight:900;text-transform:uppercase;letter-spacing:.14em}

@@ -13,6 +13,7 @@ there, run this again. Needs Google Chrome and:
     pip install segno pymupdf zxing-cpp opencv-python-headless pillow
 """
 import base64
+import io
 import math
 import re
 import subprocess
@@ -80,6 +81,16 @@ PIECES = [
     Piece("yard-sign-18x24", "yard-sign.html", (24, 18), 0.75, ("Sign",), {0: "yardsign"}, 80),
     Piece("flyer-letter-8.5x11", "flyer-letter.html", (8.5, 11), 0.25, ("Flyer",), {0: "flyer"}, 200),
     Piece("flyer-half-page-5.5x8.5", "flyer-half.html", (5.5, 8.5), 0.25, ("Flyer",), {0: "flyer"}, 250),
+    # The 2026 set, in the redesigned site's look (DESIGN.md): the name as a monument over real photos.
+    Piece("poster-18x24", "poster-18x24.html", (18, 24), 0.5, ("Poster",), {0: "poster"}, 80),
+    Piece("poster-same-car-11x17", "poster-same-car.html", (11, 17), 0.375, ("Poster",), {0: "poster"}, 160),
+    Piece("tear-off-flyer-8.5x11", "tear-off.html", (8.5, 11), 0.25, ("Flyer",), {0: "poster"}, 200),
+    Piece("business-card-2026", "business-card-2026.html", (3.5, 2), 0.125, ("Front", "Back"), {1: "card"}, 300),
+    # Door hangers come with a die-cut hole and slit at the top; the template keeps its top 2.5 in free of anything that matters.
+    Piece("door-hanger-4.25x11", "door-hanger.html", (4.25, 11), 0.25, ("Front", "Back"), {0: "doorhanger"}, 200),
+    Piece("postcard-6x4", "postcard.html", (6, 4), 0.1875, ("Front", "Back"), {1: "postcard"}, 250),
+    # Left in the car after a detail; its QR opens the review form instead of booking.
+    Piece("thank-you-card", "thank-you.html", (3.5, 2), 0.125, ("Front", "Back"), {1: "#review"}, 300),
 ]
 
 
@@ -125,8 +136,50 @@ def font_css():
     return "\n".join(rules)
 
 
+def qr_link(tag):
+    """'#review' jumps to that part of the site; anything else is a ?src= tag that fills in "How did you hear"."""
+    return SITE + tag if tag.startswith("#") else SITE + "?src=" + tag
+
+
 def qr_code(tag):
-    return segno.make(SITE + "?src=" + tag, error="m", micro=False)
+    return segno.make(qr_link(tag), error="m", micro=False)
+
+
+def media_uri(arg):
+    """A photo from media/ as a JPEG data URI. "name.webp x0 y0 x1 y1" crops it first, so what's cut off
+    isn't still hidden inside the PDF. "fade=0.45" darkens the bottom 45% into the ground colour: baked in,
+    because Chrome turns a see-through CSS gradient into a 72 ppi picture that print shops flag."""
+    name, *rest = arg.split()
+    opts = dict(o.split("=") for o in rest if "=" in o)
+    box = [int(v) for v in rest if "=" not in v]
+    im = Image.open(REPO / "media" / name).convert("RGB")
+    if box:
+        im = im.crop(tuple(box))
+    if "fade" in opts:
+        h = im.height
+        start = int(h * (1 - float(opts["fade"])))
+        # Clear at the start, 72% dark just past halfway, solid ground at the bottom edge.
+        alpha = [0] * start + [round(255 * (0.72 * t / 0.55 if t < 0.55 else 0.72 + 0.28 * (t - 0.55) / 0.45))
+                               for t in (i / max(1, h - start - 1) for i in range(h - start))]
+        mask = Image.new("L", (1, h))
+        mask.putdata(alpha)
+        im = Image.composite(Image.new("RGB", im.size, BG), im, mask.resize(im.size))
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=92)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def zigzag(arg):
+    """A clip-path that tears one edge of a paper slip into teeth, like the site's receipts: "teeth depth top|bottom"."""
+    teeth, depth, edge = arg.split()
+    step = 100 / (2 * int(teeth))
+    if edge == "bottom":
+        pts = ["0 0", "100% 0", f"100% calc(100% - {depth})"]
+        pts += [f"{100 - i * step:.3f}% " + ("100%" if i % 2 else f"calc(100% - {depth})") for i in range(1, 2 * int(teeth) + 1)]
+    else:
+        pts = [f"0 {depth}"] + [f"{i * step:.3f}% " + ("0" if i % 2 else depth) for i in range(1, 2 * int(teeth) + 1)]
+        pts += ["100% 100%", "0 100%"]
+    return "polygon(" + ",".join(pts) + ")"
 
 
 def tape_svg(w, h, stripe):
@@ -163,6 +216,14 @@ document.fonts.ready.then(() => {
   }
 });
 </script>"""
+# Sizes every [data-fit] line to its parent's width (the monument name). Registered before the probe, so it runs first.
+FIT = """<script>
+document.fonts.ready.then(() => document.querySelectorAll("[data-fit]").forEach(el => {
+  const size = parseFloat(getComputedStyle(el).fontSize);
+  // Fractional widths and a hair of room: whole-pixel scrollWidth rounding pushed big lines past the safe edge.
+  el.style.fontSize = (0.997 * size * el.parentElement.getBoundingClientRect().width / el.getBoundingClientRect().width).toFixed(3) + "px";
+}));
+</script>"""
 CHECK = '<svg class="ico" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>'
 STAR = '<svg class="star" viewBox="0 0 24 24"><path d="M12 2l2.9 6.9 7.1.6-5.4 4.7 1.7 7.3L12 17.6 5.7 21.5l1.7-7.3L2 9.5l7.1-.6z"/></svg>'
 
@@ -183,6 +244,9 @@ def render_html(piece, settings, fonts):
         if key == "phone": return settings["phone"]
         if key == "site": return SITE.removeprefix("https://").rstrip("/")
         if key == "price": return str(settings[arg])
+        if key == "media": return media_uri(arg)
+        if key == "zigzag": return zigzag(arg)
+        if key == "fit": return FIT
         if key == "qr": return qr_code(arg).svg_inline(dark=BG, light="#FFFFFF", border=4, omitsize=True)
         if key == "tape": return tape_svg(*map(float, arg.split()))
         if key == "check": return CHECK
@@ -250,7 +314,7 @@ def check(piece, pdf_file, settings):
                 notes.append(f"art on page {i + 1}: {info['width'] / wide_in:.0f} pixels per inch")
         text += page.get_text()
         # The QR: render the page at two sizes; both readers must find exactly the expected link.
-        want = {SITE + "?src=" + piece.qr[i]} if i in piece.qr else set()
+        want = {qr_link(piece.qr[i])} if i in piece.qr else set()
         for dpi in (piece.preview_dpi // 2, piece.preview_dpi):
             zx, cvt, zres = decode(to_rgb(page.get_pixmap(dpi=dpi)))
             for reader, got in (("zxing", zx), ("OpenCV", cvt)):
@@ -316,7 +380,7 @@ def main():
             problems, notes = check(piece, pdf_file, settings)
             preview(piece, pdf_file, png_file)
             zx, cvt, _ = decode(np.array(Image.open(png_file).convert("RGB")))
-            want = {SITE + "?src=" + t for t in piece.qr.values()}
+            want = {qr_link(t) for t in piece.qr.values()}
             if zx != want or cvt != want:
                 problems.append(f"preview PNG: zxing read {sorted(zx)}, OpenCV read {sorted(cvt)}, expected {sorted(want)}")
             all_problems += len(problems)
