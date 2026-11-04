@@ -1,4 +1,5 @@
 -- Security pass (2026-11-03): website visitors can only fill in the booking fields the form really has, and a
+-- Applied to the live project 2026-11-03 with Andrew's OK.
 -- flood of bookings from bots stops at the database instead of filling Andrew's calendar.
 --
 -- Already in place before this file (checked 2026-11-03, kept as is): RLS on every table, owner-only policies via
