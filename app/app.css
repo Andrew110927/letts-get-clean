@@ -1,3 +1,6 @@
+/* The site's own font files (fonts/, OFL), so signing in doesn't tell Google who opened the app. */
+@font-face{font-family:"Inter";src:url(../fonts/inter-latin.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Anton";src:url(../fonts/anton-latin.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
 /* LGC Pro owner app. Colors come from config.js (set as variables on :root at startup); these are the fallbacks.
    Phone-first: header and tab bar stay put, only #view scrolls, sheets slide up from the bottom. */
 :root{

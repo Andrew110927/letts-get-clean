@@ -149,7 +149,7 @@ Node 24+. One install, then the app logic and database rules (`tests/`, run agai
 same migrations, never the live data) and the push encryption (checked against the `http_ece` reference decoder):
 
 ```bash
-npm install --no-save --no-package-lock @electric-sql/pglite@0.5.8 http_ece@1.2.0 jspdf@3.0.3 qrcode-generator@1.4.4
+npm install --no-save --no-package-lock @electric-sql/pglite@0.5.8 http_ece@1.2.0 jspdf@4.2.1 qrcode-generator@1.4.4
 ```
 
 ```bash
@@ -164,7 +164,7 @@ node --test "tests/*.test.mjs" supabase/functions/booking-push/push.test.mjs
   "Invoices only"; flip the switch to offer one on the website too (stored as `web: false` in `site_settings.addons`).
 - What prints on invoices (business name, phone, email, website, Cash App / Venmo, tax %, number prefixes, overdue
   days, thank-you note, terms, logo, brand color): More → Invoice settings. Saved in the owner-only `invoice_settings` row.
-  The PDF is drawn on the phone by `app/pdf.js` with jsPDF 3.0.3 and qrcode-generator 1.4.4, loaded from jsDelivr the
+  The PDF is drawn on the phone by `app/pdf.js` with jsPDF 4.2.1 and qrcode-generator 1.4.4, loaded from jsDelivr the
   first time with integrity hashes (pinned in `PDF_LIBS` in `app/app.js`). The home address is never printed.
 - Text for invoice, receipt and quote messages: `messages.invoice`, `messages.receipt`, `messages.quote` in `app/config.js`.
 - Text message wording: `messages` in `app/config.js`.

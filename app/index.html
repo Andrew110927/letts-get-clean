@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Only this app, its Supabase project and the pinned CDN libraries (each checked by an integrity hash) may load.
+     style 'unsafe-inline' covers the style="" attributes the views set; scripts have no inline exception. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://fisenrazdvnobzjpihti.supabase.co wss://fisenrazdvnobzjpihti.supabase.co; worker-src 'self'; manifest-src 'self'; frame-src blob:; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <title>LGC Pro · Letts Get Clean owner app</title>
 <meta name="description" content="Owner app for Letts Get Clean: jobs, customers, invoices, money, social media, reviews and website settings.">
 <meta name="robots" content="noindex">
@@ -14,12 +18,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap">
 <link rel="stylesheet" href="app.css">
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous" defer></script>
 <script src="core.js" defer></script>
 <script src="pdf.js" defer></script>
 <script src="discounts.js" defer></script>

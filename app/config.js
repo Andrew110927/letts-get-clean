@@ -1,3 +1,7 @@
+// Never inside someone else's page: a framed copy of the sign-in screen could be used to trick taps (clickjacking).
+// GitHub Pages can't send the X-Frame-Options header, so the app breaks out of any frame itself.
+if (window.top !== window.self) { document.documentElement.style.display = "none"; try { window.top.location.replace(window.self.location.href); } catch (e) { /* browsers may block it: staying hidden is enough */ } }
+
 // Everything brand-specific for the owner app lives in this file.
 // To run the app for another detailing business: change the values below, swap the icons in icons/,
 // and point `supabase` at that business's project (same tables, see supabase/migrations/).

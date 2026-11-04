@@ -70,6 +70,7 @@ before(async () => {
   await db.exec(await sql("20261029_trash_cans"));
   await db.exec(await sql("20261031_privacy"));
   await db.exec(await sql("20261101_booking_email_limit"));
+  await db.exec(await sql("20261103_security_pass"));
 });
 
 test("existing bookings become one customer per phone, skipping cancelled-only people", async () => {
@@ -108,7 +109,9 @@ test("a blank name still books, filed under a customer called Customer", async (
 
 test("a website visitor can't attach a booking to someone else's customer record", async () => {
   const ann = await one("select id from public.customers where phone_key = '8455550101'");
-  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, customer_id) values ($1, '15:00', 'Eve', '(212) 555-0177', $2)`, [future(25), ann.id]));
+  // Since the security pass the field itself is off limits to visitors; without it, the database files Eve as herself.
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, customer_id) values ($1, '15:00', 'Eve', '(212) 555-0177', $2)`, [future(25), ann.id])), /permission denied/);
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Eve', '(212) 555-0177')`, [future(25)]));
   const b = await one("select c.name from public.bookings b join public.customers c on c.id = b.customer_id where b.date = $1", [future(25)]);
   assert.equal(b.name, "Eve");
 });
@@ -274,8 +277,10 @@ test("two cars are saved together or not at all: if one slot is taken, neither i
 });
 
 test("a website booking records which terms it agreed to, timed by the database, not the visitor", async () => {
-  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, terms_version, terms_agreed_at)
-    values ($1, '15:00', 'Terms Tess', '(845) 555-0190', '2026-10-31', '2020-01-01')`, [future(70)]));
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, terms_version, terms_agreed_at)
+    values ($1, '15:00', 'Terms Tess', '(845) 555-0190', '2026-10-31', '2020-01-01')`, [future(70)])), /permission denied/);
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, terms_version)
+    values ($1, '15:00', 'Terms Tess', '(845) 555-0190', '2026-10-31')`, [future(70)]));
   await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '17:00', 'No Terms', '(845) 555-0191')`, [future(70)]));
   const got = await rows(`select name, terms_version, terms_agreed_at > now() - interval '1 minute' as fresh from public.bookings where date = $1 order by name`, [future(70)]);
   assert.deepEqual(got, [{ name: "No Terms", terms_version: null, fresh: null }, { name: "Terms Tess", terms_version: "2026-10-31", fresh: true }]);
@@ -341,4 +346,41 @@ test("forgetting a customer blanks the email on their bookings too", async () =>
   const c = await one("select id from public.customers where phone_key = '8455550164'");
   await as("owner", () => db.query("select public.forget_customer($1)", [c.id]));
   assert.deepEqual(await one("select name, email from public.bookings where date = $1", [future(100)]), { name: "Deleted customer", email: null });
+});
+
+// ===== Security pass (20261103) =====
+
+test("visitors can't set the fields that are the database's or Andrew's: status, time made, tip, payment, links, card", async () => {
+  const cols = { status: "'Done'", created_at: "'2020-01-01'", tip: "50", paid_with: "'Cash'", vehicle_id: "gen_random_uuid()",
+    terms_agreed_at: "now()" }; // (the card_* and stripe_* columns live in the card migration, not loaded here; the grant leaves them out too)
+  for (const [col, val] of Object.entries(cols))
+    await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone, ${col}) values ($1, '15:00', 'Tamper Tom', '(845) 555-0170', ${val})`, [future(110)])), /permission denied/, col);
+  assert.equal((await one("select count(*)::int as n from public.bookings where name = 'Tamper Tom'")).n, 0);
+});
+
+test("everything the booking form sends is still accepted from a visitor", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (id, service, date, "time", name, phone, location, address, town, car, package, size, addons,
+      total, source, notes, deal, discount, discount_amount, terms_version, email)
+    values (gen_random_uuid(), 'car', $1, '15:00', 'Form Fay', '(845) 555-0171', 'mobile', '9 Elm St', 'Newburgh', 'Civic', 'Exterior', 'Car / sedan',
+      'Air freshener', 22, 'Poster', 'Gate code 12', true, 'Military 10% off', 3, '2026-10-31', 'fay@example.com')`, [future(111)]));
+  const b = await one("select status, tip, paid_with, created_at > now() - interval '1 minute' as fresh from public.bookings where name = 'Form Fay'");
+  assert.deepEqual(b, { status: "Requested", tip: 0, paid_with: null, fresh: true });
+});
+
+test("visitors can book up to 120 days out; further is refused, but Andrew's app can go further", async () => {
+  await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Far Fran', '(845) 555-0172')`, [future(119)]));
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Far Fran', '(845) 555-0172')`, [future(130)])), /too far ahead/);
+  await as("owner", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '15:00', 'Far Fran', '(845) 555-0172')`, [future(200)]));
+});
+
+// Kept last: it fills the hour's allowance on purpose.
+test("the whole site takes at most 40 website bookings an hour, then asks people to call; Andrew isn't limited", async () => {
+  const already = (await one("select count(*)::int as n from public.bookings where status = 'Requested' and created_at > now() - interval '1 hour'")).n;
+  // Odd minutes (":07") are times the site never offers, so these never collide with the other tests' slots.
+  for (let i = already; i < 40; i++)
+    await as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, $2, 'Bot', $3)`,
+      [future(101 + (i % 18)), String(i % 24).padStart(2, "0") + ":07", "(845) 556-" + String(1000 + i)]));
+  assert.equal((await one("select count(*)::int as n from public.bookings where status = 'Requested' and created_at > now() - interval '1 hour'")).n, 40);
+  await assert.rejects(as("anon", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '19:00', 'One Too Many', '(845) 557-0000')`, [future(60)])), /busy right now/);
+  await as("owner", () => db.query(`insert into public.bookings (date, "time", name, phone) values ($1, '19:00', 'Phone Call', '(845) 557-0001')`, [future(60)]));
 });

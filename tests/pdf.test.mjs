@@ -1,5 +1,5 @@
 // The invoice PDF (app/pdf.js), built with the real jsPDF and QR libraries and read back as PDF text.
-// Setup once: npm install --no-save --no-package-lock jspdf@3.0.3 qrcode-generator@1.4.4 (README "Tests").
+// Setup once: npm install --no-save --no-package-lock jspdf@4.2.1 qrcode-generator@1.4.4 (README "Tests").
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { jsPDF } from "jspdf";

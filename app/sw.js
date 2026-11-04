@@ -1,9 +1,9 @@
 // Keeps the app opening with weak or no signal. Supabase (customer data) is never cached here:
 // those calls always go to the network, and the app keeps its own last-loaded copy for offline viewing.
 // Bump VERSION when shipping changes so phones drop the old files.
-const VERSION = "lgcpro-v15";
-const SHELL = ["./", "index.html", "app.css", "core.js", "pdf.js", "discounts.js", "app.js", "config.js", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png"];
-const LIBS = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
+const VERSION = "lgcpro-v16"; // v16: fonts served locally; supabase-js now loads with an integrity check, so old (opaque) copies must go
+const SHELL = ["./", "index.html", "app.css", "core.js", "pdf.js", "discounts.js", "app.js", "config.js", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "../fonts/inter-latin.woff2", "../fonts/anton-latin.woff2"];
+const LIBS = ["cdn.jsdelivr.net"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

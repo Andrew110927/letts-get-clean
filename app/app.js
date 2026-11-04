@@ -1491,7 +1491,7 @@
   // jsPDF and the QR maker load the first time a PDF is made; the service worker then keeps them for offline use.
   // Pinned versions with integrity hashes, so a changed copy on the CDN is refused.
   const PDF_LIBS = [
-    ["https://cdn.jsdelivr.net/npm/jspdf@3.0.3/dist/jspdf.umd.min.js", "sha384-GwHhSt8QjC7J+v0zZ0Flfho/T76YHEcCL9w4rvjTIUHauh6gWJeBSIi3vWXxNhtA"],
+    ["https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js", "sha384-qovJwSBbRDPP5cEjCp8S0UP66wrvnjaa60XMOGzTNanrThcrGfXfnZkvgY8N1KT3"],
     ["https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js", "sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz"]
   ];
   let pdfLibs = null, appIcon = null;
